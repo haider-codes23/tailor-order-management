@@ -1,5 +1,5 @@
 import { http, HttpResponse, delay } from "msw"
-import { validateCredentials, sanitizeUser, generateMockToken } from "../data/mockUsers"
+import { validateCredentials, sanitizeUser, generateMockToken } from "../data/mockUser.js"
 import { appConfig } from "@/config/appConfig"
 
 /**
