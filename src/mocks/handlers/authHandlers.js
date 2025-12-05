@@ -1,5 +1,5 @@
 import { http, HttpResponse, delay } from "msw"
-import { validateCredentials, sanitizeUser, generateMockToken } from "../data/mockUsers"
+import { validateCredentials, sanitizeUser, generateMockToken } from "../data/mockUser.js"
 import { appConfig } from "@/config/appConfig"
 
 /**
@@ -222,6 +222,74 @@ export const authHandlers = [
     return HttpResponse.json(
       {
         user: user,
+      },
+      { status: 200 }
+    )
+  }),
+
+  /**
+   * GET /test/protected
+   *
+   * Special test endpoint to verify token refresh mechanism works.
+   *
+   * This endpoint simulates a protected resource that requires authentication.
+   * On the FIRST call with any token, it returns 401 to simulate token expiration.
+   * On subsequent calls after refresh, it returns success.
+   *
+   * We track calls using a counter stored in sessionStorage so it persists
+   * across the refresh attempt but resets when you close the tab.
+   *
+   * Test flow:
+   * 1. User is logged in with a valid token
+   * 2. User clicks "Test Token Refresh" button
+   * 3. This endpoint is called, returns 401 (simulating expired token)
+   * 4. httpClient sees 401, calls /auth/refresh to get new token
+   * 5. httpClient retries this endpoint with new token
+   * 6. This endpoint now returns success
+   * 7. User sees success message confirming refresh worked
+   */
+  http.get(`${appConfig.apiBaseUrl}/test/protected`, async ({ request }) => {
+    await delay(300)
+
+    // Check for authorization header
+    const authHeader = request.headers.get("Authorization")
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return HttpResponse.json(
+        {
+          error: "UNAUTHORIZED",
+          message: "No access token provided",
+        },
+        { status: 401 }
+      )
+    }
+
+    // Check if this is the first call or a retry after refresh
+    // We use sessionStorage to track state across the refresh attempt
+    const callCount = parseInt(sessionStorage.getItem("testProtectedCallCount") || "0")
+    sessionStorage.setItem("testProtectedCallCount", String(callCount + 1))
+
+    if (callCount === 0) {
+      // First call - simulate expired token
+      return HttpResponse.json(
+        {
+          error: "TOKEN_EXPIRED",
+          message: "Access token has expired",
+        },
+        { status: 401 }
+      )
+    }
+
+    // Subsequent calls after refresh - return success
+    // Reset the counter for next test
+    sessionStorage.removeItem("testProtectedCallCount")
+
+    return HttpResponse.json(
+      {
+        message:
+          "Token refresh worked! This request failed with 401, triggered automatic refresh, and was retried successfully.",
+        timestamp: new Date().toISOString(),
+        requestNumber: callCount + 1,
       },
       { status: 200 }
     )
