@@ -45,4 +45,4 @@ dist-ssr
 *.sw?
 
 # MSW
-public/mockServiceWorker.js
+#public/mockServiceWorker.js
