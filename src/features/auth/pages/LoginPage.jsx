@@ -1,8 +1,6 @@
-import { useState } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useForm } from "react-hook-form"
-import { useAuth } from "@/features/auth/hooks/useAuth"
-import { httpClient } from "@/services/http/httpClient"
+import { useLogin } from "@/features/auth/hooks/useAuthMutations"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,35 +10,29 @@ import { Loader2 } from "lucide-react"
 /**
  * LoginPage Component
  *
- * This is a production-quality login form that demonstrates best practices
- * for form handling in React. The patterns you see here will be used
- * throughout the application for every form you build.
+ * Notice how clean this component is now. It doesn't know anything about
+ * HTTP requests, API endpoints, or how authentication works under the hood.
+ * It just knows:
+ * - Render a form
+ * - Call loginMutation.mutate when form is submitted
+ * - Show loading state from loginMutation.isPending
+ * - Show errors from loginMutation.error
+ * - Redirect on success
  *
- * Key features:
- * - Real-time validation with react-hook-form
- * - Loading states during API calls
- * - Comprehensive error handling
- * - Redirect to intended destination after login
- * - Accessible form structure with proper labels
+ * All the complexity of API calls and state management lives in the hooks,
+ * keeping this component focused purely on UI concerns.
  */
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [apiError, setApiError] = useState(null)
-  const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Get the page the user was trying to access (if any)
-  // This comes from the ProtectedRoute component's Navigate state
+  // Get the page the user was trying to access
   const from = location.state?.from?.pathname || "/"
 
-  /**
-   * Set up react-hook-form for form handling and validation
-   *
-   * react-hook-form manages form state, handles validation, and provides
-   * helpful utilities for working with forms. It's more performant than
-   * managing form state manually with useState because it minimizes re-renders.
-   */
+  // Get the login mutation hook
+  const loginMutation = useLogin()
+
+  // Set up form handling
   const {
     register,
     handleSubmit,
@@ -55,72 +47,45 @@ export default function LoginPage() {
   /**
    * Handle form submission
    *
-   * This function is called when the user submits the form AND validation passes.
-   * If validation fails, this function never runs and errors are shown instead.
-   *
-   * The flow:
-   * 1. Clear any previous errors
-   * 2. Set loading state (disables button, shows spinner)
-   * 3. Call the login API through httpClient
-   * 4. On success: store auth data and redirect
-   * 5. On error: display error message and re-enable form
+   * Now this is beautifully simple. We just call mutate with the form data.
+   * React Query handles all the loading state, error handling, and success callbacks.
    */
   const onSubmit = async (data) => {
-    // Clear any previous error messages
-    setApiError(null)
+    loginMutation.mutate(data, {
+      // onSuccess callback specific to this mutation call
+      // The hook already has an onSuccess that stores auth data
+      // This additional callback handles the redirect
+      onSuccess: () => {
+        navigate(from, { replace: true })
+      },
+    })
+  }
 
-    // Set loading state - this will disable the button and show a spinner
-    setIsLoading(true)
-
-    try {
-      // Make the API call through our HTTP client
-      // This request will be intercepted by MSW and handled by our login handler
-      const response = await httpClient.post("/auth/login", {
-        email: data.email,
-        password: data.password,
-      })
-
-      // Login successful! The response contains user data and access token
-      // Store them in auth context (which also stores in localStorage)
-      login(response.user, response.accessToken)
-
-      // Redirect to where they were trying to go, or dashboard if they came directly to login
-      navigate(from, { replace: true })
-    } catch (error) {
-      // Something went wrong - could be wrong credentials, network error, or server error
-      // Display a user-friendly error message
-
-      if (error.status === 401) {
-        // Invalid credentials - specific message
-        setApiError("Invalid email or password. Please check your credentials and try again.")
-      } else if (error.status === 400) {
-        // Validation error from API - this shouldn't happen if our frontend validation is correct
-        setApiError(error.message || "Please check your input and try again.")
-      } else if (error.message) {
-        // Other API error with a message
-        setApiError(error.message)
-      } else {
-        // Network error or unknown error
-        setApiError(
-          "Unable to connect to the server. Please check your internet connection and try again."
-        )
-      }
-    } finally {
-      // Always reset loading state whether success or failure
-      // This re-enables the button so user can try again if there was an error
-      setIsLoading(false)
+  /**
+   * Clear error when user starts typing
+   */
+  const handleInputChange = () => {
+    if (loginMutation.error) {
+      loginMutation.reset() // React Query's way to clear mutation state
     }
   }
 
   /**
-   * Clear error message when user starts typing
+   * Format error message for display
    *
-   * This provides better UX - once they start correcting their mistake,
-   * we don't want to keep showing them the old error message.
+   * Different error codes need different user-friendly messages
    */
-  const handleInputChange = () => {
-    if (apiError) {
-      setApiError(null)
+  const getErrorMessage = (error) => {
+    if (!error) return null
+
+    if (error.status === 401) {
+      return "Invalid email or password. Please check your credentials and try again."
+    } else if (error.status === 400) {
+      return error.message || "Please check your input and try again."
+    } else if (error.message) {
+      return error.message
+    } else {
+      return "Unable to connect to the server. Please check your internet connection and try again."
     }
   }
 
@@ -131,24 +96,13 @@ export default function LoginPage() {
         <CardDescription>Sign in to your account to continue</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* 
-          API Error Display
-          
-          Show this alert when there's an error from the API.
-          It appears above the form so users see it immediately.
-        */}
-        {apiError && (
+        {/* Display error if login failed */}
+        {loginMutation.error && (
           <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{apiError}</AlertDescription>
+            <AlertDescription>{getErrorMessage(loginMutation.error)}</AlertDescription>
           </Alert>
         )}
 
-        {/*
-          Login Form
-          
-          handleSubmit is from react-hook-form and wraps our onSubmit function.
-          It validates the form first, and only calls onSubmit if validation passes.
-        */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Email Field */}
           <div className="space-y-2">
@@ -165,11 +119,10 @@ export default function LoginPage() {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                   message: "Please enter a valid email address",
                 },
-                onChange: handleInputChange, // Clear API error on input
+                onChange: handleInputChange,
               })}
-              disabled={isLoading}
+              disabled={loginMutation.isPending}
             />
-            {/* Show validation error if email is invalid */}
             {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
           </div>
 
@@ -188,19 +141,17 @@ export default function LoginPage() {
                   value: 6,
                   message: "Password must be at least 6 characters",
                 },
-                onChange: handleInputChange, // Clear API error on input
+                onChange: handleInputChange,
               })}
-              disabled={isLoading}
+              disabled={loginMutation.isPending}
             />
-            {/* Show validation error if password is invalid */}
             {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
           </div>
 
           {/* Submit Button */}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
+          <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+            {loginMutation.isPending ? (
               <>
-                {/* Show spinner while loading */}
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Signing in...
               </>
@@ -209,7 +160,7 @@ export default function LoginPage() {
             )}
           </Button>
 
-          {/* Testing Help */}
+          {/* Test Accounts */}
           <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-200">
             <p className="text-xs font-medium text-slate-700 mb-2">Test Accounts:</p>
             <div className="text-xs text-slate-600 space-y-1">
