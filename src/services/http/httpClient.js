@@ -132,15 +132,36 @@ async function handleResponse(response, originalRequest) {
 
   // Handle 401 Unauthorized - try to refresh token
   if (response.status === 401) {
-    // If this is already a refresh request, don't retry
-    if (originalRequest.url.includes("/auth/refresh")) {
-      clearAuth()
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.href = "/login"
+    // CRITICAL FIX: Don't attempt token refresh for authentication endpoints
+    // These endpoints are either establishing authentication (login) or 
+    // refreshing it (refresh), so a 401 here means "wrong credentials" or 
+    // "invalid refresh token" - not "please refresh my token"
+    const isAuthEndpoint = 
+      originalRequest.url.includes("/auth/login") || 
+      originalRequest.url.includes("/auth/refresh")
+    
+    if (isAuthEndpoint) {
+      // For auth endpoints, pass through the API's error message directly
+      // This ensures "Invalid email or password" reaches the UI instead of "Session expired"
+      let errorMessage = `HTTP Error ${response.status}`
+      let errorBody = null
+      
+      try {
+        errorBody = await response.json()
+        errorMessage = errorBody.message || errorBody.error || errorMessage
+      } catch {
+        // If we can't parse JSON, keep the default error message
       }
-      throw new Error("Session expired")
+      
+      const error = new Error(errorMessage)
+      error.status = response.status
+      error.statusText = response.statusText
+      error.body = errorBody
+      
+      throw error
     }
 
+    // For all other endpoints, proceed with automatic token refresh logic
     // If we're already refreshing, queue this request
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
