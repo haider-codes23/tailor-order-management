@@ -7,12 +7,12 @@ import App from "./App.jsx"
 import { queryClient } from "./services/queryClient"
 import "./index.css"
 
-import "./index.css"
-
 // Initialize MSW in development
 if (import.meta.env.DEV) {
   const { worker } = await import("./mocks/browser")
-  worker.start()
+  worker.start({
+    onUnhandledRequest: 'bypass', // Let unhandled requests pass through to the network
+  })
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
