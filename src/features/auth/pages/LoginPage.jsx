@@ -180,7 +180,7 @@ export default function LoginPage() {
                 <strong>Purchaser:</strong> purchaser@tailor.com / purchase123
               </p>
               <p>
-                <strong>QA:</strong> qa@tailor.com / qa123
+                <strong>QA:</strong> qa@tailor.com / qa1234
               </p>
             </div>
           </div>
