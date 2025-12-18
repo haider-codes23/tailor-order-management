@@ -1,26 +1,26 @@
 /**
  * Mock Measurement Charts Data
- * 
+ *
  * These charts define the standard measurements used for Standard size orders.
  * When a customer selects a standard size, these measurements determine what
  * gets shown on their order form and what production uses as a reference.
- * 
+ *
  * The Size Chart defines body measurements (shoulder, bust, waist, hip, armhole)
  * for each standard size (XS, S, M, L, XL, XXL).
- * 
+ *
  * The Height Chart defines garment lengths (kaftan, sleeve front, sleeve back)
  * based on customer height ranges.
- * 
+ *
  * These charts are editable by Admin users and are foundational for the
  * Customer Forms workflow that will be built in Phase 10.
  */
 
 /**
  * Standard Size Chart
- * 
+ *
  * Defines body measurements for each standard size.
  * All measurements are in inches.
- * 
+ *
  * Business context: When a customer orders size "M", the system knows
  * this means shoulder=15, bust=38, waist=30, hip=40, armhole=8.5
  */
@@ -31,7 +31,7 @@ export const mockStandardSizeChart = {
   is_active: true,
   created_at: "2024-01-01T00:00:00Z",
   updated_at: "2024-01-01T00:00:00Z",
-  
+
   // The actual measurement rows
   rows: [
     {
@@ -44,7 +44,7 @@ export const mockStandardSizeChart = {
       armhole: 7.5,
       uk_size: 6,
       us_size: 2,
-      sequence: 1
+      sequence: 1,
     },
     {
       id: 2,
@@ -56,7 +56,7 @@ export const mockStandardSizeChart = {
       armhole: 8,
       uk_size: 8,
       us_size: 4,
-      sequence: 2
+      sequence: 2,
     },
     {
       id: 3,
@@ -68,7 +68,7 @@ export const mockStandardSizeChart = {
       armhole: 8.5,
       uk_size: 12,
       us_size: 8,
-      sequence: 3
+      sequence: 3,
     },
     {
       id: 4,
@@ -80,7 +80,7 @@ export const mockStandardSizeChart = {
       armhole: 9,
       uk_size: 14,
       us_size: 10,
-      sequence: 4
+      sequence: 4,
     },
     {
       id: 5,
@@ -92,7 +92,7 @@ export const mockStandardSizeChart = {
       armhole: 9.5,
       uk_size: 16,
       us_size: 12,
-      sequence: 5
+      sequence: 5,
     },
     {
       id: 6,
@@ -104,20 +104,20 @@ export const mockStandardSizeChart = {
       armhole: 10,
       uk_size: 18,
       us_size: 14,
-      sequence: 6
-    }
-  ]
+      sequence: 6,
+    },
+  ],
 }
 
 /**
  * Standard Height Chart
- * 
+ *
  * Defines garment lengths based on customer height ranges.
  * All measurements are in inches.
- * 
+ *
  * Business context: A customer who is 5'3"-5'5" needs different dress lengths
  * than someone who is 5'6"-5'8", even if they wear the same size.
- * 
+ *
  * These lengths apply to specific garment types:
  * - kaftan_length: Full length for kaftan-style dresses
  * - sleeve_front_length: Front sleeve measurement
@@ -130,18 +130,18 @@ export const mockStandardHeightChart = {
   is_active: true,
   created_at: "2024-01-01T00:00:00Z",
   updated_at: "2024-01-01T00:00:00Z",
-  
+
   // The actual height-to-length mapping rows
   rows: [
     {
       id: 1,
       height_range: "4'10\" - 5'0\"",
-      height_min_inches: 58,  // 4'10"
-      height_max_inches: 60,  // 5'0"
+      height_min_inches: 58, // 4'10"
+      height_max_inches: 60, // 5'0"
       kaftan_length: 50,
       sleeve_front_length: 22,
       sleeve_back_length: 23,
-      sequence: 1
+      sequence: 1,
     },
     {
       id: 2,
@@ -151,7 +151,7 @@ export const mockStandardHeightChart = {
       kaftan_length: 52,
       sleeve_front_length: 23,
       sleeve_back_length: 24,
-      sequence: 2
+      sequence: 2,
     },
     {
       id: 3,
@@ -161,7 +161,7 @@ export const mockStandardHeightChart = {
       kaftan_length: 54,
       sleeve_front_length: 24,
       sleeve_back_length: 25,
-      sequence: 3
+      sequence: 3,
     },
     {
       id: 4,
@@ -171,7 +171,7 @@ export const mockStandardHeightChart = {
       kaftan_length: 56,
       sleeve_front_length: 25,
       sleeve_back_length: 26,
-      sequence: 4
+      sequence: 4,
     },
     {
       id: 5,
@@ -181,7 +181,7 @@ export const mockStandardHeightChart = {
       kaftan_length: 58,
       sleeve_front_length: 26,
       sleeve_back_length: 27,
-      sequence: 5
+      sequence: 5,
     },
     {
       id: 6,
@@ -191,14 +191,14 @@ export const mockStandardHeightChart = {
       kaftan_length: 60,
       sleeve_front_length: 27,
       sleeve_back_length: 28,
-      sequence: 6
-    }
-  ]
+      sequence: 6,
+    },
+  ],
 }
 
 /**
  * Helper Functions for Working with Measurement Charts
- * 
+ *
  * These functions will be used extensively in Phase 10 when building
  * the customer forms workflow. They extract specific data from the charts
  * based on customer selections.
@@ -206,76 +206,72 @@ export const mockStandardHeightChart = {
 
 /**
  * Get measurements for a specific size
- * 
+ *
  * Used when generating a Standard form - shows only the selected size's measurements
  * instead of the entire chart.
- * 
+ *
  * @param {string} sizeCode - Size code like "M" or "L"
  * @returns {object|null} - Measurements for that size, or null if not found
  */
 export function getMeasurementsForSize(sizeCode) {
   const row = mockStandardSizeChart.rows.find(
-    row => row.size_code.toUpperCase() === sizeCode.toUpperCase()
+    (row) => row.size_code.toUpperCase() === sizeCode.toUpperCase()
   )
   return row || null
 }
 
 /**
  * Get garment lengths for a specific height range
- * 
+ *
  * Used when generating a Standard form - shows only the selected height's lengths
  * instead of the entire chart.
- * 
+ *
  * @param {string} heightRange - Height range like "5'3\" - 5'5\""
  * @returns {object|null} - Lengths for that range, or null if not found
  */
 export function getLengthsForHeight(heightRange) {
-  const row = mockStandardHeightChart.rows.find(
-    row => row.height_range === heightRange
-  )
+  const row = mockStandardHeightChart.rows.find((row) => row.height_range === heightRange)
   return row || null
 }
 
 /**
  * Get all available size codes
- * 
+ *
  * Used in UI dropdowns for size selection
- * 
+ *
  * @returns {string[]} - Array of size codes like ["XS", "S", "M", "L", "XL", "XXL"]
  */
 export function getAvailableSizes() {
-  return mockStandardSizeChart.rows.map(row => row.size_code)
+  return mockStandardSizeChart.rows.map((row) => row.size_code)
 }
 
 /**
  * Get all available height ranges
- * 
+ *
  * Used in UI dropdowns for height selection
- * 
+ *
  * @returns {string[]} - Array of height ranges
  */
 export function getAvailableHeightRanges() {
-  return mockStandardHeightChart.rows.map(row => row.height_range)
+  return mockStandardHeightChart.rows.map((row) => row.height_range)
 }
 
 /**
  * Validate that a size exists in the chart
- * 
+ *
  * Used for form validation
  */
 export function isValidSize(sizeCode) {
   return mockStandardSizeChart.rows.some(
-    row => row.size_code.toUpperCase() === sizeCode.toUpperCase()
+    (row) => row.size_code.toUpperCase() === sizeCode.toUpperCase()
   )
 }
 
 /**
  * Validate that a height range exists in the chart
- * 
+ *
  * Used for form validation
  */
 export function isValidHeightRange(heightRange) {
-  return mockStandardHeightChart.rows.some(
-    row => row.height_range === heightRange
-  )
+  return mockStandardHeightChart.rows.some((row) => row.height_range === heightRange)
 }
