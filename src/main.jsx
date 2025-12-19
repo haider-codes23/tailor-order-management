@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider } from "@/features/auth/hooks/useAuth"
 import App from "./App.jsx"
 import { queryClient } from "./services/queryClient"
+import { Toaster } from "@/components/ui/toaster"
 import "./index.css"
 
 // Initialize MSW in development
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <AuthProvider>
           <App />
+          <Toaster />
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
