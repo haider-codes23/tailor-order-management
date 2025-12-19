@@ -9,6 +9,7 @@ import {
   Users,
   ShoppingBag,
   Settings,
+  Ruler, // New icon for measurement charts
 } from "lucide-react"
 
 /**
@@ -26,6 +27,7 @@ import {
  * - Dispatch (Sales, Admin)
  * - Shopify (Admin)
  * - Users (Admin only)
+ * - Settings (Admin only)
  *
  * Later, we'll add permission checks to hide items users can't access.
  */
@@ -73,9 +75,9 @@ const navItems = [
     icon: Users,
   },
   {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
+    name: "Measurement Charts",
+    href: "/settings/measurement-charts",
+    icon: Ruler, // Using Ruler icon to represent measurements
   },
 ]
 
@@ -101,7 +103,7 @@ export default function Sidebar() {
         <div className="flex flex-col flex-grow bg-white border-r border-slate-200 pt-5 pb-4 overflow-y-auto">
           {/* Logo/Brand */}
           <div className="flex items-center flex-shrink-0 px-4 mb-5">
-            <h1 className="text-xl font-bold text-slate-900">Order Management System</h1>
+            <h1 className="text-xl font-bold text-slate-900">Tailor Order System</h1>
           </div>
 
           {/* Navigation Menu */}
@@ -137,7 +139,7 @@ export default function Sidebar() {
 
           {/* Footer info */}
           <div className="flex-shrink-0 flex border-t border-slate-200 p-4">
-            <div className="text-xs text-slate-500">v1.0.0</div>
+            <div className="text-xs text-slate-500">v1.0.0 - Phase 5</div>
           </div>
         </div>
       </div>
