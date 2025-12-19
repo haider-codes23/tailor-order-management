@@ -1,4 +1,4 @@
-import { httpClient } from "@/lib/httpClient"
+import { httpClient } from "@/services/http/httpClient"
 
 /**
  * Measurement Charts API Service
@@ -55,7 +55,7 @@ import { httpClient } from "@/lib/httpClient"
  */
 export const getStandardSizeChart = async () => {
   const response = await httpClient.get("/settings/standard-size-chart")
-  return response.data
+  return response
 }
 
 /**
@@ -93,7 +93,7 @@ export const getStandardSizeChart = async () => {
  */
 export const updateStandardSizeChart = async (data) => {
   const response = await httpClient.put("/settings/standard-size-chart", data)
-  return response.data
+  return response
 }
 
 /**
@@ -129,7 +129,7 @@ export const updateStandardSizeChart = async (data) => {
  */
 export const getStandardHeightChart = async () => {
   const response = await httpClient.get("/settings/standard-height-chart")
-  return response.data
+  return response
 }
 
 /**
@@ -173,7 +173,7 @@ export const getStandardHeightChart = async () => {
  */
 export const updateStandardHeightChart = async (data) => {
   const response = await httpClient.put("/settings/standard-height-chart", data)
-  return response.data
+  return response
 }
 
 /**
