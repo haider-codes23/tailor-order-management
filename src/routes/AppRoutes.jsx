@@ -9,6 +9,9 @@ import DashboardPage from "@/pages/DashboardPage"
 import OrdersPage from "@/pages/OrdersPage"
 import NotFoundPage from "@/pages/NotFoundPage"
 
+// Admin pages
+import { MeasurementChartsSettings } from "@/features/admin/pages/MeasurementChartsSettings"
+
 /**
  * AppRoutes - Central routing configuration
  *
@@ -49,6 +52,9 @@ export default function AppRoutes() {
 
         {/* Orders */}
         <Route path="/orders" element={<OrdersPage />} />
+
+        {/* Settings - Admin */}
+        <Route path="/settings/measurement-charts" element={<MeasurementChartsSettings />} />
 
         {/* We'll add more routes in future phases:
          * /inventory
