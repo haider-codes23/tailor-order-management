@@ -2,14 +2,21 @@ import { useState } from "react"
 import { useStandardHeightChart, useUpdateStandardHeightChart } from "@/hooks/useMeasurementCharts"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Save, Plus, Trash2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 /**
  * Height Chart Editor Component
- * 
+ *
  * Similar to SizeChartEditor but for height-to-length mappings.
  * Allows admin to define garment lengths for different height ranges.
  */
@@ -30,7 +37,7 @@ export function HeightChartEditor() {
     const newRows = [...editedRows]
     newRows[rowIndex] = {
       ...newRows[rowIndex],
-      [field]: field === 'height_range' ? value : parseFloat(value) || 0
+      [field]: field === "height_range" ? value : parseFloat(value) || 0,
     }
     setEditedRows(newRows)
     setHasChanges(true)
@@ -45,7 +52,7 @@ export function HeightChartEditor() {
       kaftan_length: 0,
       sleeve_front_length: 0,
       sleeve_back_length: 0,
-      sequence: editedRows.length + 1
+      sequence: editedRows.length + 1,
     }
     setEditedRows([...editedRows, newRow])
     setHasChanges(true)
@@ -58,7 +65,10 @@ export function HeightChartEditor() {
   }
 
   const handleSave = () => {
-    const hasEmptyRange = editedRows.some(row => !row.height_range || row.height_range.trim() === '')
+    // Validation 1: Check for empty height ranges
+    const hasEmptyRange = editedRows.some(
+      (row) => !row.height_range || row.height_range.trim() === ""
+    )
     if (hasEmptyRange) {
       toast({
         title: "Validation Error",
@@ -68,7 +78,21 @@ export function HeightChartEditor() {
       return
     }
 
-    const hasInvalidLength = editedRows.some(row => {
+    // Validation 2: Check for duplicate height ranges
+    const heightRanges = editedRows.map((row) => row.height_range.trim().toUpperCase())
+    const duplicates = heightRanges.filter((range, index) => heightRanges.indexOf(range) !== index)
+
+    if (duplicates.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: `Duplicate height range found: ${duplicates[0]}. Each range must be unique.`,
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validation 3: Check for invalid lengths
+    const hasInvalidLength = editedRows.some((row) => {
       return row.kaftan_length <= 0 || row.sleeve_front_length <= 0 || row.sleeve_back_length <= 0
     })
     if (hasInvalidLength) {
@@ -80,6 +104,7 @@ export function HeightChartEditor() {
       return
     }
 
+    // All validations passed - proceed with save
     updateHeightChart.mutate(
       { rows: editedRows },
       {
@@ -96,7 +121,7 @@ export function HeightChartEditor() {
             description: error.message || "Failed to update height chart",
             variant: "destructive",
           })
-        }
+        },
       }
     )
   }
@@ -134,7 +159,8 @@ export function HeightChartEditor() {
         <Alert>
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
-            Height chart has been updated successfully. Changes are now live for all new customer forms.
+            Height chart has been updated successfully. Changes are now live for all new customer
+            forms.
           </AlertDescription>
         </Alert>
       )}
@@ -163,7 +189,7 @@ export function HeightChartEditor() {
                   <TableCell>
                     <Input
                       value={row.height_range}
-                      onChange={(e) => handleCellChange(index, 'height_range', e.target.value)}
+                      onChange={(e) => handleCellChange(index, "height_range", e.target.value)}
                       placeholder={`5'0" - 5'2"`}
                       className="min-w-[140px]"
                     />
@@ -173,7 +199,7 @@ export function HeightChartEditor() {
                       type="number"
                       step="0.5"
                       value={row.kaftan_length}
-                      onChange={(e) => handleCellChange(index, 'kaftan_length', e.target.value)}
+                      onChange={(e) => handleCellChange(index, "kaftan_length", e.target.value)}
                       className="w-28"
                     />
                   </TableCell>
@@ -182,7 +208,9 @@ export function HeightChartEditor() {
                       type="number"
                       step="0.5"
                       value={row.sleeve_front_length}
-                      onChange={(e) => handleCellChange(index, 'sleeve_front_length', e.target.value)}
+                      onChange={(e) =>
+                        handleCellChange(index, "sleeve_front_length", e.target.value)
+                      }
                       className="w-28"
                     />
                   </TableCell>
@@ -191,7 +219,9 @@ export function HeightChartEditor() {
                       type="number"
                       step="0.5"
                       value={row.sleeve_back_length}
-                      onChange={(e) => handleCellChange(index, 'sleeve_back_length', e.target.value)}
+                      onChange={(e) =>
+                        handleCellChange(index, "sleeve_back_length", e.target.value)
+                      }
                       className="w-28"
                     />
                   </TableCell>
@@ -213,10 +243,7 @@ export function HeightChartEditor() {
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t">
-        <Button
-          variant="outline"
-          onClick={handleAddRow}
-        >
+        <Button variant="outline" onClick={handleAddRow}>
           <Plus className="h-4 w-4 mr-2" />
           Add Range
         </Button>
@@ -229,10 +256,7 @@ export function HeightChartEditor() {
           >
             Reset
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || updateHeightChart.isPending}
-          >
+          <Button onClick={handleSave} disabled={!hasChanges || updateHeightChart.isPending}>
             {updateHeightChart.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
