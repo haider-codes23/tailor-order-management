@@ -1,22 +1,22 @@
 /**
  * Mock Inventory Data - Enhanced with Size Variants and Images
- * 
+ *
  * This represents your complete inventory system with all material categories
  * used in your tailoring business. The data is based on actual BOMs from
  * products like GOLDESS, MAUVE MAGIC, IVORY MUSE, and PRINCESS SOLARA.
- * 
+ *
  * Key Enhancements:
  * 1. Size Variants: READY_STOCK and READY_SAMPLE items now track multiple sizes
  *    within a single inventory item using a variants array. This matches how
  *    customers think about products and makes stock checking much simpler.
- * 
+ *
  * 2. Images: Every item includes an image_url field for visual identification.
  *    These images serve different purposes by category:
  *    - Fabrics: Show texture, drape, and color for shelf identification
  *    - ADA Materials: Close-up details for distinguishing similar items
  *    - Multi-head: Display embroidery patterns for design visualization
  *    - Ready Stock: Professional product photos for customer presentation
- * 
+ *
  * Categories Explained:
  * - FABRIC: Base cloth materials measured in yards (Tissue Silk, Kimkhab, etc.)
  * - MULTI_HEAD: Pre-embroidered pieces from multi-head machines (organza, borders)
@@ -24,7 +24,7 @@
  * - RAW_MATERIAL: Supporting materials like lace, threads, buttons
  * - READY_STOCK: Completed garments ready for immediate sale (with size variants)
  * - READY_SAMPLE: Display pieces and samples for customer viewing (with size variants)
- * 
+ *
  * Each item tracks:
  * - Current stock levels (remaining_stock or per-variant for ready stock)
  * - Reorder thresholds (reorder_level) for low stock alerts
@@ -43,9 +43,10 @@ export const mockInventoryItems = [
     name: "Tissue Silk",
     sku: "FAB-TISSUE-001",
     category: "FABRIC",
-    description: "Premium tissue silk fabric, lightweight and elegant, commonly used for bridal and formal wear. This fabric has a subtle sheen and drapes beautifully.",
+    description:
+      "Premium tissue silk fabric, lightweight and elegant, commonly used for bridal and formal wear. This fabric has a subtle sheen and drapes beautifully.",
     unit: "Yard",
-    unit_price: 850.00, // PKR per yard
+    unit_price: 850.0, // PKR per yard
     remaining_stock: 45.0,
     reorder_level: 20.0,
     has_variants: false, // Fabrics don't come in sizes
@@ -62,9 +63,10 @@ export const mockInventoryItems = [
     name: "Kimkhab Fabric",
     sku: "FAB-KIMK-002",
     category: "FABRIC",
-    description: "Rich kimkhab fabric with metallic threads woven throughout, traditional choice for formal wear and bridal outfits. Heavy weight fabric.",
+    description:
+      "Rich kimkhab fabric with metallic threads woven throughout, traditional choice for formal wear and bridal outfits. Heavy weight fabric.",
     unit: "Yard",
-    unit_price: 950.00,
+    unit_price: 950.0,
     remaining_stock: 28.0,
     reorder_level: 15.0,
     has_variants: false,
@@ -81,9 +83,10 @@ export const mockInventoryItems = [
     name: "P Raw Silk",
     sku: "FAB-PRAW-003",
     category: "FABRIC",
-    description: "Pure raw silk with natural textured finish, excellent for pants and structured garments. Provides good structure without being too stiff.",
+    description:
+      "Pure raw silk with natural textured finish, excellent for pants and structured garments. Provides good structure without being too stiff.",
     unit: "Yard",
-    unit_price: 650.00,
+    unit_price: 650.0,
     remaining_stock: 55.0,
     reorder_level: 25.0,
     has_variants: false,
@@ -100,9 +103,10 @@ export const mockInventoryItems = [
     name: "Cotton Silk",
     sku: "FAB-COTSILK-004",
     category: "FABRIC",
-    description: "Cotton silk blend combining the breathability of cotton with the smoothness of silk. Comfortable for everyday wear and less formal occasions.",
+    description:
+      "Cotton silk blend combining the breathability of cotton with the smoothness of silk. Comfortable for everyday wear and less formal occasions.",
     unit: "Yard",
-    unit_price: 450.00,
+    unit_price: 450.0,
     remaining_stock: 72.0,
     reorder_level: 30.0,
     has_variants: false,
@@ -119,9 +123,10 @@ export const mockInventoryItems = [
     name: "Chiffon",
     sku: "FAB-CHIFF-005",
     category: "FABRIC",
-    description: "Light, sheer chiffon fabric perfect for dupattas and decorative overlays. Creates flowing, ethereal effects in formal wear.",
+    description:
+      "Light, sheer chiffon fabric perfect for dupattas and decorative overlays. Creates flowing, ethereal effects in formal wear.",
     unit: "Yard",
-    unit_price: 350.00,
+    unit_price: 350.0,
     remaining_stock: 88.0,
     reorder_level: 40.0,
     has_variants: false,
@@ -138,9 +143,10 @@ export const mockInventoryItems = [
     name: "Net Fabric",
     sku: "FAB-NET-006",
     category: "FABRIC",
-    description: "Mesh net fabric with fine weave, often used for overlays and decorative layers that add texture without weight.",
+    description:
+      "Mesh net fabric with fine weave, often used for overlays and decorative layers that add texture without weight.",
     unit: "Yard",
-    unit_price: 280.00,
+    unit_price: 280.0,
     remaining_stock: 42.0,
     reorder_level: 20.0,
     has_variants: false,
@@ -157,9 +163,10 @@ export const mockInventoryItems = [
     name: "Raw Silk Butti",
     sku: "FAB-RAWBUTTI-007",
     category: "FABRIC",
-    description: "Raw silk with pre-woven butti (small motif) pattern throughout the fabric. Adds subtle decorative element without additional embellishment.",
+    description:
+      "Raw silk with pre-woven butti (small motif) pattern throughout the fabric. Adds subtle decorative element without additional embellishment.",
     unit: "Yard",
-    unit_price: 720.00,
+    unit_price: 720.0,
     remaining_stock: 18.0, // Low stock!
     reorder_level: 20.0,
     has_variants: false,
@@ -180,9 +187,10 @@ export const mockInventoryItems = [
     name: "M.H Organza Embroidered",
     sku: "MH-ORG-008",
     category: "MULTI_HEAD",
-    description: "Multi-head embroidered organza pieces with intricate patterns. These are pre-made embroidered sections that can be applied to various garment pieces.",
+    description:
+      "Multi-head embroidered organza pieces with intricate patterns. These are pre-made embroidered sections that can be applied to various garment pieces.",
     unit: "Yard",
-    unit_price: 1200.00,
+    unit_price: 1200.0,
     remaining_stock: 25.0,
     reorder_level: 10.0,
     has_variants: false,
@@ -199,9 +207,10 @@ export const mockInventoryItems = [
     name: "Multi-head Border",
     sku: "MH-BORDER-009",
     category: "MULTI_HEAD",
-    description: "Embroidered border pieces for finishing garment edges. Used on sleeves, hems, necklines, and dupatta edges.",
+    description:
+      "Embroidered border pieces for finishing garment edges. Used on sleeves, hems, necklines, and dupatta edges.",
     unit: "Yard",
-    unit_price: 380.00,
+    unit_price: 380.0,
     remaining_stock: 62.0,
     reorder_level: 30.0,
     has_variants: false,
@@ -218,9 +227,10 @@ export const mockInventoryItems = [
     name: "Multi-head Neckline",
     sku: "MH-NECK-010",
     category: "MULTI_HEAD",
-    description: "Pre-embroidered neckline pieces specifically designed for shirt fronts. Each piece is sized for one standard neckline.",
+    description:
+      "Pre-embroidered neckline pieces specifically designed for shirt fronts. Each piece is sized for one standard neckline.",
     unit: "Piece",
-    unit_price: 450.00,
+    unit_price: 450.0,
     remaining_stock: 35.0,
     reorder_level: 15.0,
     has_variants: false,
@@ -237,9 +247,10 @@ export const mockInventoryItems = [
     name: "Multi-head Sleeve",
     sku: "MH-SLEEVE-011",
     category: "MULTI_HEAD",
-    description: "Embroidered sleeve panels for formal shirts. Typically sold as pairs since each shirt needs two matching sleeves.",
+    description:
+      "Embroidered sleeve panels for formal shirts. Typically sold as pairs since each shirt needs two matching sleeves.",
     unit: "Piece",
-    unit_price: 320.00,
+    unit_price: 320.0,
     remaining_stock: 48.0,
     reorder_level: 20.0,
     has_variants: false,
@@ -256,9 +267,10 @@ export const mockInventoryItems = [
     name: "Multi-head Ghera Border",
     sku: "MH-GHERA-012",
     category: "MULTI_HEAD",
-    description: "Embroidered ghera (hem) border for the lower portion of shirts. Adds decorative finish to the bottom edge of the garment.",
+    description:
+      "Embroidered ghera (hem) border for the lower portion of shirts. Adds decorative finish to the bottom edge of the garment.",
     unit: "Yard",
-    unit_price: 420.00,
+    unit_price: 420.0,
     remaining_stock: 38.0,
     reorder_level: 15.0,
     has_variants: false,
@@ -280,9 +292,10 @@ export const mockInventoryItems = [
     name: "Champagne Karti",
     sku: "ADA-KARTI-013",
     category: "ADA_MATERIAL",
-    description: "Champagne colored karti embellishment for hand work. Small decorative pieces that catch light beautifully.",
+    description:
+      "Champagne colored karti embellishment for hand work. Small decorative pieces that catch light beautifully.",
     unit: "Gram",
-    unit_price: 12.00, // Per gram
+    unit_price: 12.0, // Per gram
     remaining_stock: 850.0,
     reorder_level: 500.0,
     has_variants: false,
@@ -299,9 +312,10 @@ export const mockInventoryItems = [
     name: "Champagne Badaam",
     sku: "ADA-BADAAM-014",
     category: "ADA_MATERIAL",
-    description: "Almond-shaped champagne colored beads. Named 'badaam' (almond) for their distinctive shape.",
+    description:
+      "Almond-shaped champagne colored beads. Named 'badaam' (almond) for their distinctive shape.",
     unit: "Gram",
-    unit_price: 15.00,
+    unit_price: 15.0,
     remaining_stock: 1200.0,
     reorder_level: 600.0,
     has_variants: false,
@@ -318,9 +332,10 @@ export const mockInventoryItems = [
     name: "Kulfi",
     sku: "ADA-KULFI-015",
     category: "ADA_MATERIAL",
-    description: "Long tube-shaped beads resembling the kulfi dessert. Available in various colors, provides linear decorative element.",
+    description:
+      "Long tube-shaped beads resembling the kulfi dessert. Available in various colors, provides linear decorative element.",
     unit: "Gram",
-    unit_price: 10.00,
+    unit_price: 10.0,
     remaining_stock: 650.0,
     reorder_level: 400.0,
     has_variants: false,
@@ -337,9 +352,10 @@ export const mockInventoryItems = [
     name: "Behti",
     sku: "ADA-BEHTI-016",
     category: "ADA_MATERIAL",
-    description: "Small round beads perfect for filling large areas and creating borders. Economical option for coverage.",
+    description:
+      "Small round beads perfect for filling large areas and creating borders. Economical option for coverage.",
     unit: "Gram",
-    unit_price: 8.00,
+    unit_price: 8.0,
     remaining_stock: 920.0,
     reorder_level: 500.0,
     has_variants: false,
@@ -356,9 +372,10 @@ export const mockInventoryItems = [
     name: "Bajra Moti",
     sku: "ADA-BAJRA-017",
     category: "ADA_MATERIAL",
-    description: "Pearl-like beads in various sizes. 'Bajra' refers to the millet grain they resemble. Creates lustrous pearl effect.",
+    description:
+      "Pearl-like beads in various sizes. 'Bajra' refers to the millet grain they resemble. Creates lustrous pearl effect.",
     unit: "Gram",
-    unit_price: 18.00,
+    unit_price: 18.0,
     remaining_stock: 480.0, // Low stock warning
     reorder_level: 500.0,
     has_variants: false,
@@ -375,9 +392,10 @@ export const mockInventoryItems = [
     name: "Betkhi Moti",
     sku: "ADA-BETKHI-018",
     category: "ADA_MATERIAL",
-    description: "Specific style of pearl beads with particular finish and shape. Higher quality than standard moti.",
+    description:
+      "Specific style of pearl beads with particular finish and shape. Higher quality than standard moti.",
     unit: "Gram",
-    unit_price: 16.00,
+    unit_price: 16.0,
     remaining_stock: 720.0,
     reorder_level: 400.0,
     has_variants: false,
@@ -394,9 +412,10 @@ export const mockInventoryItems = [
     name: "Champagne Drop Crystal",
     sku: "ADA-DROPCRYS-019",
     category: "ADA_MATERIAL",
-    description: "Teardrop shaped crystal embellishments. Creates elegant dangling effect, catches light dramatically.",
+    description:
+      "Teardrop shaped crystal embellishments. Creates elegant dangling effect, catches light dramatically.",
     unit: "Gram",
-    unit_price: 25.00,
+    unit_price: 25.0,
     remaining_stock: 340.0,
     reorder_level: 200.0,
     has_variants: false,
@@ -413,9 +432,10 @@ export const mockInventoryItems = [
     name: "Champagne Crystal 4no",
     sku: "ADA-CRYS4-020",
     category: "ADA_MATERIAL",
-    description: "Size 4 champagne colored crystals. Standard size for most bridal and formal wear designs.",
+    description:
+      "Size 4 champagne colored crystals. Standard size for most bridal and formal wear designs.",
     unit: "Gram",
-    unit_price: 22.00,
+    unit_price: 22.0,
     remaining_stock: 580.0,
     reorder_level: 300.0,
     has_variants: false,
@@ -432,9 +452,10 @@ export const mockInventoryItems = [
     name: "Golden Sitara 3no",
     sku: "ADA-GOLDSTAR3-021",
     category: "ADA_MATERIAL",
-    description: "Size 3 golden star-shaped sequins. Small size perfect for detailed work and creating shimmer.",
+    description:
+      "Size 3 golden star-shaped sequins. Small size perfect for detailed work and creating shimmer.",
     unit: "Gram",
-    unit_price: 6.00,
+    unit_price: 6.0,
     remaining_stock: 1150.0,
     reorder_level: 600.0,
     has_variants: false,
@@ -453,7 +474,7 @@ export const mockInventoryItems = [
     category: "ADA_MATERIAL",
     description: "Size 6 golden star-shaped sequins. Larger size creates bolder visual impact.",
     unit: "Gram",
-    unit_price: 7.00,
+    unit_price: 7.0,
     remaining_stock: 890.0,
     reorder_level: 500.0,
     has_variants: false,
@@ -470,9 +491,10 @@ export const mockInventoryItems = [
     name: "Golden Sitara 8no",
     sku: "ADA-GOLDSTAR8-023",
     category: "ADA_MATERIAL",
-    description: "Size 8 golden star-shaped sequins. Largest standard size, very prominent on garments.",
+    description:
+      "Size 8 golden star-shaped sequins. Largest standard size, very prominent on garments.",
     unit: "Gram",
-    unit_price: 8.00,
+    unit_price: 8.0,
     remaining_stock: 620.0,
     reorder_level: 400.0,
     has_variants: false,
@@ -491,7 +513,7 @@ export const mockInventoryItems = [
     category: "ADA_MATERIAL",
     description: "Antique finish flower-shaped sequins. Creates vintage, heirloom aesthetic.",
     unit: "Gram",
-    unit_price: 9.00,
+    unit_price: 9.0,
     remaining_stock: 450.0,
     reorder_level: 300.0,
     has_variants: false,
@@ -508,9 +530,10 @@ export const mockInventoryItems = [
     name: "Silver Nagh",
     sku: "ADA-SILVERNAGH-025",
     category: "ADA_MATERIAL",
-    description: "Silver colored nagh embellishments. Provides cool-toned alternative to gold elements.",
+    description:
+      "Silver colored nagh embellishments. Provides cool-toned alternative to gold elements.",
     unit: "Gram",
-    unit_price: 7.00,
+    unit_price: 7.0,
     remaining_stock: 780.0,
     reorder_level: 400.0,
     has_variants: false,
@@ -527,9 +550,10 @@ export const mockInventoryItems = [
     name: "White Pearl 3no Sona Color",
     sku: "ADA-WHITEPEARL3-026",
     category: "ADA_MATERIAL",
-    description: "Size 3 white pearl with golden undertone. 'Sona' means gold, referring to the warm glow.",
+    description:
+      "Size 3 white pearl with golden undertone. 'Sona' means gold, referring to the warm glow.",
     unit: "Gram",
-    unit_price: 14.00,
+    unit_price: 14.0,
     remaining_stock: 520.0,
     reorder_level: 300.0,
     has_variants: false,
@@ -546,9 +570,10 @@ export const mockInventoryItems = [
     name: "White Pearl 6no",
     sku: "ADA-WHITEPEARL6-027",
     category: "ADA_MATERIAL",
-    description: "Size 6 white pearl beads. Medium size, versatile for various design applications.",
+    description:
+      "Size 6 white pearl beads. Medium size, versatile for various design applications.",
     unit: "Gram",
-    unit_price: 16.00,
+    unit_price: 16.0,
     remaining_stock: 680.0,
     reorder_level: 400.0,
     has_variants: false,
@@ -565,9 +590,10 @@ export const mockInventoryItems = [
     name: "Kashti Sno",
     sku: "ADA-KASHTI-028",
     category: "ADA_MATERIAL",
-    description: "Boat-shaped embellishments. 'Kashti' means boat, creating unique directional design element.",
+    description:
+      "Boat-shaped embellishments. 'Kashti' means boat, creating unique directional design element.",
     unit: "Gram",
-    unit_price: 11.00,
+    unit_price: 11.0,
     remaining_stock: 390.0,
     reorder_level: 250.0,
     has_variants: false,
@@ -586,7 +612,7 @@ export const mockInventoryItems = [
     category: "ADA_MATERIAL",
     description: "Size 3 flat plate-style sitara sequins. Flat profile sits flush against fabric.",
     unit: "Gram",
-    unit_price: 5.00,
+    unit_price: 5.0,
     remaining_stock: 1050.0,
     reorder_level: 600.0,
     has_variants: false,
@@ -603,9 +629,10 @@ export const mockInventoryItems = [
     name: "Nagh",
     sku: "ADA-NAGH-030",
     category: "ADA_MATERIAL",
-    description: "Standard nagh embellishments in golden color. Traditional decorative element used in Pakistani formal wear.",
+    description:
+      "Standard nagh embellishments in golden color. Traditional decorative element used in Pakistani formal wear.",
     unit: "Gram",
-    unit_price: 7.00,
+    unit_price: 7.0,
     remaining_stock: 820.0,
     reorder_level: 450.0,
     has_variants: false,
@@ -622,9 +649,10 @@ export const mockInventoryItems = [
     name: "Patti Sitara Golden",
     sku: "ADA-PATTISIT-031",
     category: "ADA_MATERIAL",
-    description: "Golden sitara pre-attached on strip/patti form. Faster application than individual sequins.",
+    description:
+      "Golden sitara pre-attached on strip/patti form. Faster application than individual sequins.",
     unit: "Gram",
-    unit_price: 9.00,
+    unit_price: 9.0,
     remaining_stock: 470.0,
     reorder_level: 300.0,
     has_variants: false,
@@ -641,9 +669,10 @@ export const mockInventoryItems = [
     name: "Kerki 3no Sona Color",
     sku: "ADA-KERKI3-032",
     category: "ADA_MATERIAL",
-    description: "Size 3 kerki embellishment in gold tone. Traditional Pakistani embellishment style.",
+    description:
+      "Size 3 kerki embellishment in gold tone. Traditional Pakistani embellishment style.",
     unit: "Gram",
-    unit_price: 13.00,
+    unit_price: 13.0,
     remaining_stock: 550.0,
     reorder_level: 350.0,
     has_variants: false,
@@ -660,9 +689,10 @@ export const mockInventoryItems = [
     name: "Crystal Kulfi Moti",
     sku: "ADA-CRYSKULFI-033",
     category: "ADA_MATERIAL",
-    description: "Crystal-finish kulfi shaped beads. Combines the shape of kulfi with crystal sparkle.",
+    description:
+      "Crystal-finish kulfi shaped beads. Combines the shape of kulfi with crystal sparkle.",
     unit: "Gram",
-    unit_price: 20.00,
+    unit_price: 20.0,
     remaining_stock: 310.0,
     reorder_level: 200.0,
     has_variants: false,
@@ -679,9 +709,10 @@ export const mockInventoryItems = [
     name: "Tekenor Sitara Golden",
     sku: "ADA-TEKENOR-034",
     category: "ADA_MATERIAL",
-    description: "Specific style of golden sitara with unique pattern. Creates distinctive texture.",
+    description:
+      "Specific style of golden sitara with unique pattern. Creates distinctive texture.",
     unit: "Gram",
-    unit_price: 8.00,
+    unit_price: 8.0,
     remaining_stock: 640.0,
     reorder_level: 400.0,
     has_variants: false,
@@ -700,7 +731,7 @@ export const mockInventoryItems = [
     category: "ADA_MATERIAL",
     description: "Traditional sika embellishment. Small decorative element used in detailed work.",
     unit: "Gram",
-    unit_price: 6.50,
+    unit_price: 6.5,
     remaining_stock: 720.0,
     reorder_level: 400.0,
     has_variants: false,
@@ -721,9 +752,10 @@ export const mockInventoryItems = [
     name: "Lace - Golden",
     sku: "RAW-LACE-036",
     category: "RAW_MATERIAL",
-    description: "Golden colored decorative lace for edging. Used on necklines, sleeves, and hem finishes.",
+    description:
+      "Golden colored decorative lace for edging. Used on necklines, sleeves, and hem finishes.",
     unit: "Yard",
-    unit_price: 45.00,
+    unit_price: 45.0,
     remaining_stock: 120.0,
     reorder_level: 50.0,
     has_variants: false,
@@ -742,7 +774,7 @@ export const mockInventoryItems = [
     category: "RAW_MATERIAL",
     description: "Silver colored decorative lace. Provides cool-toned finishing option.",
     unit: "Yard",
-    unit_price: 45.00,
+    unit_price: 45.0,
     remaining_stock: 95.0,
     reorder_level: 50.0,
     has_variants: false,
@@ -761,7 +793,7 @@ export const mockInventoryItems = [
     category: "RAW_MATERIAL",
     description: "Almond pattern lace trim. Features repeating almond-shaped motifs.",
     unit: "Yard",
-    unit_price: 52.00,
+    unit_price: 52.0,
     remaining_stock: 78.0,
     reorder_level: 40.0,
     has_variants: false,
@@ -778,9 +810,10 @@ export const mockInventoryItems = [
     name: "Tensel Organza",
     sku: "RAW-TENSEL-039",
     category: "RAW_MATERIAL",
-    description: "Organza fabric for layering and providing structure. Used as interlining for body and shape.",
+    description:
+      "Organza fabric for layering and providing structure. Used as interlining for body and shape.",
     unit: "Yard",
-    unit_price: 180.00,
+    unit_price: 180.0,
     remaining_stock: 42.0,
     reorder_level: 20.0,
     has_variants: false,
@@ -799,7 +832,7 @@ export const mockInventoryItems = [
     category: "RAW_MATERIAL",
     description: "Durka trim for decorative edging. Small trim pieces applied for finishing.",
     unit: "Gram",
-    unit_price: 4.00,
+    unit_price: 4.0,
     remaining_stock: 1500.0,
     reorder_level: 800.0,
     has_variants: false,
@@ -816,9 +849,10 @@ export const mockInventoryItems = [
     name: "Champagne Betkhi Durka",
     sku: "RAW-CHAMPDURKA-041",
     category: "RAW_MATERIAL",
-    description: "Champagne colored betkhi style durka trim. Coordinates with champagne-themed designs.",
+    description:
+      "Champagne colored betkhi style durka trim. Coordinates with champagne-themed designs.",
     unit: "Gram",
-    unit_price: 5.00,
+    unit_price: 5.0,
     remaining_stock: 1180.0,
     reorder_level: 600.0,
     has_variants: false,
@@ -837,7 +871,7 @@ export const mockInventoryItems = [
     category: "RAW_MATERIAL",
     description: "Pearl-style durka trim. Creates elegant pearl-lined finish on edges.",
     unit: "Gram",
-    unit_price: 6.00,
+    unit_price: 6.0,
     remaining_stock: 890.0,
     reorder_level: 500.0,
     has_variants: false,
@@ -859,10 +893,11 @@ export const mockInventoryItems = [
     name: "GOLDESS Luxury Ensemble",
     sku: "RS-GOLDESS-043",
     category: "READY_STOCK",
-    description: "Complete GOLDESS ensemble featuring luxurious outfit with cotton silk, champagne karti work, and premium quality kulfi, behti, and bajra moti embellishments. Three-piece set includes shirt, pant, and dupatta.",
+    description:
+      "Complete GOLDESS ensemble featuring luxurious outfit with cotton silk, champagne karti work, and premium quality kulfi, behti, and bajra moti embellishments. Three-piece set includes shirt, pant, and dupatta.",
     unit: "Piece",
-    base_price: 35000.00, // Base selling price
-    
+    base_price: 35000.0, // Base selling price
+
     // This item has size variants
     has_variants: true,
     variants: [
@@ -872,7 +907,7 @@ export const mockInventoryItems = [
         sku: "RS-GOLDESS-S",
         remaining_stock: 0, // Out of stock in Small
         reorder_level: 1,
-        price: 35000.00,
+        price: 35000.0,
         image_url: "/images/products/goldess/goldess-s.jpg",
       },
       {
@@ -881,7 +916,7 @@ export const mockInventoryItems = [
         sku: "RS-GOLDESS-M",
         remaining_stock: 2,
         reorder_level: 1,
-        price: 35000.00,
+        price: 35000.0,
         image_url: "/images/products/goldess/goldess-m.jpg",
       },
       {
@@ -890,7 +925,7 @@ export const mockInventoryItems = [
         sku: "RS-GOLDESS-L",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 35000.00,
+        price: 35000.0,
         image_url: "/images/products/goldess/goldess-l.jpg",
       },
       {
@@ -899,14 +934,14 @@ export const mockInventoryItems = [
         sku: "RS-GOLDESS-XL",
         remaining_stock: 0, // Out of stock in XL
         reorder_level: 1,
-        price: 35000.00,
+        price: 35000.0,
         image_url: "/images/products/goldess/goldess-xl.jpg",
       },
     ],
-    
+
     // Main product image (can be used when showing all sizes together)
     image_url: "/images/products/goldess/goldess-main.jpg",
-    
+
     vendor_name: "Internal Production",
     vendor_contact: "N/A",
     rack_location: "E1",
@@ -919,10 +954,11 @@ export const mockInventoryItems = [
     name: "MAUVE MAGIC Designer Dress",
     sku: "RS-MAUVE-044",
     category: "READY_STOCK",
-    description: "Complete MAUVE MAGIC outfit featuring contemporary designer dress with tissue silk, multi-head organza, and exquisite raw material embellishments. Elegant formal wear piece.",
+    description:
+      "Complete MAUVE MAGIC outfit featuring contemporary designer dress with tissue silk, multi-head organza, and exquisite raw material embellishments. Elegant formal wear piece.",
     unit: "Piece",
-    base_price: 32000.00,
-    
+    base_price: 32000.0,
+
     has_variants: true,
     variants: [
       {
@@ -931,7 +967,7 @@ export const mockInventoryItems = [
         sku: "RS-MAUVE-S",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 32000.00,
+        price: 32000.0,
         image_url: "/images/products/mauve-magic/mauve-s.jpg",
       },
       {
@@ -940,7 +976,7 @@ export const mockInventoryItems = [
         sku: "RS-MAUVE-M",
         remaining_stock: 0,
         reorder_level: 1,
-        price: 32000.00,
+        price: 32000.0,
         image_url: "/images/products/mauve-magic/mauve-m.jpg",
       },
       {
@@ -949,7 +985,7 @@ export const mockInventoryItems = [
         sku: "RS-MAUVE-L",
         remaining_stock: 2,
         reorder_level: 1,
-        price: 32000.00,
+        price: 32000.0,
         image_url: "/images/products/mauve-magic/mauve-l.jpg",
       },
       {
@@ -958,13 +994,13 @@ export const mockInventoryItems = [
         sku: "RS-MAUVE-XL",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 32000.00,
+        price: 32000.0,
         image_url: "/images/products/mauve-magic/mauve-xl.jpg",
       },
     ],
-    
+
     image_url: "/images/products/mauve-magic/mauve-main.jpg",
-    
+
     vendor_name: "Internal Production",
     vendor_contact: "N/A",
     rack_location: "E2",
@@ -977,10 +1013,11 @@ export const mockInventoryItems = [
     name: "IVORY MUSE Bridal Collection",
     sku: "RS-IVORY-045",
     category: "READY_STOCK",
-    description: "Complete IVORY MUSE bridal ensemble featuring elegant bridal set with embroidered shirt, pant, and dupatta with intricate multi-head work and premium silk fabrics. Signature bridal piece.",
+    description:
+      "Complete IVORY MUSE bridal ensemble featuring elegant bridal set with embroidered shirt, pant, and dupatta with intricate multi-head work and premium silk fabrics. Signature bridal piece.",
     unit: "Piece",
-    base_price: 45000.00, // Higher price for bridal piece
-    
+    base_price: 45000.0, // Higher price for bridal piece
+
     has_variants: true,
     variants: [
       {
@@ -989,7 +1026,7 @@ export const mockInventoryItems = [
         sku: "RS-IVORY-S",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 45000.00,
+        price: 45000.0,
         image_url: "/images/products/ivory-muse/ivory-s.jpg",
       },
       {
@@ -998,7 +1035,7 @@ export const mockInventoryItems = [
         sku: "RS-IVORY-M",
         remaining_stock: 0,
         reorder_level: 1,
-        price: 45000.00,
+        price: 45000.0,
         image_url: "/images/products/ivory-muse/ivory-m.jpg",
       },
       {
@@ -1007,7 +1044,7 @@ export const mockInventoryItems = [
         sku: "RS-IVORY-L",
         remaining_stock: 0,
         reorder_level: 1,
-        price: 45000.00,
+        price: 45000.0,
         image_url: "/images/products/ivory-muse/ivory-l.jpg",
       },
       {
@@ -1016,13 +1053,13 @@ export const mockInventoryItems = [
         sku: "RS-IVORY-XL",
         remaining_stock: 0,
         reorder_level: 1,
-        price: 45000.00,
+        price: 45000.0,
         image_url: "/images/products/ivory-muse/ivory-xl.jpg",
       },
     ],
-    
+
     image_url: "/images/products/ivory-muse/ivory-main.jpg",
-    
+
     vendor_name: "Internal Production",
     vendor_contact: "N/A",
     rack_location: "E3",
@@ -1035,10 +1072,11 @@ export const mockInventoryItems = [
     name: "PRINCESS SOLARA Kaftan",
     sku: "RS-SOLARA-046",
     category: "READY_STOCK",
-    description: "Elegant PRINCESS SOLARA kaftan design with tissue silk, kimkhab fabric, and golden sitara embellishments with kerki and bajra moti work. Sophisticated kaftan style.",
+    description:
+      "Elegant PRINCESS SOLARA kaftan design with tissue silk, kimkhab fabric, and golden sitara embellishments with kerki and bajra moti work. Sophisticated kaftan style.",
     unit: "Piece",
-    base_price: 28000.00,
-    
+    base_price: 28000.0,
+
     has_variants: true,
     variants: [
       {
@@ -1047,7 +1085,7 @@ export const mockInventoryItems = [
         sku: "RS-SOLARA-S",
         remaining_stock: 2,
         reorder_level: 1,
-        price: 28000.00,
+        price: 28000.0,
         image_url: "/images/products/princess-solara/solara-s.jpg",
       },
       {
@@ -1056,7 +1094,7 @@ export const mockInventoryItems = [
         sku: "RS-SOLARA-M",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 28000.00,
+        price: 28000.0,
         image_url: "/images/products/princess-solara/solara-m.jpg",
       },
       {
@@ -1065,7 +1103,7 @@ export const mockInventoryItems = [
         sku: "RS-SOLARA-L",
         remaining_stock: 2,
         reorder_level: 1,
-        price: 28000.00,
+        price: 28000.0,
         image_url: "/images/products/princess-solara/solara-l.jpg",
       },
       {
@@ -1074,13 +1112,13 @@ export const mockInventoryItems = [
         sku: "RS-SOLARA-XL",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 28000.00,
+        price: 28000.0,
         image_url: "/images/products/princess-solara/solara-xl.jpg",
       },
     ],
-    
+
     image_url: "/images/products/princess-solara/solara-main.jpg",
-    
+
     vendor_name: "Internal Production",
     vendor_contact: "N/A",
     rack_location: "E4",
@@ -1098,10 +1136,11 @@ export const mockInventoryItems = [
     name: "AQUA PRINCESS Peshwas Sample",
     sku: "SAMP-AQUA-047",
     category: "READY_SAMPLE",
-    description: "Display sample of AQUA PRINCESS peshwas featuring traditional peshwas style with tissue fabric, multi-head work, and extensive ADA-material embellishments. Showroom display piece.",
+    description:
+      "Display sample of AQUA PRINCESS peshwas featuring traditional peshwas style with tissue fabric, multi-head work, and extensive ADA-material embellishments. Showroom display piece.",
     unit: "Piece",
-    base_price: 0.00, // Not for sale, display only
-    
+    base_price: 0.0, // Not for sale, display only
+
     has_variants: true,
     variants: [
       {
@@ -1110,13 +1149,13 @@ export const mockInventoryItems = [
         sku: "SAMP-AQUA-M",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 0.00,
+        price: 0.0,
         image_url: "/images/samples/aqua-princess/aqua-sample.jpg",
       },
     ],
-    
+
     image_url: "/images/samples/aqua-princess/aqua-display.jpg",
-    
+
     vendor_name: "Internal Production",
     vendor_contact: "N/A",
     rack_location: "F1",
@@ -1129,10 +1168,11 @@ export const mockInventoryItems = [
     name: "CORAL ELEGANCE Sample",
     sku: "SAMP-CORAL-048",
     category: "READY_SAMPLE",
-    description: "Display sample of CORAL ELEGANCE design. Shows coral color theme with detailed hand work. Reference piece for custom orders.",
+    description:
+      "Display sample of CORAL ELEGANCE design. Shows coral color theme with detailed hand work. Reference piece for custom orders.",
     unit: "Piece",
-    base_price: 0.00,
-    
+    base_price: 0.0,
+
     has_variants: true,
     variants: [
       {
@@ -1141,13 +1181,13 @@ export const mockInventoryItems = [
         sku: "SAMP-CORAL-M",
         remaining_stock: 1,
         reorder_level: 1,
-        price: 0.00,
+        price: 0.0,
         image_url: "/images/samples/coral-elegance/coral-sample.jpg",
       },
     ],
-    
+
     image_url: "/images/samples/coral-elegance/coral-display.jpg",
-    
+
     vendor_name: "Internal Production",
     vendor_contact: "N/A",
     rack_location: "F2",
@@ -1159,13 +1199,13 @@ export const mockInventoryItems = [
 
 /**
  * Mock Stock Movements
- * 
+ *
  * This tracks all stock-in and stock-out transactions for audit trails.
  * Each movement records what happened, when, how much, and by whom.
- * 
+ *
  * For items with variants (ready stock), the movement references the specific
  * variant_id to track which size was affected.
- * 
+ *
  * Movement types:
  * - STOCK_IN: Materials received from vendor (increases stock)
  * - STOCK_OUT: Materials consumed in production (decreases stock)
