@@ -34,8 +34,8 @@ export function HeightChartEditor() {
   }
 
   const handleCellChange = (rowIndex, field, value) => {
-    const newRows = [...editedRows]
-    newRows[rowIndex] = {
+    const newRows = [...editedRows] // create a new array
+    newRows[rowIndex] = { // create a new object
       ...newRows[rowIndex],
       [field]: field === "height_range" ? value : parseFloat(value) || 0,
     }
