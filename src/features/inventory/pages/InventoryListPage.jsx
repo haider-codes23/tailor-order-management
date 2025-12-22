@@ -4,31 +4,44 @@ import { useInventoryItems } from "@/hooks/useInventory"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Search, Plus, AlertCircle, Package } from "lucide-react"
 
 /**
  * Inventory List Page
- * 
+ *
  * This page displays all inventory items in a searchable, filterable table.
  * It demonstrates how simple components become when React Query handles all
  * the data fetching complexity.
- * 
+ *
  * Key Features:
  * - Real-time filtering by category
  * - Search by name or SKU
  * - Visual indicators for low stock items
  * - Click any row to navigate to detail page
  * - Responsive table that works on mobile devices
- * 
+ *
  * Notice how this entire component is just UI logic. There are no useEffect
  * hooks managing when to fetch data. No complex state management for loading
  * and errors. React Query provides all of that automatically through the
  * useInventoryItems hook.
- * 
+ *
  * The component rerenders whenever the filters change, which triggers the hook
  * to fetch new data with those filters. If the data for those filters is already
  * cached, React Query returns it instantly. If not, it fetches it and caches
@@ -37,12 +50,12 @@ import { Loader2, Search, Plus, AlertCircle, Package } from "lucide-react"
  */
 export default function InventoryListPage() {
   const navigate = useNavigate()
-  
+
   // Local state for filter controls
   // These are UI state, not server state, so useState is appropriate
   const [category, setCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
-  
+
   // Build filters object to pass to the hook
   // We only include filters that are actually set to avoid unnecessary query params
   const filters = {}
@@ -52,11 +65,11 @@ export default function InventoryListPage() {
   if (searchTerm.trim() !== "") {
     filters.search = searchTerm.trim()
   }
-  
+
   // Fetch inventory items with current filters
   // The hook returns loading state, error state, and data automatically
   const { data, isLoading, isError, error } = useInventoryItems(filters)
-  
+
   /**
    * Handle row click to navigate to detail page
    * This is a pattern you will use throughout your application where list items
@@ -65,7 +78,7 @@ export default function InventoryListPage() {
   const handleRowClick = (item) => {
     navigate(`/inventory/${item.id}`)
   }
-  
+
   /**
    * Navigate to the create new item page
    * In a future step, we might build an inline creation modal instead
@@ -73,7 +86,7 @@ export default function InventoryListPage() {
   const handleCreateNew = () => {
     navigate("/inventory/new")
   }
-  
+
   /**
    * Render loading state
    * While React Query is fetching data, we show a centered spinner
@@ -92,7 +105,7 @@ export default function InventoryListPage() {
       </div>
     )
   }
-  
+
   /**
    * Render error state
    * If the query fails, React Query provides the error automatically
@@ -110,11 +123,11 @@ export default function InventoryListPage() {
       </div>
     )
   }
-  
+
   // Extract the items array from the response
   // Our API returns { success: true, data: [...items], meta: {...} }
   const items = data?.data || []
-  
+
   /**
    * Main render with filters and table
    * The UI is straightforward because all the complex data management happens
@@ -130,13 +143,13 @@ export default function InventoryListPage() {
             Track all materials, fabrics, embellishments, and ready stock items
           </p>
         </div>
-        
+
         <Button onClick={handleCreateNew}>
           <Plus className="h-4 w-4 mr-2" />
           Add New Item
         </Button>
       </div>
-      
+
       {/* Filters Card */}
       <Card className="mb-6">
         <CardHeader>
@@ -165,7 +178,7 @@ export default function InventoryListPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             {/* Search Input */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Search</label>
@@ -180,19 +193,19 @@ export default function InventoryListPage() {
               </div>
             </div>
           </div>
-          
+
           {/* Results Summary */}
           <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
             <Package className="h-4 w-4" />
             <span>
-              Showing {items.length} item{items.length !== 1 ? 's' : ''}
-              {category !== "all" && ` in ${category.replace('_', ' ')}`}
+              Showing {items.length} item{items.length !== 1 ? "s" : ""}
+              {category !== "all" && ` in ${category.replace("_", " ")}`}
               {searchTerm && ` matching "${searchTerm}"`}
             </span>
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Inventory Table */}
       <Card>
         <CardContent className="p-0">
@@ -202,10 +215,9 @@ export default function InventoryListPage() {
               <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No items found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || category !== "all" 
+                {searchTerm || category !== "all"
                   ? "Try adjusting your filters to see more results"
-                  : "Get started by adding your first inventory item"
-                }
+                  : "Get started by adding your first inventory item"}
               </p>
               {!searchTerm && category === "all" && (
                 <Button onClick={handleCreateNew}>
@@ -241,14 +253,15 @@ export default function InventoryListPage() {
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded overflow-hidden bg-muted flex-shrink-0">
                             {item.image_url ? (
-                              <img 
-                                src={item.image_url} 
+                              <img
+                                src={item.image_url}
                                 alt={item.name}
                                 className="h-full w-full object-cover"
                                 onError={(e) => {
                                   // Fallback if image fails to load
-                                  e.target.style.display = 'none'
-                                  e.target.parentElement.innerHTML = '<Package class="h-full w-full p-2 text-muted-foreground" />'
+                                  e.target.style.display = "none"
+                                  e.target.parentElement.innerHTML =
+                                    '<Package class="h-full w-full p-2 text-muted-foreground" />'
                                 }}
                               />
                             ) : (
@@ -265,21 +278,17 @@ export default function InventoryListPage() {
                           </div>
                         </div>
                       </TableCell>
-                      
+
                       {/* SKU */}
                       <TableCell>
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                          {item.sku}
-                        </code>
+                        <code className="text-xs bg-muted px-2 py-1 rounded">{item.sku}</code>
                       </TableCell>
-                      
+
                       {/* Category Badge */}
                       <TableCell>
-                        <Badge variant="outline">
-                          {item.category.replace('_', ' ')}
-                        </Badge>
+                        <Badge variant="outline">{item.category.replace("_", " ")}</Badge>
                       </TableCell>
-                      
+
                       {/* Stock Level */}
                       <TableCell>
                         <div className="font-medium">
@@ -297,19 +306,15 @@ export default function InventoryListPage() {
                           </div>
                         )}
                       </TableCell>
-                      
+
                       {/* Unit */}
-                      <TableCell className="text-muted-foreground">
-                        {item.unit}
-                      </TableCell>
-                      
+                      <TableCell className="text-muted-foreground">{item.unit}</TableCell>
+
                       {/* Rack Location */}
                       <TableCell>
-                        {item.rack_location || (
-                          <span className="text-muted-foreground">—</span>
-                        )}
+                        {item.rack_location || <span className="text-muted-foreground">—</span>}
                       </TableCell>
-                      
+
                       {/* Stock Status */}
                       <TableCell>
                         {item.is_low_stock ? (
