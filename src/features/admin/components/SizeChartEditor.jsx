@@ -110,7 +110,7 @@ export function SizeChartEditor() {
    * Save changes to the backend
    */
   const handleSave = () => {
-    // Basic validation before saving
+    // Validation 1: Check for empty size codes
     const hasEmptySize = editedRows.some((row) => !row.size_code || row.size_code.trim() === "")
     if (hasEmptySize) {
       toast({
@@ -121,6 +121,20 @@ export function SizeChartEditor() {
       return
     }
 
+    // Validation 2: Check for duplicate size codes
+    const sizeCodes = editedRows.map((row) => row.size_code.trim().toUpperCase())
+    const duplicates = sizeCodes.filter((code, index) => sizeCodes.indexOf(code) !== index)
+
+    if (duplicates.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: `Duplicate size code found: ${duplicates[0]}. Each size must be unique.`,
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validation 3: Check for invalid measurements
     const hasInvalidMeasurement = editedRows.some((row) => {
       return (
         row.shoulder <= 0 || row.bust <= 0 || row.waist <= 0 || row.hip <= 0 || row.armhole <= 0
@@ -135,7 +149,7 @@ export function SizeChartEditor() {
       return
     }
 
-    // Call the mutation with the edited rows
+    // All validations passed - proceed with save
     updateSizeChart.mutate(
       { rows: editedRows },
       {
