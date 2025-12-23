@@ -14,6 +14,8 @@ import { MeasurementChartsSettings } from "@/features/admin/pages/MeasurementCha
 
 // Inventory pages
 import InventoryListPage from "@/features/inventory/pages/InventoryListPage"
+import EditInventoryItemPage from "@/features/inventory/pages/EditInventoryItemPage"
+import CreateInventoryItemPage from "@/features/inventory/pages/CreateInventoryItemPage"
 import InventoryDetailPage from "@/features/inventory/pages/InventoryDetailPage"
 import LowStockAlertsPage from "@/features/inventory/pages/LowStockAlertsPage"
 
@@ -60,6 +62,8 @@ export default function AppRoutes() {
 
         {/* Inventory */}
         <Route path="/inventory" element={<InventoryListPage />} />
+        <Route path="/inventory/new" element={<CreateInventoryItemPage />} />
+        <Route path="/inventory/:id/edit" element={<EditInventoryItemPage />} />
         <Route path="/inventory/:id" element={<InventoryDetailPage />} />
         <Route path="/inventory/alerts/low-stock" element={<LowStockAlertsPage />} />
 
