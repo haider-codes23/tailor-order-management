@@ -12,6 +12,11 @@ import NotFoundPage from "@/pages/NotFoundPage"
 // Admin pages
 import { MeasurementChartsSettings } from "@/features/admin/pages/MeasurementChartsSettings"
 
+// Inventory pages
+import InventoryListPage from "@/features/inventory/pages/InventoryListPage"
+import InventoryDetailPage from "@/features/inventory/pages/InventoryDetailPage"
+import LowStockAlertsPage from "@/features/inventory/pages/LowStockAlertsPage"
+
 /**
  * AppRoutes - Central routing configuration
  *
@@ -52,6 +57,11 @@ export default function AppRoutes() {
 
         {/* Orders */}
         <Route path="/orders" element={<OrdersPage />} />
+
+        {/* Inventory */}
+        <Route path="/inventory" element={<InventoryListPage />} />
+        <Route path="/inventory/:id" element={<InventoryDetailPage />} />
+        <Route path="/inventory/alerts/low-stock" element={<LowStockAlertsPage />} />
 
         {/* Settings - Admin */}
         <Route path="/settings/measurement-charts" element={<MeasurementChartsSettings />} />
