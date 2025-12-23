@@ -85,7 +85,7 @@ export function useInventoryItems(filters = {}, options = {}) {
 
     // Consider data fresh for 2 minutes. During this time, if the same query runs
     // again in another component, React Query returns cached data with zero delay
-    staleTime: 2 * 60 * 1000,
+    staleTime: 0,
 
     // Keep unused cached data for 5 minutes before garbage collecting it
     // This means if a user navigates away from the inventory page and comes back
