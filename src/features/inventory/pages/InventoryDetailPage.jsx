@@ -30,18 +30,8 @@ import { StockInModal } from "../components/StockInModal"
  * Inventory Detail Page
  *
  * This page displays comprehensive information about a single inventory item.
- * It demonstrates several advanced patterns:
- *
- * 1. Using URL parameters with React Router to identify which item to display
- * 2. Loading related data (item details and stock movements) with separate queries
- * 3. Handling variant items that have size-specific information
- * 4. Tabbed interface for organizing different aspects of the data
- * 5. Modal dialogs for actions like recording stock-in
- *
- * The component structure reflects how you present complex business data in a
- * way that is easy for users to understand and navigate. All the essential
- * information is visible immediately, while detailed transaction history is
- * available in a tab for users who need that level of detail.
+ * Enhanced with visual feedback during background refetching to show users
+ * that their actions (like stock-in) are being processed and data is updating.
  */
 export default function InventoryDetailPage() {
   const { id } = useParams()
@@ -51,13 +41,21 @@ export default function InventoryDetailPage() {
   const [showStockInModal, setShowStockInModal] = useState(false)
   const [activeTab, setActiveTab] = useState("overview")
 
-  // Fetch the inventory item
-  // The hook automatically enables/disables based on whether we have a valid ID
-  const { data: itemData, isLoading: itemLoading, isError: itemError, error } = useInventoryItem(id)
+  // Fetch the inventory item with isFetching state for background refetch indicator
+  const {
+    data: itemData,
+    isLoading: itemLoading,
+    isFetching: itemFetching, // NEW: Track background refetching
+    isError: itemError,
+    error,
+  } = useInventoryItem(id)
 
-  // Fetch stock movements for this item
-  // This query only runs after we have successfully loaded the item
-  const { data: movementsData, isLoading: movementsLoading } = useStockMovements(id)
+  // Fetch stock movements with isFetching state
+  const {
+    data: movementsData,
+    isLoading: movementsLoading,
+    isFetching: movementsFetching, // NEW: Track background refetching
+  } = useStockMovements(id)
 
   /**
    * Loading State
@@ -117,10 +115,9 @@ export default function InventoryDetailPage() {
     : []
 
   /**
-   * Main render with tabbed interface
+   * Main render with tabbed interface and refetch indicators
    * Overview tab shows basic info and stock levels
    * History tab shows transaction timeline
-   * Settings tab would show edit controls (future enhancement)
    */
   return (
     <div className="container mx-auto py-6 px-4 max-w-6xl">
@@ -130,6 +127,14 @@ export default function InventoryDetailPage() {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Inventory
         </Button>
+
+        {/* NEW: Visual indicator when data is being refetched in background */}
+        {itemFetching && !itemLoading && (
+          <Alert className="mb-4 border-blue-200 bg-blue-50">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            <AlertDescription className="text-blue-800">Refreshing item data...</AlertDescription>
+          </Alert>
+        )}
 
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
@@ -184,9 +189,9 @@ export default function InventoryDetailPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6 mt-6">
-          {/* Stock Summary Cards */}
+          {/* Stock Summary Cards with pulsing animation during refetch */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
+            <Card className={itemFetching && !itemLoading ? "animate-pulse" : ""}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Current Stock
@@ -201,7 +206,7 @@ export default function InventoryDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className={itemFetching && !itemLoading ? "animate-pulse" : ""}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Reorder Level
@@ -246,9 +251,9 @@ export default function InventoryDetailPage() {
             </Alert>
           )}
 
-          {/* Size Variants Table (for Ready Stock) */}
+          {/* Size Variants Table (for Ready Stock) with pulsing during refetch */}
           {item.has_variants && item.variants && (
-            <Card>
+            <Card className={itemFetching && !itemLoading ? "animate-pulse" : ""}>
               <CardHeader>
                 <CardTitle>Size Availability</CardTitle>
                 <CardDescription>Stock levels for each size variant of this item</CardDescription>
@@ -367,6 +372,10 @@ export default function InventoryDetailPage() {
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
                 Stock Movement History
+                {/* NEW: Show refetching indicator in tab */}
+                {movementsFetching && !movementsLoading && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground ml-2" />
+                )}
               </CardTitle>
               <CardDescription>
                 Complete audit trail of all stock-in and stock-out transactions
