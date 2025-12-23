@@ -423,6 +423,72 @@ export function useRecordStockIn() {
 }
 
 /**
+ * useRecordStockOut
+ *
+ * Records a stock-out transaction. Similar to stock-in but deducts from inventory.
+ * Validates that sufficient stock exists before allowing the deduction.
+ *
+ * @returns {Object} Mutation object with mutate function and state
+ *
+ * Example usage:
+ *   const recordStockOut = useRecordStockOut()
+ *
+ *   const handleStockOut = (formData) => {
+ *     recordStockOut.mutate(
+ *       {
+ *         itemId: item.id,
+ *         stockData: {
+ *           quantity: formData.quantity,
+ *           variant_id: formData.variantId,
+ *           reference_number: formData.productionOrder,
+ *           notes: formData.notes
+ *         }
+ *       },
+ *       {
+ *         onSuccess: (result) => {
+ *           toast.success(`Deducted ${result.data.quantity} ${item.unit}`)
+ *         },
+ *         onError: (error) => {
+ *           toast.error(error.message) // Shows "Insufficient stock" if not enough available
+ *         }
+ *       }
+ *     )
+ *   }
+ */
+export function useRecordStockOut() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ itemId, stockData }) => inventoryApi.recordStockOut(itemId, stockData),
+
+    onSuccess: (data, variables) => {
+      // Invalidate the item's detail query to show updated stock level
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(variables.itemId) })
+
+      // Invalidate movements query to show the new transaction in history
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.movements(variables.itemId) })
+
+      // Invalidate lists in case stock level change affects how item is displayed
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() })
+
+      // Invalidate low stock query since this item might now be low stock
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lowStock() })
+
+      // Force immediate refetch
+      queryClient.refetchQueries({
+        queryKey: inventoryKeys.detail(variables.itemId),
+        exact: true,
+      })
+
+      queryClient.refetchQueries({
+        queryKey: inventoryKeys.movements(variables.itemId),
+        exact: true,
+      })
+    },
+  })
+}
+
+/**
  * useDeleteInventoryItem
  *
  * Deletes an inventory item. This is the most aggressive invalidation because the
