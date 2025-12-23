@@ -85,12 +85,14 @@ export function useInventoryItems(filters = {}, options = {}) {
 
     // Consider data fresh for 2 minutes. During this time, if the same query runs
     // again in another component, React Query returns cached data with zero delay
-    staleTime: 0,
+    staleTime: 30 * 1000, // 30 seconds - short enough to stay fresh
 
     // Keep unused cached data for 5 minutes before garbage collecting it
     // This means if a user navigates away from the inventory page and comes back
     // within 5 minutes, the data is still there instantly
     gcTime: 5 * 60 * 1000,
+    // ✅ keep showing previous list while fetching new filters
+    placeholderData: (previousData) => previousData,
 
     // Allow caller to override any of these defaults
     ...options,
@@ -133,7 +135,7 @@ export function useInventoryItem(itemId, options = {}) {
   return useQuery({
     queryKey: inventoryKeys.detail(itemId),
     queryFn: () => inventoryApi.getInventoryItem(itemId),
-    staleTime: 2 * 60 * 1000,
+    staleTime: 30 * 1000,
 
     // Only run this query if we have a valid itemId
     // This prevents errors when the component first mounts and ID is undefined
@@ -228,7 +230,7 @@ export function useStockMovements(itemId, options = {}) {
     queryFn: () => inventoryApi.getStockMovements(itemId),
 
     // Movement history rarely changes, so we can cache it for longer
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 5 minutes
 
     enabled: !!itemId,
 
@@ -395,7 +397,7 @@ export function useRecordStockIn() {
       // Invalidate the item's detail query to show updated stock level
       queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(variables.itemId) })
 
-      // Invalidate movements query to show the new transaction in the history
+      // Invalidate movements query to show the new transaction in history
       queryClient.invalidateQueries({ queryKey: inventoryKeys.movements(variables.itemId) })
 
       // Invalidate lists in case stock level change affects how item is displayed
@@ -403,6 +405,19 @@ export function useRecordStockIn() {
 
       // Invalidate low stock query since this item might no longer be low stock
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lowStock() })
+
+      // IMPORTANT: Force immediate refetch of the detail query
+      // This ensures the UI updates immediately without waiting for React Query's timing
+      queryClient.refetchQueries({
+        queryKey: inventoryKeys.detail(variables.itemId),
+        exact: true,
+      })
+
+      // Force immediate refetch of movements to show transaction history
+      queryClient.refetchQueries({
+        queryKey: inventoryKeys.movements(variables.itemId),
+        exact: true,
+      })
     },
   })
 }
