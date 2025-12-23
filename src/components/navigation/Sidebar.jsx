@@ -9,6 +9,7 @@ import {
   Users,
   ShoppingBag,
   Settings,
+  AlertTriangle,
   Ruler, // New icon for measurement charts
 } from "lucide-react"
 
@@ -48,6 +49,11 @@ const navItems = [
     name: "Inventory",
     href: "/inventory",
     icon: Package,
+  },
+  {
+    name: "Low Stock Alerts",
+    href: "/inventory/alerts/low-stock",
+    icon: AlertTriangle,
   },
   {
     name: "Production",
