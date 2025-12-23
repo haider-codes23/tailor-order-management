@@ -12,27 +12,33 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Package, CheckCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 /**
  * Stock-In Modal Component
- * 
+ *
  * This modal provides a focused interface for recording when materials arrive
  * from vendors. It demonstrates several important patterns:
- * 
+ *
  * 1. Form state management for capturing user input
  * 2. Conditional rendering based on item type (variant vs simple)
  * 3. Form validation before submission
  * 4. Mutation state handling (loading, success, error)
  * 5. User feedback through toasts and visual indicators
- * 
+ *
  * The modal automatically adapts its interface based on the item being updated.
  * For variant items like ready stock, it shows a size selector. For simple items
  * like fabrics, it hides the size selector since it is not applicable.
- * 
+ *
  * Notice how the component uses the useRecordStockIn mutation hook. When the
  * mutation succeeds, React Query automatically invalidates relevant queries, which
  * causes the detail page behind this modal to refresh and show the new stock level.
@@ -42,54 +48,54 @@ import { useToast } from "@/hooks/use-toast"
 export function StockInModal({ item, open, onClose }) {
   const { toast } = useToast()
   const recordStockIn = useRecordStockIn()
-  
+
   // Form state - these track user input as they fill out the form
   const [quantity, setQuantity] = useState("")
   const [selectedVariantId, setSelectedVariantId] = useState("")
   const [referenceNumber, setReferenceNumber] = useState("")
   const [notes, setNotes] = useState("")
-  
+
   // Validation state - tracks any errors in user input
   const [validationError, setValidationError] = useState("")
-  
+
   /**
    * Handle form submission
-   * 
+   *
    * This function runs when the user clicks the "Record Stock-In" button.
    * It performs validation first, then calls the mutation if everything is valid.
    * The mutation hook handles the actual API call and all the cache invalidation.
    */
   const handleSubmit = (e) => {
     e.preventDefault()
-    
+
     // Clear any previous validation errors
     setValidationError("")
-    
+
     // Validation: Quantity must be a positive number
     const qty = parseFloat(quantity)
     if (isNaN(qty) || qty <= 0) {
       setValidationError("Please enter a valid quantity greater than zero")
       return
     }
-    
+
     // Validation: For variant items, a size must be selected
     if (item.has_variants && !selectedVariantId) {
       setValidationError("Please select a size variant")
       return
     }
-    
+
     // Build the stock data object to send to the API
     const stockData = {
       quantity: qty,
       reference_number: referenceNumber.trim() || undefined,
       notes: notes.trim() || undefined,
     }
-    
+
     // For variant items, include which variant is being updated
     if (item.has_variants && selectedVariantId) {
       stockData.variant_id = parseInt(selectedVariantId)
     }
-    
+
     // Call the mutation with success and error handlers
     recordStockIn.mutate(
       { itemId: item.id, stockData },
@@ -98,9 +104,9 @@ export function StockInModal({ item, open, onClose }) {
           // Show success toast notification
           toast({
             title: "Stock-In Recorded",
-            description: `Successfully added ${qty} ${item.unit}${qty !== 1 ? 's' : ''} to inventory`,
+            description: `Successfully added ${qty} ${item.unit}${qty !== 1 ? "s" : ""} to inventory`,
           })
-          
+
           // Close the modal - the parent component (detail page) will automatically
           // refresh because React Query invalidated its queries
           onClose()
@@ -112,14 +118,14 @@ export function StockInModal({ item, open, onClose }) {
             description: error.message || "Failed to record stock-in transaction",
             variant: "destructive",
           })
-        }
+        },
       }
     )
   }
-  
+
   /**
    * Handle modal close
-   * 
+   *
    * Reset the form when the modal closes so it is clean if reopened.
    * We only allow closing if a mutation is not in progress to prevent
    * users from accidentally canceling an in-flight request.
@@ -134,15 +140,16 @@ export function StockInModal({ item, open, onClose }) {
       onClose()
     }
   }
-  
+
   /**
    * Find the selected variant details for display purposes
    * This helps show the user which size they are adding stock to
    */
-  const selectedVariant = item.has_variants && selectedVariantId
-    ? item.variants.find(v => v.variant_id === parseInt(selectedVariantId))
-    : null
-  
+  const selectedVariant =
+    item.has_variants && selectedVariantId
+      ? item.variants.find((v) => v.variant_id === parseInt(selectedVariantId))
+      : null
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -155,7 +162,7 @@ export function StockInModal({ item, open, onClose }) {
             Record materials received for <strong>{item.name}</strong>
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           {/* Validation Error Alert */}
           {validationError && (
@@ -164,7 +171,7 @@ export function StockInModal({ item, open, onClose }) {
               <AlertDescription>{validationError}</AlertDescription>
             </Alert>
           )}
-          
+
           {/* Variant Selector (only for ready stock items with sizes) */}
           {item.has_variants && item.variants && (
             <div className="space-y-2">
@@ -191,18 +198,17 @@ export function StockInModal({ item, open, onClose }) {
               </p>
             </div>
           )}
-          
+
           {/* Current Stock Display */}
           <div className="rounded-lg bg-muted p-3 text-sm">
             <div className="flex justify-between items-center mb-1">
               <span className="text-muted-foreground">Current Stock:</span>
               <span className="font-medium">
-                {selectedVariant 
-                  ? `${selectedVariant.remaining_stock} ${item.unit}` 
+                {selectedVariant
+                  ? `${selectedVariant.remaining_stock} ${item.unit}`
                   : item.has_variants
                     ? "Select a size first"
-                    : `${item.remaining_stock} ${item.unit}`
-                }
+                    : `${item.remaining_stock} ${item.unit}`}
               </span>
             </div>
             {selectedVariant && selectedVariant.remaining_stock < selectedVariant.reorder_level && (
@@ -212,7 +218,7 @@ export function StockInModal({ item, open, onClose }) {
               </div>
             )}
           </div>
-          
+
           {/* Quantity Input */}
           <div className="space-y-2">
             <Label htmlFor="quantity">
@@ -238,7 +244,7 @@ export function StockInModal({ item, open, onClose }) {
               How much material was received from the vendor
             </p>
           </div>
-          
+
           {/* Reference Number Input */}
           <div className="space-y-2">
             <Label htmlFor="reference">Reference Number (Optional)</Label>
@@ -254,7 +260,7 @@ export function StockInModal({ item, open, onClose }) {
               Purchase order or invoice number for tracking
             </p>
           </div>
-          
+
           {/* Notes Input */}
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
@@ -270,7 +276,7 @@ export function StockInModal({ item, open, onClose }) {
               Quality observations, vendor information, or other details
             </p>
           </div>
-          
+
           {/* Success State (shown briefly before modal closes) */}
           {recordStockIn.isSuccess && (
             <Alert>
@@ -281,7 +287,7 @@ export function StockInModal({ item, open, onClose }) {
             </Alert>
           )}
         </form>
-        
+
         <DialogFooter>
           <Button
             type="button"
@@ -291,11 +297,7 @@ export function StockInModal({ item, open, onClose }) {
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={recordStockIn.isPending}
-          >
+          <Button type="submit" onClick={handleSubmit} disabled={recordStockIn.isPending}>
             {recordStockIn.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
