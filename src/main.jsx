@@ -9,22 +9,30 @@ import { Toaster } from "@/components/ui/toaster"
 import "./index.css"
 
 // Initialize MSW in development
-if (import.meta.env.DEV) {
+async function enableMocking() {
   const { worker } = await import("./mocks/browser")
-  worker.start({
-    onUnhandledRequest: 'bypass', // Let unhandled requests pass through to the network
+  await worker.start({
+    onUnhandledRequest: "bypass",
   })
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-          <Toaster />
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </React.StrictMode>
-)
+// if (import.meta.env.DEV) {
+//   const { worker } = await import("./mocks/browser")
+//   await worker.start({
+//     onUnhandledRequest: 'bypass', // Let unhandled requests pass through to the network
+//   })
+// }
+enableMocking().then(() => {
+  ReactDOM.createRoot(document.getElementById("root")).render(
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+            <Toaster />
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </React.StrictMode>
+  )
+})
