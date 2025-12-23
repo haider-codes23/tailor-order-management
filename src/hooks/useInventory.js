@@ -40,13 +40,13 @@ import { inventoryApi } from "@/services/api/inventoryApi"
  * 'inventory.detail', etc. This gives us both precision and convenience.
  */
 export const inventoryKeys = {
-  all: ['inventory'],
-  lists: () => [...inventoryKeys.all, 'list'],
+  all: ["inventory"],
+  lists: () => [...inventoryKeys.all, "list"],
   list: (filters) => [...inventoryKeys.lists(), filters],
-  details: () => [...inventoryKeys.all, 'detail'],
+  details: () => [...inventoryKeys.all, "detail"],
   detail: (id) => [...inventoryKeys.details(), id],
-  lowStock: () => [...inventoryKeys.all, 'lowStock'],
-  movements: (id) => [...inventoryKeys.all, 'movements', id],
+  lowStock: () => [...inventoryKeys.all, "lowStock"],
+  movements: (id) => [...inventoryKeys.all, "movements", id],
 }
 
 /**
@@ -69,29 +69,29 @@ export const inventoryKeys = {
  *
  * Example usage in a component:
  *   const { data, isLoading, error } = useInventoryItems({ category: 'FABRIC' })
- *  
+ *
  *   if (isLoading) return <Spinner />
  *   if (error) return <Error message={error.message} />
- *  
+ *
  *   return data.data.map(item => <InventoryCard key={item.id} item={item} />)
  */
 export function useInventoryItems(filters = {}, options = {}) {
   return useQuery({
     // The query key includes the filters so different filter combinations cache separately
     queryKey: inventoryKeys.list(filters),
-   
+
     // The query function makes the actual API call
     queryFn: () => inventoryApi.getInventoryItems(filters),
-   
+
     // Consider data fresh for 2 minutes. During this time, if the same query runs
     // again in another component, React Query returns cached data with zero delay
     staleTime: 2 * 60 * 1000,
-   
+
     // Keep unused cached data for 5 minutes before garbage collecting it
     // This means if a user navigates away from the inventory page and comes back
     // within 5 minutes, the data is still there instantly
     gcTime: 5 * 60 * 1000,
-   
+
     // Allow caller to override any of these defaults
     ...options,
   })
@@ -116,9 +116,9 @@ export function useInventoryItems(filters = {}, options = {}) {
  * Example usage:
  *   const { id } = useParams() // From React Router
  *   const { data: item, isLoading } = useInventoryItem(id)
- *  
+ *
  *   if (isLoading) return <DetailSkeleton />
- *  
+ *
  *   return (
  *     <div>
  *       <h1>{item.data.name}</h1>
@@ -134,11 +134,11 @@ export function useInventoryItem(itemId, options = {}) {
     queryKey: inventoryKeys.detail(itemId),
     queryFn: () => inventoryApi.getInventoryItem(itemId),
     staleTime: 2 * 60 * 1000,
-   
+
     // Only run this query if we have a valid itemId
     // This prevents errors when the component first mounts and ID is undefined
     enabled: !!itemId,
-   
+
     ...options,
   })
 }
@@ -159,7 +159,7 @@ export function useInventoryItem(itemId, options = {}) {
  *
  * Example usage:
  *   const { data: lowStock } = useLowStockItems()
- *  
+ *
  *   return (
  *     <Alert severity="warning">
  *       <h3>{lowStock.data.length} items need reordering</h3>
@@ -175,13 +175,13 @@ export function useLowStockItems(options = {}) {
   return useQuery({
     queryKey: inventoryKeys.lowStock(),
     queryFn: () => inventoryApi.getLowStockItems(),
-   
+
     // Shorter stale time because low stock status changes frequently
     staleTime: 30 * 1000, // 30 seconds
-   
+
     // Refetch when the window regains focus so purchasers always see current data
     refetchOnWindowFocus: true,
-   
+
     ...options,
   })
 }
@@ -203,7 +203,7 @@ export function useLowStockItems(options = {}) {
  *
  * Example usage:
  *   const { data: history } = useStockMovements(itemId)
- *  
+ *
  *   return (
  *     <Table>
  *       <thead>
@@ -226,12 +226,12 @@ export function useStockMovements(itemId, options = {}) {
   return useQuery({
     queryKey: inventoryKeys.movements(itemId),
     queryFn: () => inventoryApi.getStockMovements(itemId),
-   
+
     // Movement history rarely changes, so we can cache it for longer
     staleTime: 5 * 60 * 1000, // 5 minutes
-   
+
     enabled: !!itemId,
-   
+
     ...options,
   })
 }
@@ -258,7 +258,7 @@ export function useStockMovements(itemId, options = {}) {
  *
  * Example usage:
  *   const createItem = useCreateInventoryItem()
- *  
+ *
  *   const handleSubmit = (formData) => {
  *     createItem.mutate(formData, {
  *       onSuccess: (newItem) => {
@@ -270,7 +270,7 @@ export function useStockMovements(itemId, options = {}) {
  *       }
  *     })
  *   }
- *  
+ *
  *   return (
  *     <form onSubmit={handleSubmit}>
  *       <Button type="submit" disabled={createItem.isPending}>
@@ -281,10 +281,10 @@ export function useStockMovements(itemId, options = {}) {
  */
 export function useCreateInventoryItem() {
   const queryClient = useQueryClient()
- 
+
   return useMutation({
     mutationFn: (itemData) => inventoryApi.createInventoryItem(itemData),
-   
+
     onSuccess: () => {
       // Invalidate all inventory lists so they refetch and include the new item
       // This keeps all components displaying inventory lists automatically up to date
@@ -313,7 +313,7 @@ export function useCreateInventoryItem() {
  *
  * Example usage:
  *   const updateItem = useUpdateInventoryItem()
- *  
+ *
  *   const handleSave = (updates) => {
  *     updateItem.mutate(
  *       { itemId: item.id, updates },
@@ -328,17 +328,17 @@ export function useCreateInventoryItem() {
  */
 export function useUpdateInventoryItem() {
   const queryClient = useQueryClient()
- 
+
   return useMutation({
     mutationFn: ({ itemId, updates }) => inventoryApi.updateInventoryItem(itemId, updates),
-   
+
     onSuccess: (data, variables) => {
       // Invalidate the specific item's detail query
       queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(variables.itemId) })
-     
+
       // Invalidate list queries in case the update affects how the item appears in lists
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() })
-     
+
       // Invalidate low stock if the update might have changed stock levels
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lowStock() })
     },
@@ -364,7 +364,7 @@ export function useUpdateInventoryItem() {
  *
  * Example usage:
  *   const recordStockIn = useRecordStockIn()
- *  
+ *
  *   const handleStockIn = (formData) => {
  *     recordStockIn.mutate(
  *       {
@@ -387,20 +387,20 @@ export function useUpdateInventoryItem() {
  */
 export function useRecordStockIn() {
   const queryClient = useQueryClient()
- 
+
   return useMutation({
     mutationFn: ({ itemId, stockData }) => inventoryApi.recordStockIn(itemId, stockData),
-   
+
     onSuccess: (data, variables) => {
       // Invalidate the item's detail query to show updated stock level
       queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(variables.itemId) })
-     
+
       // Invalidate movements query to show the new transaction in the history
       queryClient.invalidateQueries({ queryKey: inventoryKeys.movements(variables.itemId) })
-     
+
       // Invalidate lists in case stock level change affects how item is displayed
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() })
-     
+
       // Invalidate low stock query since this item might no longer be low stock
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lowStock() })
     },
@@ -422,7 +422,7 @@ export function useRecordStockIn() {
  *
  * Example usage:
  *   const deleteItem = useDeleteInventoryItem()
- *  
+ *
  *   const handleDelete = () => {
  *     if (window.confirm('Are you sure? This cannot be undone.')) {
  *       deleteItem.mutate(itemId, {
@@ -436,10 +436,10 @@ export function useRecordStockIn() {
  */
 export function useDeleteInventoryItem() {
   const queryClient = useQueryClient()
- 
+
   return useMutation({
     mutationFn: (itemId) => inventoryApi.deleteInventoryItem(itemId),
-   
+
     onSuccess: () => {
       // Invalidate all inventory queries since the deleted item should disappear everywhere
       queryClient.invalidateQueries({ queryKey: inventoryKeys.all })
