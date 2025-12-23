@@ -68,6 +68,8 @@ export default function InventoryListPage() {
 
   // Fetch inventory items with current filters
   // The hook returns loading state, error state, and data automatically
+  console.log("Category state:", category)
+  console.log("Filters object:", filters)
   const { data, isLoading, isError, error } = useInventoryItems(filters)
 
   /**
