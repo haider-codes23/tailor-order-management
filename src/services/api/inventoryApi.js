@@ -307,12 +307,12 @@ export async function checkStockAvailability(itemId, quantityNeeded, variantId =
   // This endpoint doesn't exist yet in our handlers, but shows how you'd extend the API
   // For now, we can implement this client-side by fetching the item and checking stock
   const item = await getInventoryItem(itemId)
- 
+
   let currentStock = 0
   let available = false
 
   if (item.data.has_variants && variantId) {
-    const variant = item.data.variants.find(v => v.variant_id === variantId)
+    const variant = item.data.variants.find((v) => v.variant_id === variantId)
     if (variant) {
       currentStock = variant.remaining_stock
       available = currentStock >= quantityNeeded
@@ -328,9 +328,46 @@ export async function checkStockAvailability(itemId, quantityNeeded, variantId =
       available: available,
       current_stock: currentStock,
       quantity_needed: quantityNeeded,
-      shortage: available ? 0 : quantityNeeded - currentStock
-    }
+      shortage: available ? 0 : quantityNeeded - currentStock,
+    },
   }
+}
+/**
+ * Record a stock-out transaction (materials consumed in production)
+ *
+ * This function handles recording when materials are consumed, typically
+ * in production processes. For variant items, you must specify which size
+ * variant is being consumed.
+ *
+ * The function validates that sufficient stock exists before allowing the
+ * deduction. If insufficient stock exists, the API returns an error.
+ *
+ * @param {number} itemId - The ID of the inventory item
+ * @param {Object} stockData - Details about the stock-out transaction
+ * @param {number} stockData.quantity - Amount consumed (in item's unit)
+ * @param {number} stockData.variant_id - Required for variant items, specifies which size
+ * @param {string} stockData.reference_number - Optional, production order reference
+ * @param {string} stockData.notes - Optional, notes about consumption
+ * @returns {Promise<Object>} Result with updated item and movement record
+ *
+ * Example usage for fabric (simple item):
+ *   await recordStockOut(1, {
+ *     quantity: 2.5,
+ *     reference_number: "PROD-ORDER-089",
+ *     notes: "Used in GOLDESS production batch, cutting for 3 shirts"
+ *   })
+ *
+ * Example usage for ready stock (variant item):
+ *   await recordStockOut(43, {
+ *     quantity: 1,
+ *     variant_id: 2, // Size M
+ *     reference_number: "SALE-ORDER-156",
+ *     notes: "Sold to customer via website order"
+ *   })
+ */
+export async function recordStockOut(itemId, stockData) {
+  const response = await httpClient.post(`/inventory/${itemId}/stock-out`, stockData)
+  return response
 }
 
 /**
@@ -349,6 +386,7 @@ export const inventoryApi = {
   createInventoryItem,
   updateInventoryItem,
   recordStockIn,
+  recordStockOut,
   getLowStockItems,
   getStockMovements,
   deleteInventoryItem,
