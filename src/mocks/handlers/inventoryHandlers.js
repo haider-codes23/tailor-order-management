@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw"
 import { mockInventoryItems, mockStockMovements } from "../data/mockInventory"
 
+
 /**
  * Inventory MSW Handlers
  *
@@ -51,12 +52,14 @@ function isLowStock(item) {
  * Returns array of inventory items sorted by name
  */
 export const getInventoryList = http.get("/api/inventory", async ({ request }) => {
+  console.log("[MSW] GET /api/inventory HIT:", request.url)
   // Simulate network delay for realistic development experience
   await new Promise((resolve) => setTimeout(resolve, 300))
 
   // Parse query parameters from the URL
   const url = new URL(request.url)
-  const category = url.searchParams.get("category")
+  const categoryRaw = url.searchParams.get("category")
+  const category = categoryRaw?.trim()
   const search = url.searchParams.get("search")
   const lowStockFilter = url.searchParams.get("low_stock") === "true"
 
@@ -64,7 +67,11 @@ export const getInventoryList = http.get("/api/inventory", async ({ request }) =
   let filteredItems = [...mockInventoryItems]
 
   // Filter by category if specified
-  if (category) {
+  // if (category) {
+  //   filteredItems = filteredItems.filter((item) => item.category === category)
+  // }
+
+  if (category && category.toLowerCase() !== "all") {
     filteredItems = filteredItems.filter((item) => item.category === category)
   }
 
@@ -596,11 +603,11 @@ export const deleteInventoryItem = http.delete("/api/inventory/:id", async ({ pa
 // Export all handlers as an array
 export const inventoryHandlers = [
   getInventoryList,
+  getLowStockItems,
   getInventoryItem,
   createInventoryItem,
   updateInventoryItem,
   recordStockIn,
-  getLowStockItems,
   getStockMovements,
   deleteInventoryItem,
 ]
