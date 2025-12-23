@@ -1,7 +1,6 @@
 import { http, HttpResponse } from "msw"
 import { mockInventoryItems, mockStockMovements } from "../data/mockInventory"
 
-
 /**
  * Inventory MSW Handlers
  *
@@ -600,6 +599,149 @@ export const deleteInventoryItem = http.delete("/api/inventory/:id", async ({ pa
   })
 })
 
+/**
+ * POST /inventory/:id/stock-out
+ *
+ * Record a stock-out transaction (materials consumed in production)
+ *
+ * For simple items: Decreases remaining_stock
+ * For variant items: Decreases stock for specified variant_id
+ *
+ * Request body:
+ * - quantity: Required, positive number
+ * - variant_id: Required for variant items
+ * - reference_number: Optional, production order reference
+ * - notes: Optional, notes about consumption
+ */
+export const recordStockOut = http.post(
+  "/api/inventory/:id/stock-out",
+  async ({ params, request }) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    const itemId = parseInt(params.id)
+    const data = await request.json()
+
+    const itemIndex = mockInventoryItems.findIndex((i) => i.id === itemId)
+
+    if (itemIndex === -1) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Not found",
+          message: `Inventory item with ID ${itemId} not found`,
+        },
+        { status: 404 }
+      )
+    }
+
+    // Validation: Quantity must be positive
+    if (!data.quantity || data.quantity <= 0) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          message: "Quantity must be a positive number",
+        },
+        { status: 400 }
+      )
+    }
+
+    const item = mockInventoryItems[itemIndex]
+    let newStockLevel = 0
+    let insufficientStock = false
+
+    // Handle variant items (ready stock with sizes)
+    if (item.has_variants) {
+      if (!data.variant_id) {
+        return HttpResponse.json(
+          {
+            success: false,
+            error: "Validation failed",
+            message: "variant_id is required for items with size variants",
+          },
+          { status: 400 }
+        )
+      }
+
+      const variantIndex = item.variants.findIndex((v) => v.variant_id === data.variant_id)
+
+      if (variantIndex === -1) {
+        return HttpResponse.json(
+          {
+            success: false,
+            error: "Variant not found",
+            message: `No variant with ID ${data.variant_id} exists for this item`,
+          },
+          { status: 404 }
+        )
+      }
+
+      // Check if sufficient stock exists
+      if (item.variants[variantIndex].remaining_stock < data.quantity) {
+        return HttpResponse.json(
+          {
+            success: false,
+            error: "Insufficient stock",
+            message: `Only ${item.variants[variantIndex].remaining_stock} ${item.unit} available, cannot deduct ${data.quantity}`,
+          },
+          { status: 400 }
+        )
+      }
+
+      // Deduct the stock
+      item.variants[variantIndex].remaining_stock -= data.quantity
+      newStockLevel = item.variants[variantIndex].remaining_stock
+    } else {
+      // Handle simple items
+      // Check if sufficient stock exists
+      if (item.remaining_stock < data.quantity) {
+        return HttpResponse.json(
+          {
+            success: false,
+            error: "Insufficient stock",
+            message: `Only ${item.remaining_stock} ${item.unit} available, cannot deduct ${data.quantity}`,
+          },
+          { status: 400 }
+        )
+      }
+
+      // Deduct the stock
+      item.remaining_stock -= data.quantity
+      newStockLevel = item.remaining_stock
+    }
+
+    // Update modification timestamp
+    item.updated_at = new Date().toISOString()
+
+    // Create a stock movement record
+    const movement = {
+      id: mockStockMovements.length + 1,
+      inventory_item_id: itemId,
+      variant_id: data.variant_id || null,
+      movement_type: "STOCK_OUT",
+      quantity: data.quantity,
+      remaining_stock_after: newStockLevel,
+      transaction_date: new Date().toISOString(),
+      reference_number: data.reference_number || `AUTO-${Date.now()}`,
+      notes: data.notes || "Stock-out transaction",
+      performed_by_user_id: 1,
+      created_at: new Date().toISOString(),
+    }
+
+    mockStockMovements.push(movement)
+
+    return HttpResponse.json({
+      success: true,
+      data: {
+        item: item,
+        movement: movement,
+        new_stock_level: newStockLevel,
+      },
+      message: `Successfully deducted ${data.quantity} ${item.unit}${data.quantity > 1 ? "s" : ""} from inventory`,
+    })
+  }
+)
+
 // Export all handlers as an array
 export const inventoryHandlers = [
   getInventoryList,
@@ -608,6 +750,7 @@ export const inventoryHandlers = [
   createInventoryItem,
   updateInventoryItem,
   recordStockIn,
+  recordStockOut,
   getStockMovements,
   deleteInventoryItem,
 ]
