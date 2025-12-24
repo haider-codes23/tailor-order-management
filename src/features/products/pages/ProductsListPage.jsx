@@ -166,7 +166,7 @@ export default function ProductsListPage() {
             Showing {products.length} product{products.length !== 1 ? "s" : ""}
           </div>
 
-          {/* Products Grid */}
+          {/* Products Grid - OPTION 1: Full Image with aspect-[2/3] */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-6">
             {products.map((product) => (
               <Card
@@ -175,13 +175,13 @@ export default function ProductsListPage() {
                 onClick={() => handleProductClick(product.id)}
               >
                 <CardContent className="p-0">
-                  {/* Product Image */}
+                  {/* Product Image - Compact size for full screen */}
                   {product.primary_image ? (
-                    <div className="relative h-48 w-full bg-gray-100 rounded-t-lg overflow-hidden">
+                    <div className="relative h-72 w-full bg-gray-100 rounded-t-lg overflow-hidden">
                       <img
                         src={product.primary_image}
                         alt={product.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover object-top"
                       />
                       {!product.active && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -190,7 +190,7 @@ export default function ProductsListPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="h-48 w-full bg-gray-100 rounded-t-lg flex items-center justify-center">
+                    <div className="h-72 w-full bg-gray-100 rounded-t-lg flex items-center justify-center">
                       <Package className="h-12 w-12 text-gray-400" />
                     </div>
                   )}
