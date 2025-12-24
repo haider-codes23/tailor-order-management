@@ -17,29 +17,30 @@ export const productsHandlers = [
     await new Promise((resolve) => setTimeout(resolve, 300))
 
     const url = new URL(request.url)
-    const search = url.searchParams.get("search")?.toLowerCase()
+    const search = url.searchParams.get("search")
     const category = url.searchParams.get("category")
     const active = url.searchParams.get("active")
 
     let filtered = [...mockProducts]
 
-    // Apply search filter
-    if (search) {
+    // Apply search filter - FIXED: Safe null/undefined handling
+    if (search && search.trim() !== "") {
+      const searchLower = search.toLowerCase()
       filtered = filtered.filter(
         (product) =>
-          product.name.toLowerCase().includes(search) ||
-          product.sku.toLowerCase().includes(search) ||
-          product.description.toLowerCase().includes(search)
+          product.name?.toLowerCase().includes(searchLower) ||
+          product.sku?.toLowerCase().includes(searchLower) ||
+          (product.description && product.description.toLowerCase().includes(searchLower))
       )
     }
 
     // Apply category filter
-    if (category) {
+    if (category && category !== "ALL") {
       filtered = filtered.filter((product) => product.category === category)
     }
 
     // Apply active filter
-    if (active !== null && active !== undefined) {
+    if (active !== null && active !== undefined && active !== "") {
       const isActive = active === "true"
       filtered = filtered.filter((product) => product.active === isActive)
     }
