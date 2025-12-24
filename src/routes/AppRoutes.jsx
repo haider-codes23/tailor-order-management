@@ -19,6 +19,10 @@ import CreateInventoryItemPage from "@/features/inventory/pages/CreateInventoryI
 import InventoryDetailPage from "@/features/inventory/pages/InventoryDetailPage"
 import LowStockAlertsPage from "@/features/inventory/pages/LowStockAlertsPage"
 
+// Products Pages
+import ProductsListPage from "@/features/products/pages/ProductsListPage"
+import ProductDetailPage from "@/features/products/pages/ProductDetailPage"
+
 /**
  * AppRoutes - Central routing configuration
  *
@@ -66,6 +70,10 @@ export default function AppRoutes() {
         <Route path="/inventory/:id/edit" element={<EditInventoryItemPage />} />
         <Route path="/inventory/:id" element={<InventoryDetailPage />} />
         <Route path="/inventory/alerts/low-stock" element={<LowStockAlertsPage />} />
+
+        {/* Products - ADD THIS SECTION ⬇️ */}
+        <Route path="/products" element={<ProductsListPage />} />
+        <Route path="/products/:id" element={<ProductDetailPage />} />
 
         {/* Settings - Admin */}
         <Route path="/settings/measurement-charts" element={<MeasurementChartsSettings />} />
