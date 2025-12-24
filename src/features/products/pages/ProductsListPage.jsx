@@ -43,188 +43,185 @@ export default function ProductsListPage() {
   }
 
   return (
-    <div className="h-full flex flex-col p-4 md:p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage your product catalog and BOMs</p>
+          <h1 className="text-3xl font-bold">Products</h1>
+          <p className="text-muted-foreground">Manage your product catalog and BOMs</p>
         </div>
-        <Link to="/products/new">
-          <Button className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
+        <Button asChild>
+          <Link to="/products/new">
+            <Plus className="mr-2 h-4 w-4" />
             New Product
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search products..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
 
-            {/* Category Filter */}
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Category Filter */}
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value}>
+                {cat.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-            {/* Active Status Filter */}
-            <div className="flex gap-2">
-              <Button
-                variant={activeFilter === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveFilter("all")}
-                className="flex-1"
-              >
-                All
-              </Button>
-              <Button
-                variant={activeFilter === "active" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveFilter("active")}
-                className="flex-1"
-              >
-                Active
-              </Button>
-              <Button
-                variant={activeFilter === "inactive" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveFilter("inactive")}
-                className="flex-1"
-              >
-                Inactive
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Active Status Filter */}
+        <div className="flex gap-2">
+          <Button
+            variant={activeFilter === "all" ? "default" : "outline"}
+            onClick={() => setActiveFilter("all")}
+            className="flex-1"
+          >
+            All
+          </Button>
+          <Button
+            variant={activeFilter === "active" ? "default" : "outline"}
+            onClick={() => setActiveFilter("active")}
+            className="flex-1"
+          >
+            Active
+          </Button>
+          <Button
+            variant={activeFilter === "inactive" ? "default" : "outline"}
+            onClick={() => setActiveFilter("inactive")}
+            className="flex-1"
+          >
+            Inactive
+          </Button>
+        </div>
+      </div>
 
       {/* Products Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <Skeleton className="h-48 w-full mb-4" />
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
+            <Card key={i} className="overflow-hidden p-0">
+              <Skeleton className="aspect-[4/5] sm:aspect-[3/4] md:aspect-[2/3] w-full" />
+              <CardContent className="p-3">
+                <Skeleton className="mb-2 h-5 w-3/4" />
+                <Skeleton className="mb-2 h-4 w-1/2" />
+                <Skeleton className="h-4 w-full" />
               </CardContent>
             </Card>
           ))}
         </div>
       ) : error ? (
         <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-red-600 mb-2">Failed to load products</div>
-            <p className="text-sm text-gray-600">{error.message}</p>
+          <CardContent className="py-12 text-center">
+            <p className="text-lg font-semibold text-destructive">Failed to load products</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
           </CardContent>
         </Card>
       ) : products?.length === 0 ? (
         <Card>
-          <CardContent className="p-12 text-center">
-            <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold mb-2">No products found</h3>
-            <p className="text-sm text-gray-600 mb-4">
+          <CardContent className="py-12 text-center">
+            <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">No products found</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
               {search || category !== "ALL"
                 ? "Try adjusting your filters"
                 : "Get started by creating your first product"}
             </p>
             {!search && category === "ALL" && (
-              <Link to="/products/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+              <Button asChild>
+                <Link to="/products/new">
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Product
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
           </CardContent>
         </Card>
       ) : (
         <>
           {/* Results Count */}
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             Showing {products.length} product{products.length !== 1 ? "s" : ""}
           </div>
 
-          {/* Products Grid - OPTION 1: Full Image with aspect-[2/3] */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-6">
+          {/* Products Grid - Responsive */}
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {products.map((product) => (
               <Card
                 key={product.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg p-0"
                 onClick={() => handleProductClick(product.id)}
               >
-                <CardContent className="p-0">
-                  {/* Product Image - Compact size for full screen */}
-                  {product.primary_image ? (
-                    <div className="relative h-72 w-full bg-gray-100 rounded-t-lg overflow-hidden">
-                      <img
-                        src={product.primary_image}
-                        alt={product.name}
-                        className="h-full w-full object-cover object-top"
-                      />
-                      {!product.active && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <Badge variant="secondary">Inactive</Badge>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-72 w-full bg-gray-100 rounded-t-lg flex items-center justify-center">
-                      <Package className="h-12 w-12 text-gray-400" />
-                    </div>
-                  )}
-
-                  {/* Product Info */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 truncate flex-1">
-                        {product.name}
-                      </h3>
-                      {product.active && (
-                        <Badge variant="outline" className="ml-2 shrink-0">
-                          Active
+                {/* Product Image - Responsive aspect ratios */}
+                {product.primary_image ? (
+                  <div className="relative aspect-[4/5] sm:aspect-[3/4] md:aspect-[2/3] overflow-hidden bg-gray-100">
+                    {!product.active && (
+                      <div className="absolute left-2 top-2 z-10">
+                        <Badge variant="secondary" className="text-xs">
+                          Inactive
                         </Badge>
-                      )}
-                    </div>
+                      </div>
+                    )}
+                    <img
+                      src={product.primary_image}
+                      alt={product.name}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex aspect-[4/5] sm:aspect-[3/4] md:aspect-[2/3] items-center justify-center bg-gray-100">
+                    <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400" />
+                  </div>
+                )}
 
-                    <p className="text-sm text-gray-600 mb-3">SKU: {product.sku}</p>
-
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary">{product.category}</Badge>
-                      {product.base_price && (
-                        <span className="text-sm font-medium text-gray-900">
-                          PKR {product.base_price.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-
-                    {product.description && (
-                      <p className="text-xs text-gray-500 mt-3 line-clamp-2">
-                        {product.description}
-                      </p>
+                {/* Product Info */}
+                <CardContent className="p-3 sm:p-4">
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h3 className="line-clamp-1 text-sm sm:text-base font-semibold">
+                      {product.name}
+                    </h3>
+                    {product.active && (
+                      <Badge variant="default" className="shrink-0 text-xs">
+                        Active
+                      </Badge>
                     )}
                   </div>
+
+                  <p className="mb-2 text-xs sm:text-sm text-muted-foreground">
+                    SKU: {product.sku}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+                      {product.category}
+                    </span>
+                    {product.base_price && (
+                      <span className="text-sm sm:text-base font-semibold">
+                        PKR {product.base_price.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+
+                  {product.description && (
+                    <p className="mt-2 line-clamp-2 text-xs sm:text-sm text-muted-foreground">
+                      {product.description}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
