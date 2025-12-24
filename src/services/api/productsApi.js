@@ -1,4 +1,4 @@
-import { httpClient } from './httpClient';
+import { httpClient } from "../http/httpClient"
 
 // ==================== PRODUCTS API ====================
 
