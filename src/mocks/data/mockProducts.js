@@ -1,884 +1,484 @@
 /**
- * Mock Products and BOMs Data
+ * Mock Products and BOMs
  *
- * This represents your product catalog with Bill of Materials for each product.
- * The structure reflects the real complexity of tailoring products where a single
- * article (like a bridal dress or traditional outfit) may have multiple garment
- * pieces (shirt, pant, dupatta) and require dozens of materials including fabrics,
- * multi-head embroidered pieces, raw materials, and ADA-materials for embellishments.
+ * Data Structure:
+ * - mockProducts: Product catalog with Shopify integration fields
+ * - mockBOMs: Bill of Materials (versioned, one active per product)
+ * - mockBOMItems: Individual material requirements per BOM
  *
- * Key Concepts:
- * - Product = The sellable item (what customers order)
- * - BOM = Bill of Materials (the recipe for production)
- * - BOM Items = Individual materials needed with quantities
- * - Each BOM item references an inventory item by ID
- * - BOMs only include production materials: FABRIC, RAW_MATERIAL, MULTI_HEAD, ADA_MATERIAL
- * - READY_SAMPLE and READY_STOCK are excluded because they're completed dresses
+ * Rules:
+ * - Products can have multiple BOMs (design changes over time)
+ * - Only one BOM is active (is_active: true)
+ * - BOM items can ONLY reference: FABRIC, RAW_MATERIAL, MULTI_HEAD, ADDA_MATERIAL
+ * - BOM items CANNOT reference: READY_STOCK, READY_SAMPLE
  */
 
-/**
- * Products Catalog
- *
- * These are the designs available in your catalog.
- * Each product will have one active BOM that defines materials needed.
- */
+// ==================== PRODUCTS ====================
 export const mockProducts = [
   {
-    id: 1,
-    name: "Ivory Muse Bridal Collection",
-    sku: "IVORY-MUSE-001",
-    description:
-      "Elegant bridal ensemble featuring embroidered shirt, pant, and dupatta with intricate multi-head work and premium silk fabrics",
-    shopify_product_id: null, // Not synced to Shopify yet
-    shopify_variant_id: null,
-    is_active: true,
-    created_at: "2024-01-10T09:00:00Z",
-    updated_at: "2024-01-10T09:00:00Z",
+    id: "prod_1",
+    name: "GOLDESS",
+    sku: "GOLD-001",
+    description: "Elegant golden ensemble with intricate embroidery",
+    category: "FORMAL",
+    active: true,
+    // Shopify integration fields (for future use)
+    shopify_product_id: "gid://shopify/Product/8234567890",
+    shopify_variant_id: "gid://shopify/ProductVariant/44123456789",
+    // Images
+    images: [
+      "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400",
+      "https://images.unsplash.com/photo-1583391733981-5afc4b6debd5?w=400",
+    ],
+    primary_image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400",
+    // Pricing (optional, for reference)
+    base_price: 45000, // PKR
+    // Active BOM reference (computed field)
+    active_bom_id: "bom_1",
+    // Metadata
+    created_at: "2024-01-15T10:00:00Z",
+    updated_at: "2024-12-20T14:30:00Z",
   },
   {
-    id: 2,
-    name: "Mauve Magic Designer Dress",
-    sku: "MAUVE-MAGIC-002",
-    description:
-      "Contemporary designer dress with tissue silk, multi-head organza, and exquisite raw material embellishments",
-    shopify_product_id: "gid://shopify/Product/7234567890",
-    shopify_variant_id: "gid://shopify/ProductVariant/9234567891",
-    is_active: true,
-    created_at: "2024-01-15T10:30:00Z",
-    updated_at: "2024-01-15T10:30:00Z",
+    id: "prod_2",
+    name: "MAUVE MAGIC",
+    sku: "MAUVE-001",
+    description: "Stunning mauve dress with delicate detailing",
+    category: "SEMI_FORMAL",
+    active: true,
+    shopify_product_id: "gid://shopify/Product/8234567891",
+    shopify_variant_id: "gid://shopify/ProductVariant/44123456790",
+    images: ["https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400"],
+    primary_image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400",
+    base_price: 38000,
+    active_bom_id: "bom_3",
+    created_at: "2024-02-10T09:00:00Z",
+    updated_at: "2024-12-18T11:20:00Z",
   },
   {
-    id: 3,
-    name: "Aqua Princess Peshwas",
-    sku: "AQUA-PRINCESS-003",
-    description:
-      "Traditional peshwas style with tissue fabric, multi-head work, and extensive ADA-material embellishments including motis, sitaras, and dholki",
-    shopify_product_id: null,
-    shopify_variant_id: null,
-    is_active: true,
-    created_at: "2024-02-01T11:00:00Z",
-    updated_at: "2024-02-01T11:00:00Z",
+    id: "prod_3",
+    name: "EMERALD GRACE",
+    ug: "EMER-001",
+    description: "Vibrant emerald green outfit with traditional embellishments",
+    category: "FORMAL",
+    active: true,
+    shopify_product_id: "gid://shopify/Product/8234567892",
+    shopify_variant_id: "gid://shopify/ProductVariant/44123456791",
+    images: ["https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400"],
+    primary_image: "https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400",
+    base_price: 52000,
+    active_bom_id: "bom_5",
+    created_at: "2024-03-05T10:30:00Z",
+    updated_at: "2024-12-19T16:45:00Z",
   },
   {
-    id: 4,
-    name: "Goldess Luxury Ensemble",
-    sku: "GOLDESS-004",
-    description:
-      "Luxurious outfit with cotton silk, champagne karti work, and premium quality kulfi, behti, and bajra moti embellishments",
-    shopify_product_id: "gid://shopify/Product/7234567892",
-    shopify_variant_id: "gid://shopify/ProductVariant/9234567893",
-    is_active: true,
-    created_at: "2024-02-10T14:00:00Z",
-    updated_at: "2024-02-10T14:00:00Z",
+    id: "prod_4",
+    name: "PEARL ELEGANCE",
+    sku: "PEARL-001",
+    description: "Sophisticated pearl white ensemble",
+    category: "BRIDAL",
+    active: true,
+    shopify_product_id: "gid://shopify/Product/8234567893",
+    shopify_variant_id: "gid://shopify/ProductVariant/44123456792",
+    images: ["https://images.unsplash.com/photo-1617019114583-cacb66e8c278?w=400"],
+    primary_image: "https://images.unsplash.com/photo-1617019114583-cacb66e8c278?w=400",
+    base_price: 95000,
+    active_bom_id: "bom_7",
+    created_at: "2024-04-12T11:00:00Z",
+    updated_at: "2024-12-22T09:15:00Z",
   },
   {
-    id: 5,
-    name: "Princess Solara Kaftan",
-    sku: "PRINCESS-SOLARA-005",
-    description:
-      "Elegant kaftan design with tissue silk, kimkhab fabric, and golden sitara embellishments with kerki and bjara moti work",
-    shopify_product_id: null,
-    shopify_variant_id: null,
-    is_active: true,
-    created_at: "2024-02-20T15:30:00Z",
-    updated_at: "2024-02-20T15:30:00Z",
+    id: "prod_5",
+    name: "CRIMSON DREAMS",
+    sku: "CRIM-001",
+    description: "Bold crimson outfit with modern cuts",
+    category: "CASUAL",
+    active: true,
+    shopify_product_id: "gid://shopify/Product/8234567894",
+    shopify_variant_id: "gid://shopify/ProductVariant/44123456793",
+    images: ["https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400"],
+    primary_image: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400",
+    base_price: 28000,
+    active_bom_id: "bom_9",
+    created_at: "2024-05-20T14:20:00Z",
+    updated_at: "2024-12-21T13:30:00Z",
   },
 ]
 
-/**
- * BOMs (Bill of Materials)
- *
- * Each product has an active BOM that defines what materials are needed.
- * In a real system, products might have multiple BOM versions over time
- * as designs are refined, but only one is active at any time.
- */
+// ==================== BOMs ====================
 export const mockBOMs = [
+  // GOLDESS - Active BOM (v2)
   {
-    id: 101,
-    product_id: 1, // Ivory Muse
-    bom_name: "Ivory Muse - Original Design V1",
+    id: "bom_1",
+    product_id: "prod_1",
+    version: 2,
     is_active: true,
-    created_at: "2024-01-10T09:30:00Z",
-    updated_at: "2024-01-10T09:30:00Z",
+    name: "GOLDESS Standard BOM v2",
+    notes: "Updated material quantities after design refinement",
+    created_by: "user_admin",
+    created_at: "2024-12-01T10:00:00Z",
+    updated_at: "2024-12-01T10:00:00Z",
   },
+  // GOLDESS - Old BOM (v1, inactive)
   {
-    id: 102,
-    product_id: 2, // Mauve Magic
-    bom_name: "Mauve Magic - Standard Version",
-    is_active: true,
-    created_at: "2024-01-15T11:00:00Z",
-    updated_at: "2024-01-15T11:00:00Z",
+    id: "bom_2",
+    product_id: "prod_1",
+    version: 1,
+    is_active: false,
+    name: "GOLDESS Standard BOM v1",
+    notes: "Original design - replaced due to material shortage",
+    created_by: "user_admin",
+    created_at: "2024-01-15T10:00:00Z",
+    updated_at: "2024-12-01T10:00:00Z",
   },
+  // MAUVE MAGIC - Active BOM
   {
-    id: 103,
-    product_id: 3, // Aqua Princess
-    bom_name: "Aqua Princess Peshwas - Detailed",
+    id: "bom_3",
+    product_id: "prod_2",
+    version: 1,
     is_active: true,
-    created_at: "2024-02-01T11:30:00Z",
-    updated_at: "2024-02-01T11:30:00Z",
+    name: "MAUVE MAGIC Standard BOM",
+    notes: "Standard production BOM",
+    created_by: "user_admin",
+    created_at: "2024-02-10T09:00:00Z",
+    updated_at: "2024-02-10T09:00:00Z",
   },
+  // MAUVE MAGIC - Old BOM (inactive)
   {
-    id: 104,
-    product_id: 4, // Goldess
-    bom_name: "Goldess - Premium Version",
-    is_active: true,
-    created_at: "2024-02-10T14:30:00Z",
-    updated_at: "2024-02-10T14:30:00Z",
+    id: "bom_4",
+    product_id: "prod_2",
+    version: 0,
+    is_active: false,
+    name: "MAUVE MAGIC Prototype BOM",
+    notes: "Initial prototype - not used in production",
+    created_by: "user_admin",
+    created_at: "2024-02-01T09:00:00Z",
+    updated_at: "2024-02-10T09:00:00Z",
   },
+  // EMERALD GRACE - Active BOM
   {
-    id: 105,
-    product_id: 5, // Princess Solara
-    bom_name: "Princess Solara Kaftan - Standard",
+    id: "bom_5",
+    product_id: "prod_3",
+    version: 1,
     is_active: true,
-    created_at: "2024-02-20T16:00:00Z",
-    updated_at: "2024-02-20T16:00:00Z",
+    name: "EMERALD GRACE Standard BOM",
+    notes: "Heavy embroidery design",
+    created_by: "user_admin",
+    created_at: "2024-03-05T10:30:00Z",
+    updated_at: "2024-03-05T10:30:00Z",
+  },
+  // EMERALD GRACE - Old BOM (inactive)
+  {
+    id: "bom_6",
+    product_id: "prod_3",
+    version: 0,
+    is_active: false,
+    name: "EMERALD GRACE Light BOM",
+    notes: "Lighter version - customer preferred heavier embroidery",
+    created_by: "user_admin",
+    created_at: "2024-03-01T10:30:00Z",
+    updated_at: "2024-03-05T10:30:00Z",
+  },
+  // PEARL ELEGANCE - Active BOM
+  {
+    id: "bom_7",
+    product_id: "prod_4",
+    version: 1,
+    is_active: true,
+    name: "PEARL ELEGANCE Bridal BOM",
+    notes: "Premium bridal collection",
+    created_by: "user_admin",
+    created_at: "2024-04-12T11:00:00Z",
+    updated_at: "2024-04-12T11:00:00Z",
+  },
+  // PEARL ELEGANCE - Old BOM (inactive)
+  {
+    id: "bom_8",
+    product_id: "prod_4",
+    version: 0,
+    is_active: false,
+    name: "PEARL ELEGANCE Standard BOM",
+    notes: "Standard version - upgraded to bridal tier",
+    created_by: "user_admin",
+    created_at: "2024-04-01T11:00:00Z",
+    updated_at: "2024-04-12T11:00:00Z",
+  },
+  // CRIMSON DREAMS - Active BOM
+  {
+    id: "bom_9",
+    product_id: "prod_5",
+    version: 1,
+    is_active: true,
+    name: "CRIMSON DREAMS Casual BOM",
+    notes: "Minimal embroidery, modern cuts",
+    created_by: "user_admin",
+    created_at: "2024-05-20T14:20:00Z",
+    updated_at: "2024-05-20T14:20:00Z",
   },
 ]
 
-/**
- * BOM Items
- *
- * These are the individual material requirements for each BOM.
- * Each item references an inventory_item_id (we'll create those in Phase 6)
- * and specifies quantity and unit.
- *
- * Note: In reality, you'd have 20-30+ items per BOM based on your images.
- * For mock data, I'm creating realistic but manageable sets.
- * You can expand these later to match your full complexity.
- */
+// ==================== BOM ITEMS ====================
 export const mockBOMItems = [
-  // Ivory Muse BOM Items (BOM ID 101)
-  // SHIRT components
+  // === GOLDESS BOM v2 (Active) ===
   {
-    id: 1001,
-    bom_id: 101,
-    inventory_item_id: 1, // Raw silk butti fabric
+    id: "bom_item_1",
+    bom_id: "bom_1",
+    inventory_item_id: "inv_1", // Banarasi Silk - Gold (FABRIC)
     quantity_per_unit: 3.5,
-    unit: "Yard",
-    notes: "For shirt - premium quality",
+    unit: "METER",
+    garment_piece: "SHIRT",
     sequence_order: 1,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 1002,
-    bom_id: 101,
-    inventory_item_id: 2, // NECKLINE multi-head
-    quantity_per_unit: 1,
-    unit: "QTY",
-    notes: "Pre-embroidered neckline",
-    sequence_order: 2,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 1003,
-    bom_id: 101,
-    inventory_item_id: 3, // SLEEVE multi-head
-    quantity_per_unit: 2,
-    unit: "QTY",
-    notes: "One for each sleeve",
-    sequence_order: 3,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 1004,
-    bom_id: 101,
-    inventory_item_id: 4, // Cotton silk fabric
-    quantity_per_unit: 3.5,
-    unit: "Yard",
-    notes: "Inner lining",
-    sequence_order: 4,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 1005,
-    bom_id: 101,
-    inventory_item_id: 5, // Net fabric
-    quantity_per_unit: 1,
-    unit: "Yard",
-    notes: "Accent details",
-    sequence_order: 5,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 1006,
-    bom_id: 101,
-    inventory_item_id: 10, // Bajra moti ADA-MATERIAL
-    quantity_per_unit: 50,
-    unit: "GRAMS",
-    notes: "Shirt embellishment",
-    sequence_order: 6,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 1007,
-    bom_id: 101,
-    inventory_item_id: 11, // NAGH ADA-MATERIAL
-    quantity_per_unit: 30,
-    unit: "GRAMS",
-    notes: "Border work",
-    sequence_order: 7,
-    garment_piece: "SHIRT",
-  },
-
-  // PANT components
-  {
-    id: 1008,
-    bom_id: 101,
-    inventory_item_id: 6, // Chiffon fabric
-    quantity_per_unit: 2.5,
-    unit: "Yard",
-    notes: "For pant",
-    sequence_order: 8,
-    garment_piece: "PANT",
-  },
-  {
-    id: 1009,
-    bom_id: 101,
-    inventory_item_id: 7, // P raw silk fabric
-    quantity_per_unit: 2.5,
-    unit: "Yard",
-    notes: "Pant lining",
-    sequence_order: 9,
-    garment_piece: "PANT",
-  },
-
-  // DUPATTA components
-  {
-    id: 1010,
-    bom_id: 101,
-    inventory_item_id: 8, // Tensil organza fabric
-    quantity_per_unit: 2.75,
-    unit: "Yard",
-    notes: "For dupatta",
-    sequence_order: 10,
-    garment_piece: "DUPATTA",
-  },
-  {
-    id: 1011,
-    bom_id: 101,
-    inventory_item_id: 9, // Border multi-head
-    quantity_per_unit: 9,
-    unit: "Yard",
-    notes: "Dupatta border all sides",
-    sequence_order: 11,
-    garment_piece: "DUPATTA",
-  },
-
-  // Mauve Magic BOM Items (BOM ID 102)
-  {
-    id: 2001,
-    bom_id: 102,
-    inventory_item_id: 20, // Tissue Silk fabric
-    quantity_per_unit: 3.5,
-    unit: "Yard",
     notes: "Main shirt fabric",
-    sequence_order: 1,
-    garment_piece: "SHIRT",
   },
   {
-    id: 2002,
-    bom_id: 102,
-    inventory_item_id: 21, // M.H organza multi-head
-    quantity_per_unit: 1.5,
-    unit: "Yard",
-    notes: "Decorative panels",
+    id: "bom_item_2",
+    bom_id: "bom_1",
+    inventory_item_id: "inv_2", // Organza - Ivory (FABRIC)
+    quantity_per_unit: 2.0,
+    unit: "METER",
+    garment_piece: "DUPATTA",
     sequence_order: 2,
-    garment_piece: "SHIRT",
+    notes: "Dupatta base",
   },
   {
-    id: 2003,
-    bom_id: 102,
-    inventory_item_id: 22, // Kimkhaab fabric
-    quantity_per_unit: 1,
-    unit: "Yard",
-    notes: "Accent fabric",
+    id: "bom_item_3",
+    bom_id: "bom_1",
+    inventory_item_id: "inv_11", // Zari Thread - Gold (RAW_MATERIAL)
+    quantity_per_unit: 250,
+    unit: "GRAM",
+    garment_piece: "SHIRT",
     sequence_order: 3,
-    garment_piece: "SHIRT",
+    notes: "Embroidery on neckline and sleeves",
   },
   {
-    id: 2004,
-    bom_id: 102,
-    inventory_item_id: 4, // Cotton silk
-    quantity_per_unit: 3.5,
-    unit: "Yard",
-    notes: "Inner layer",
+    id: "bom_item_4",
+    bom_id: "bom_1",
+    inventory_item_id: "inv_12", // Sequins - Gold (RAW_MATERIAL)
+    quantity_per_unit: 500,
+    unit: "PIECE",
+    garment_piece: "SHIRT",
     sequence_order: 4,
-    garment_piece: "SHIRT",
+    notes: "Border embellishment",
   },
   {
-    id: 2005,
-    bom_id: 102,
-    inventory_item_id: 23, // Bajra moti RAW-MATERIAL
-    quantity_per_unit: 20,
-    unit: "GRAMS",
-    notes: "Moti work",
+    id: "bom_item_5",
+    bom_id: "bom_1",
+    inventory_item_id: "inv_21", // Multi-Head Floral Pattern (MULTI_HEAD)
+    quantity_per_unit: 1,
+    unit: "DESIGN",
+    garment_piece: "DUPATTA",
     sequence_order: 5,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 2006,
-    bom_id: 102,
-    inventory_item_id: 24, // BETKHI CHAMPAGNE RAW-MATERIAL
-    quantity_per_unit: 20,
-    unit: "GRAMS",
-    notes: "Champagne colored betkhi",
-    sequence_order: 6,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 2007,
-    bom_id: 102,
-    inventory_item_id: 25, // KULFI RAW-MATERIAL
-    quantity_per_unit: 30,
-    unit: "GRAMS",
-    notes: "Kulfi embellishment",
-    sequence_order: 7,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 2008,
-    bom_id: 102,
-    inventory_item_id: 26, // DUBKA RAW-MATERIAL
-    quantity_per_unit: 10,
-    unit: "GRAMS",
-    notes: "Dubka work",
-    sequence_order: 8,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 2009,
-    bom_id: 102,
-    inventory_item_id: 27, // PEARL RAW-MATERIAL
-    quantity_per_unit: 10,
-    unit: "GRAMS",
-    notes: "Pearl accents",
-    sequence_order: 9,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 2010,
-    bom_id: 102,
-    inventory_item_id: 28, // P rawsilk fabric
-    quantity_per_unit: 3.5,
-    unit: "Yard",
-    notes: "For pant",
-    sequence_order: 10,
-    garment_piece: "PANT",
-  },
-  {
-    id: 2011,
-    bom_id: 102,
-    inventory_item_id: 29, // Emb. organza multi-head
-    quantity_per_unit: 3,
-    unit: "Yard",
-    notes: "Dupatta embroidery",
-    sequence_order: 11,
-    garment_piece: "DUPATTA",
-  },
-  {
-    id: 2012,
-    bom_id: 102,
-    inventory_item_id: 30, // Border multi-head
-    quantity_per_unit: 9,
-    unit: "Yard",
-    notes: "Dupatta border",
-    sequence_order: 12,
-    garment_piece: "DUPATTA",
+    notes: "Corner motifs on dupatta",
   },
 
-  // Aqua Princess BOM Items (BOM ID 103) - This one has extensive ADA-MATERIAL items like your image
+  // === MAUVE MAGIC BOM (Active) ===
   {
-    id: 3001,
-    bom_id: 103,
-    inventory_item_id: 31, // TISSUE fabric
-    quantity_per_unit: 5,
-    unit: "Yard",
-    notes: "Main peshwas fabric",
+    id: "bom_item_6",
+    bom_id: "bom_3",
+    inventory_item_id: "inv_3", // Chiffon - Mauve (FABRIC)
+    quantity_per_unit: 3.0,
+    unit: "METER",
+    garment_piece: "SHIRT",
     sequence_order: 1,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3002,
-    bom_id: 103,
-    inventory_item_id: 32, // Front neckline multi-head
-    quantity_per_unit: 1,
-    unit: "QTY",
-    notes: "Pre-embroidered neckline",
-    sequence_order: 2,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3003,
-    bom_id: 103,
-    inventory_item_id: 33, // Sleeve multi-head
-    quantity_per_unit: 2,
-    unit: "QTY",
-    notes: "Both sleeves",
-    sequence_order: 3,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3004,
-    bom_id: 103,
-    inventory_item_id: 34, // Ghera border multi-head
-    quantity_per_unit: 1,
-    unit: "QTY",
-    notes: "Bottom border",
-    sequence_order: 4,
-    garment_piece: "PESHWAS",
-  },
-  // Extensive ADA-MATERIAL items as shown in your Aqua Princess image
-  {
-    id: 3005,
-    bom_id: 103,
-    inventory_item_id: 35, // Bajra moti ADA-MATERIAL
-    quantity_per_unit: 200,
-    unit: "GRAMS",
-    notes: "Heavy moti work",
-    sequence_order: 5,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3006,
-    bom_id: 103,
-    inventory_item_id: 36, // FROZE ADA-MATERIAL
-    quantity_per_unit: 30,
-    unit: "GRAMS",
-    notes: "Froze embellishment",
-    sequence_order: 6,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3007,
-    bom_id: 103,
-    inventory_item_id: 37, // NAGH ADA-MATERIAL
-    quantity_per_unit: 10,
-    unit: "GRAMS",
-    notes: "Nagh work",
-    sequence_order: 7,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3008,
-    bom_id: 103,
-    inventory_item_id: 38, // GREEN MOTI 7 NO ADA-MATERIAL
-    quantity_per_unit: 35,
-    unit: "GRAMS",
-    notes: "Green accent motis",
-    sequence_order: 8,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3009,
-    bom_id: 103,
-    inventory_item_id: 39, // CORAL MOTRI ADA-MATERIAL
-    quantity_per_unit: 76,
-    unit: "GRAMS",
-    notes: "Coral colored motris",
-    sequence_order: 9,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3010,
-    bom_id: 103,
-    inventory_item_id: 40, // WHITE PEARL ADA-MATERIAL
-    quantity_per_unit: 37,
-    unit: "GRAMS",
-    notes: "White pearl work",
-    sequence_order: 10,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3011,
-    bom_id: 103,
-    inventory_item_id: 41, // PLATE SITARA ADA-MATERIAL
-    quantity_per_unit: 5,
-    unit: "GRAMS",
-    notes: "Sitara accents",
-    sequence_order: 11,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3012,
-    bom_id: 103,
-    inventory_item_id: 42, // DHOLKI ADA-MATERIAL
-    quantity_per_unit: 26,
-    unit: "GRAMS",
-    notes: "Dholki embellishment",
-    sequence_order: 12,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3013,
-    bom_id: 103,
-    inventory_item_id: 43, // GREE MOTI ADA-MATERIAL
-    quantity_per_unit: 14,
-    unit: "GRAMS",
-    notes: "Additional green motis",
-    sequence_order: 13,
-    garment_piece: "PESHWAS",
-  },
-  {
-    id: 3014,
-    bom_id: 103,
-    inventory_item_id: 44, // CORAL MOTI ADA-MATERIAL
-    quantity_per_unit: 23,
-    unit: "GRAMS",
-    notes: "Coral moti finishing",
-    sequence_order: 14,
-    garment_piece: "PESHWAS",
-  },
-  // DUPATTA components
-  {
-    id: 3015,
-    bom_id: 103,
-    inventory_item_id: 45, // TENSIL ORGANZA fabric
-    quantity_per_unit: 3,
-    unit: "Yard",
-    notes: "Dupatta fabric",
-    sequence_order: 15,
-    garment_piece: "DUPATTA",
-  },
-  {
-    id: 3016,
-    bom_id: 103,
-    inventory_item_id: 46, // KIMKHAAB fabric
-    quantity_per_unit: 1,
-    unit: "Yard",
-    notes: "Dupatta accent",
-    sequence_order: 16,
-    garment_piece: "DUPATTA",
-  },
-  {
-    id: 3017,
-    bom_id: 103,
-    inventory_item_id: 47, // TASSELS RAW-MATERIAL
-    quantity_per_unit: 4,
-    unit: "QTY",
-    notes: "Dupatta corner tassels",
-    sequence_order: 17,
-    garment_piece: "DUPATTA",
-  },
-
-  // I'll add simplified versions for Goldess and Princess Solara
-  // In reality, these would have 20-30 items each like the examples above
-
-  // Goldess BOM Items (BOM ID 104)
-  {
-    id: 4001,
-    bom_id: 104,
-    inventory_item_id: 50, // Tissue fabric
-    quantity_per_unit: 5,
-    unit: "Yard",
     notes: "Main fabric",
-    sequence_order: 1,
-    garment_piece: "SHIRT",
   },
   {
-    id: 4002,
-    bom_id: 104,
-    inventory_item_id: 51, // Cotton silk
-    quantity_per_unit: 6,
-    unit: "Yard",
-    notes: "Lining and details",
-    sequence_order: 2,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 4003,
-    bom_id: 104,
-    inventory_item_id: 52, // Champagne karti ADA-MATERIAL
-    quantity_per_unit: 110,
-    unit: "GRAMS",
-    notes: "Main embellishment - champagne karti in multiple places",
-    sequence_order: 3,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 4004,
-    bom_id: 104,
-    inventory_item_id: 53, // Kulfi ADA-MATERIAL
-    quantity_per_unit: 10,
-    unit: "GRAMS",
-    notes: "Kulfi work",
-    sequence_order: 4,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 4005,
-    bom_id: 104,
-    inventory_item_id: 54, // Behti ADA-MATERIAL
-    quantity_per_unit: 11,
-    unit: "GRAMS",
-    notes: "Behti embellishment",
-    sequence_order: 5,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 4006,
-    bom_id: 104,
-    inventory_item_id: 55, // Bajra moti ADA-MATERIAL
-    quantity_per_unit: 70,
-    unit: "GRAMS",
-    notes: "Moti work throughout",
-    sequence_order: 6,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 4007,
-    bom_id: 104,
-    inventory_item_id: 56, // Lace RAW-MATERIAL
-    quantity_per_unit: 18,
-    unit: "GRAMS",
-    notes: "Lace finishing",
-    sequence_order: 7,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 4008,
-    bom_id: 104,
-    inventory_item_id: 57, // Badam ADA-MATERIAL
-    quantity_per_unit: 64,
-    unit: "GRAMS",
-    notes: "Badam work accents",
-    sequence_order: 8,
-    garment_piece: "SHIRT",
-  },
-  {
-    id: 4009,
-    bom_id: 104,
-    inventory_item_id: 58, // P- raw silk fabric
+    id: "bom_item_7",
+    bom_id: "bom_3",
+    inventory_item_id: "inv_4", // Raw Silk - Cream (FABRIC)
     quantity_per_unit: 2.5,
-    unit: "Yard",
-    notes: "Pant fabric",
-    sequence_order: 9,
+    unit: "METER",
     garment_piece: "PANT",
+    sequence_order: 2,
+    notes: "Trouser fabric",
   },
   {
-    id: 4010,
-    bom_id: 104,
-    inventory_item_id: 59, // CHIFFON fabric
-    quantity_per_unit: 3,
-    unit: "Yard",
-    notes: "Dupatta fabric",
-    sequence_order: 10,
-    garment_piece: "DUPATTA",
+    id: "bom_item_8",
+    bom_id: "bom_3",
+    inventory_item_id: "inv_13", // Pearl Beads - White (RAW_MATERIAL)
+    quantity_per_unit: 300,
+    unit: "PIECE",
+    garment_piece: "SHIRT",
+    sequence_order: 3,
+    notes: "Neckline detailing",
   },
   {
-    id: 4011,
-    bom_id: 104,
-    inventory_item_id: 60, // Champagne badaam ADA-MATERIAL
-    quantity_per_unit: 55,
-    unit: "GRAMS",
-    notes: "Dupatta embellishment",
-    sequence_order: 11,
-    garment_piece: "DUPATTA",
-  },
-  {
-    id: 4012,
-    bom_id: 104,
-    inventory_item_id: 61, // Lace RAW-MATERIAL
-    quantity_per_unit: 9,
-    unit: "GRAMS",
-    notes: "Dupatta lace border",
-    sequence_order: 12,
-    garment_piece: "DUPATTA",
+    id: "bom_item_9",
+    bom_id: "bom_3",
+    inventory_item_id: "inv_22", // Multi-Head Paisley Design (MULTI_HEAD)
+    quantity_per_unit: 1,
+    unit: "DESIGN",
+    garment_piece: "SHIRT",
+    sequence_order: 4,
+    notes: "Back panel embroidery",
   },
 
-  // Princess Solara BOM Items (BOM ID 105)
+  // === EMERALD GRACE BOM (Active) ===
   {
-    id: 5001,
-    bom_id: 105,
-    inventory_item_id: 70, // Tissue silk fabric
-    quantity_per_unit: 5.5,
-    unit: "Yard",
-    notes: "Main kaftan fabric",
+    id: "bom_item_10",
+    bom_id: "bom_5",
+    inventory_item_id: "inv_5", // Velvet - Emerald (FABRIC)
+    quantity_per_unit: 4.0,
+    unit: "METER",
+    garment_piece: "SHIRT",
     sequence_order: 1,
-    garment_piece: "KAFTAN",
+    notes: "Heavy velvet for winter collection",
   },
   {
-    id: 5002,
-    bom_id: 105,
-    inventory_item_id: 71, // Kimkhab fabric
-    quantity_per_unit: 1.5,
-    unit: "Yard",
-    notes: "Accent panels",
+    id: "bom_item_11",
+    bom_id: "bom_5",
+    inventory_item_id: "inv_2", // Organza - Ivory (FABRIC)
+    quantity_per_unit: 2.5,
+    unit: "METER",
+    garment_piece: "DUPATTA",
     sequence_order: 2,
-    garment_piece: "KAFTAN",
+    notes: "Light dupatta contrast",
   },
   {
-    id: 5003,
-    bom_id: 105,
-    inventory_item_id: 72, // Bajra moti ADA-MATERIAL
-    quantity_per_unit: 200,
-    unit: "GRAMS",
-    notes: "Heavy moti work throughout",
+    id: "bom_item_12",
+    bom_id: "bom_5",
+    inventory_item_id: "inv_11", // Zari Thread - Gold (RAW_MATERIAL)
+    quantity_per_unit: 400,
+    unit: "GRAM",
+    garment_piece: "SHIRT",
     sequence_order: 3,
-    garment_piece: "KAFTAN",
+    notes: "Heavy zari work on front panel",
   },
   {
-    id: 5004,
-    bom_id: 105,
-    inventory_item_id: 73, // Kerki 3no. sona color ADA-MATERIAL
-    quantity_per_unit: 150,
-    unit: "GRAMS",
-    notes: "Golden kerki embellishment",
+    id: "bom_item_13",
+    bom_id: "bom_5",
+    inventory_item_id: "inv_14", // Crystal Stones - Clear (RAW_MATERIAL)
+    quantity_per_unit: 200,
+    unit: "PIECE",
+    garment_piece: "SHIRT",
     sequence_order: 4,
-    garment_piece: "KAFTAN",
+    notes: "Stone embellishment",
   },
   {
-    id: 5005,
-    bom_id: 105,
-    inventory_item_id: 74, // Patti sitara golden ADA-MATERIAL
-    quantity_per_unit: 23,
-    unit: "GRAMS",
-    notes: "Golden sitara work",
-    sequence_order: 5,
-    garment_piece: "KAFTAN",
-  },
-  {
-    id: 5006,
-    bom_id: 105,
-    inventory_item_id: 75, // Champaign crystal 4no ADA-MATERIAL
-    quantity_per_unit: 5,
-    unit: "GRAMS",
-    notes: "Crystal accents",
-    sequence_order: 6,
-    garment_piece: "KAFTAN",
-  },
-  {
-    id: 5007,
-    bom_id: 105,
-    inventory_item_id: 76, // Champaign drop crystal ADA-MATERIAL
-    quantity_per_unit: 78,
-    unit: "GRAMS",
-    notes: "Hanging crystal drops",
-    sequence_order: 7,
-    garment_piece: "KAFTAN",
-  },
-  {
-    id: 5008,
-    bom_id: 105,
-    inventory_item_id: 77, // Golden sitara 3no ADA-MATERIAL
-    quantity_per_unit: 2,
-    unit: "GRAMS",
-    notes: "Small golden sitaras",
-    sequence_order: 8,
-    garment_piece: "KAFTAN",
-  },
-  {
-    id: 5009,
-    bom_id: 105,
-    inventory_item_id: 78, // Golden sitara 6no ADA-MATERIAL
-    quantity_per_unit: 3,
-    unit: "GRAMS",
-    notes: "Medium golden sitaras",
-    sequence_order: 9,
-    garment_piece: "KAFTAN",
-  },
-  {
-    id: 5010,
-    bom_id: 105,
-    inventory_item_id: 79, // Golden sitara 8no ADA-MATERIAL
-    quantity_per_unit: 10,
-    unit: "GRAMS",
-    notes: "Large golden sitaras",
-    sequence_order: 10,
-    garment_piece: "KAFTAN",
-  },
-  {
-    id: 5011,
-    bom_id: 105,
-    inventory_item_id: 80, // Antique sitara phoo ADA-MATERIAL
-    quantity_per_unit: 6,
-    unit: "GRAMS",
-    notes: "Antique finish sitaras",
-    sequence_order: 11,
-    garment_piece: "KAFTAN",
-  },
-  {
-    id: 5012,
-    bom_id: 105,
-    inventory_item_id: 81, // Sika ADA-MATERIAL
+    id: "bom_item_14",
+    bom_id: "bom_5",
+    inventory_item_id: "inv_51", // Adda Work - Emerald (ADDA_MATERIAL)
     quantity_per_unit: 1,
-    unit: "GRAMS",
-    notes: "Special sika work",
-    sequence_order: 12,
-    garment_piece: "KAFTAN",
+    unit: "SET",
+    garment_piece: "SHIRT",
+    sequence_order: 5,
+    notes: "Traditional adda work on sleeves",
+  },
+
+  // === PEARL ELEGANCE BOM (Active) ===
+  {
+    id: "bom_item_15",
+    bom_id: "bom_7",
+    inventory_item_id: "inv_6", // Pure Silk - Pearl White (FABRIC)
+    quantity_per_unit: 5.0,
+    unit: "METER",
+    garment_piece: "SHIRT",
+    sequence_order: 1,
+    notes: "Premium bridal silk",
   },
   {
-    id: 5013,
-    bom_id: 105,
-    inventory_item_id: 82, // Tekenor sitara golden ADA-MATERIAL
-    quantity_per_unit: 17,
-    unit: "GRAMS",
-    notes: "Technical sitara embellishment",
-    sequence_order: 13,
-    garment_piece: "KAFTAN",
+    id: "bom_item_16",
+    bom_id: "bom_7",
+    inventory_item_id: "inv_2", // Organza - Ivory (FABRIC)
+    quantity_per_unit: 3.0,
+    unit: "METER",
+    garment_piece: "DUPATTA",
+    sequence_order: 2,
+    notes: "Bridal dupatta",
+  },
+  {
+    id: "bom_item_17",
+    bom_id: "bom_7",
+    inventory_item_id: "inv_11", // Zari Thread - Gold (RAW_MATERIAL)
+    quantity_per_unit: 500,
+    unit: "GRAM",
+    garment_piece: "SHIRT",
+    sequence_order: 3,
+    notes: "Extensive zari embroidery",
+  },
+  {
+    id: "bom_item_18",
+    bom_id: "bom_7",
+    inventory_item_id: "inv_13", // Pearl Beads - White (RAW_MATERIAL)
+    quantity_per_unit: 1000,
+    unit: "PIECE",
+    garment_piece: "SHIRT",
+    sequence_order: 4,
+    notes: "Heavy pearl work all over",
+  },
+  {
+    id: "bom_item_19",
+    bom_id: "bom_7",
+    inventory_item_id: "inv_14", // Crystal Stones - Clear (RAW_MATERIAL)
+    quantity_per_unit: 500,
+    unit: "PIECE",
+    garment_piece: "SHIRT",
+    sequence_order: 5,
+    notes: "Premium crystal embellishment",
+  },
+  {
+    id: "bom_item_20",
+    bom_id: "bom_7",
+    inventory_item_id: "inv_21", // Multi-Head Floral Pattern (MULTI_HEAD)
+    quantity_per_unit: 2,
+    unit: "DESIGN",
+    garment_piece: "DUPATTA",
+    sequence_order: 6,
+    notes: "Bridal motifs on dupatta",
+  },
+
+  // === CRIMSON DREAMS BOM (Active) ===
+  {
+    id: "bom_item_21",
+    bom_id: "bom_9",
+    inventory_item_id: "inv_7", // Cotton Lawn - Crimson (FABRIC)
+    quantity_per_unit: 3.0,
+    unit: "METER",
+    garment_piece: "SHIRT",
+    sequence_order: 1,
+    notes: "Lightweight summer fabric",
+  },
+  {
+    id: "bom_item_22",
+    bom_id: "bom_9",
+    inventory_item_id: "inv_4", // Raw Silk - Cream (FABRIC)
+    quantity_per_unit: 2.0,
+    unit: "METER",
+    garment_piece: "PANT",
+    sequence_order: 2,
+    notes: "Contrast trouser",
+  },
+  {
+    id: "bom_item_23",
+    bom_id: "bom_9",
+    inventory_item_id: "inv_12", // Sequins - Gold (RAW_MATERIAL)
+    quantity_per_unit: 100,
+    unit: "PIECE",
+    garment_piece: "SHIRT",
+    sequence_order: 3,
+    notes: "Minimal border sequins",
   },
 ]
 
 /**
- * Helper Functions for Working with Products and BOMs
+ * Helper function to get active BOM for a product
  */
-
-/**
- * Get active BOM for a product
- */
-export function getActiveBOMForProduct(productId) {
+export function getActiveBOM(productId) {
   return mockBOMs.find((bom) => bom.product_id === productId && bom.is_active)
 }
 
 /**
- * Get all BOM items for a specific BOM
+ * Helper function to get BOM items for a specific BOM
  */
 export function getBOMItems(bomId) {
   return mockBOMItems.filter((item) => item.bom_id === bomId)
 }
 
 /**
- * Get complete BOM details including all items for a product
+ * Helper function to get all BOMs for a product (including inactive ones)
  */
-export function getProductBOMDetails(productId) {
-  const product = mockProducts.find((p) => p.id === productId)
-  if (!product) return null
-
-  const bom = getActiveBOMForProduct(productId)
-  if (!bom) return null
-
-  const items = getBOMItems(bom.id)
-
-  return {
-    product,
-    bom,
-    items,
-  }
-}
-
-/**
- * Calculate total material requirements for a given quantity of a product
- * This is what inventory checking will use
- */
-export function calculateMaterialRequirements(productId, quantity) {
-  const bomDetails = getProductBOMDetails(productId)
-  if (!bomDetails) return []
-
-  // Group by inventory item and sum up total required quantities
-  const requirements = {}
-
-  bomDetails.items.forEach((item) => {
-    const totalNeeded = item.quantity_per_unit * quantity
-
-    if (requirements[item.inventory_item_id]) {
-      requirements[item.inventory_item_id].total_quantity += totalNeeded
-    } else {
-      requirements[item.inventory_item_id] = {
-        inventory_item_id: item.inventory_item_id,
-        total_quantity: totalNeeded,
-        unit: item.unit,
-      }
-    }
-  })
-
-  return Object.values(requirements)
+export function getProductBOMs(productId) {
+  return mockBOMs
+    .filter((bom) => bom.product_id === productId)
+    .sort((a, b) => b.version - a.version) // Latest version first
 }
