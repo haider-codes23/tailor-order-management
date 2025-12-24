@@ -11,6 +11,7 @@ import {
   Settings,
   AlertTriangle,
   Ruler, // New icon for measurement charts
+  Box
 } from "lucide-react"
 
 /**
@@ -49,6 +50,11 @@ const navItems = [
     name: "Inventory",
     href: "/inventory",
     icon: Package,
+  },
+  {
+    name: "Products",
+    href: "/products",
+    icon: Box,
   },
   {
     name: "Low Stock Alerts",
