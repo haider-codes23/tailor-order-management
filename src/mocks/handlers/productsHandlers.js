@@ -121,6 +121,7 @@ export const productsHandlers = [
       shopify_product_id: body.shopify_product_id || null,
       shopify_variant_id: body.shopify_variant_id || null,
       image_url: body.image_url || "/images/products/placeholder.jpg",
+      primary_image: body.primary_image || body.image_url || "/images/products/placeholder.jpg",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -274,7 +275,7 @@ export const productsHandlers = [
   http.get(`${appConfig.apiBaseUrl}/boms/:bomId`, async ({ params }) => {
     await new Promise((resolve) => setTimeout(resolve, 200))
 
-    const bomId = parseInt(params.bomId)
+    const { bomId } = params
     const bom = mockBOMs.find((b) => b.id === bomId)
 
     if (!bom) {
@@ -318,10 +319,11 @@ export const productsHandlers = [
     }
 
     const newBOM = {
-      id: Math.max(...mockBOMs.map((b) => b.id), 0) + 1,
+      id: `bom_${Math.max(...mockBOMs.map((b) => parseInt(b.id.split("_")[1])), 0) + 1}`,
       product_id: productId,
-      version: body.version || `v${mockBOMs.filter((b) => b.product_id === productId).length + 1}`,
+      version: body.version || mockBOMs.filter((b) => b.product_id === productId).length + 1,
       is_active: body.is_active || false,
+      name: body.name || "",
       notes: body.notes || "",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -352,7 +354,7 @@ export const productsHandlers = [
   http.put(`${appConfig.apiBaseUrl}/boms/:bomId`, async ({ params, request }) => {
     await new Promise((resolve) => setTimeout(resolve, 400))
 
-    const bomId = parseInt(params.bomId)
+    const { bomId } = params
     const body = await request.json()
 
     const bomIndex = mockBOMs.findIndex((b) => b.id === bomId)
@@ -392,11 +394,11 @@ export const productsHandlers = [
     })
   }),
 
-  // DELETE /boms/:bomId - Delete BOM
+  // ✅ DELETE /boms/:bomId - Delete BOM
   http.delete(`${appConfig.apiBaseUrl}/boms/:bomId`, async ({ params }) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    const bomId = parseInt(params.bomId)
+    const { bomId } = params
     const bomIndex = mockBOMs.findIndex((b) => b.id === bomId)
 
     if (bomIndex === -1) {
@@ -427,7 +429,9 @@ export const productsHandlers = [
     const itemsToDelete = mockBOMItems.filter((item) => item.bom_id === bomId)
     itemsToDelete.forEach((item) => {
       const itemIndex = mockBOMItems.indexOf(item)
-      mockBOMItems.splice(itemIndex, 1)
+      if (itemIndex > -1) {
+        mockBOMItems.splice(itemIndex, 1)
+      }
     })
 
     // Delete BOM
@@ -447,7 +451,7 @@ export const productsHandlers = [
   http.get(`${appConfig.apiBaseUrl}/boms/:bomId/items`, async ({ params }) => {
     await new Promise((resolve) => setTimeout(resolve, 200))
 
-    const bomId = parseInt(params.bomId)
+    const { bomId } = params
     const items = getBOMItems(bomId)
 
     return HttpResponse.json({
@@ -461,7 +465,7 @@ export const productsHandlers = [
   http.post(`${appConfig.apiBaseUrl}/boms/:bomId/items`, async ({ params, request }) => {
     await new Promise((resolve) => setTimeout(resolve, 400))
 
-    const bomId = parseInt(params.bomId)
+    const { bomId } = params
     const body = await request.json()
 
     // Verify BOM exists
@@ -489,7 +493,7 @@ export const productsHandlers = [
     }
 
     const newItem = {
-      id: Math.max(...mockBOMItems.map((i) => i.id), 0) + 1,
+      id: `bom_item_${Math.max(...mockBOMItems.map((i) => parseInt(i.id.split("_")[2])), 0) + 1}`,
       bom_id: bomId,
       inventory_item_id: body.inventory_item_id,
       quantity_per_unit: body.quantity_per_unit,
@@ -516,8 +520,7 @@ export const productsHandlers = [
   http.put(`${appConfig.apiBaseUrl}/boms/:bomId/items/:itemId`, async ({ params, request }) => {
     await new Promise((resolve) => setTimeout(resolve, 400))
 
-    const bomId = parseInt(params.bomId)
-    const itemId = parseInt(params.itemId)
+    const { bomId, itemId } = params
     const body = await request.json()
 
     const itemIndex = mockBOMItems.findIndex((i) => i.id === itemId && i.bom_id === bomId)
@@ -546,12 +549,11 @@ export const productsHandlers = [
     })
   }),
 
-  // DELETE /boms/:bomId/items/:itemId - Delete BOM item
+  // ✅ DELETE /boms/:bomId/items/:itemId - Delete BOM item
   http.delete(`${appConfig.apiBaseUrl}/boms/:bomId/items/:itemId`, async ({ params }) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
 
-    const bomId = parseInt(params.bomId)
-    const itemId = parseInt(params.itemId)
+    const { bomId, itemId } = params
 
     const itemIndex = mockBOMItems.findIndex((i) => i.id === itemId && i.bom_id === bomId)
 
