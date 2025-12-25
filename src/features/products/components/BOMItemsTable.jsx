@@ -41,6 +41,7 @@ export default function BOMItemsTable({ bom, productId }) {
       await deleteBOMItemMutation.mutateAsync({
         bomId: bom.id,
         itemId: itemToDelete.id,
+        productId: productId,
       })
       setItemToDelete(null)
     } catch (error) {
