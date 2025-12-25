@@ -99,12 +99,21 @@ export function useUpdateProduct() {
 /**
  * Delete a product
  */
+// ==================== FIX FOR useProducts.js ====================
+// Find the useDeleteProduct function in src/hooks/useProducts.js
+// Replace it with this version:
+
+/**
+ * Delete a product
+ */
 export function useDeleteProduct() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: productsApi.deleteProduct,
     onSuccess: (data, productId) => {
+      console.log("Product deleted successfully:", data) // Debug log
+
       // Remove from cache and refetch lists
       queryClient.removeQueries({ queryKey: productKeys.detail(productId) })
       queryClient.invalidateQueries({ queryKey: productKeys.lists() })
@@ -113,11 +122,31 @@ export function useDeleteProduct() {
       toast.success("Product deleted successfully")
     },
     onError: (error) => {
-      const message = error.response?.data?.error || "Failed to delete product"
+      // ✅ FIXED: Better error parsing
+      console.error("Delete product error:", error) // Debug log
+
+      let message = "Failed to delete product"
+
+      // Try to extract error message from different possible locations
+      if (error.response?.data?.error) {
+        message = error.response.data.error
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message
+      } else if (error.message) {
+        message = error.message
+      }
+
+      console.log("Error message:", message) // Debug log
       toast.error(message)
     },
   })
 }
+
+// Instructions:
+// 1. Open src/hooks/useProducts.js
+// 2. Find the useDeleteProduct function (around line 80-100)
+// 3. Replace it with the code above
+// 4. Save the file
 
 // ==================== BOMs QUERIES ====================
 
@@ -201,22 +230,31 @@ export function useUpdateBOM() {
   return useMutation({
     mutationFn: ({ bomId, updates }) => productsApi.updateBOM(bomId, updates),
     onSuccess: (data) => {
-      const bom = data.data
+      console.log("BOM Update - Raw response:", data) // Debug log
+
+      const bom = data
+      console.log("BOM Update - Extracted BOM:", bom) // Debug log
+      console.log("BOM Update - Product ID:", bom.product_id) // Debug log
 
       // Invalidate all related queries
+      console.log("Invalidating queries for product:", bom.product_id) // Debug log
+
       queryClient.invalidateQueries({ queryKey: productKeys.bom(bom.id) })
       queryClient.invalidateQueries({ queryKey: productKeys.boms(bom.product_id) })
       queryClient.invalidateQueries({ queryKey: productKeys.activeBom(bom.product_id) })
       queryClient.invalidateQueries({ queryKey: productKeys.detail(bom.product_id) })
 
-      // Refetch
+      // Force refetch immediately
       queryClient.refetchQueries({ queryKey: productKeys.bom(bom.id) })
       queryClient.refetchQueries({ queryKey: productKeys.boms(bom.product_id) })
       queryClient.refetchQueries({ queryKey: productKeys.activeBom(bom.product_id) })
 
+      console.log("BOM Update - Queries invalidated and refetched") // Debug log
+
       toast.success("BOM updated successfully")
     },
     onError: (error) => {
+      console.error("BOM Update Error:", error) // Debug log
       const message = error.response?.data?.error || "Failed to update BOM"
       toast.error(message)
     },
