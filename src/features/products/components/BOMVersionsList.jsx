@@ -13,11 +13,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog"
+import CreateBOMModal from "./CreateBOMModal"
 
 export default function BOMVersionsList({ productId, allBOMs }) {
   const [bomToActivate, setBomToActivate] = useState(null)
   const [bomToDeactivate, setBomToDeactivate] = useState(null)
   const [bomToDelete, setBomToDelete] = useState(null)
+  
+  // ✅ NEW: State for create modal
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const updateBOMMutation = useUpdateBOM()
   const deleteBOMMutation = useDeleteBOM()
@@ -97,7 +101,8 @@ export default function BOMVersionsList({ productId, allBOMs }) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 mb-4">No BOMs created for this product</p>
-        <Button>
+        {/* ✅ NEW: Create First BOM button opens modal */}
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create First BOM
         </Button>
@@ -110,7 +115,8 @@ export default function BOMVersionsList({ productId, allBOMs }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-gray-900">BOM Version History</h3>
-        <Button>
+        {/* ✅ NEW: Create New Version button opens modal */}
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create New Version
         </Button>
@@ -213,6 +219,7 @@ export default function BOMVersionsList({ productId, allBOMs }) {
                         <Check className="h-4 w-4 mr-1" />
                         {updateBOMMutation.isPending ? "Processing..." : "Activate"}
                       </Button>
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -223,7 +230,8 @@ export default function BOMVersionsList({ productId, allBOMs }) {
                         disabled={deleteBOMMutation.isPending}
                         className="border-red-300 text-red-700 hover:bg-red-50"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        {deleteBOMMutation.isPending ? "Deleting..." : "Delete"}
                       </Button>
                     </>
                   )}
@@ -234,28 +242,19 @@ export default function BOMVersionsList({ productId, allBOMs }) {
         })}
       </div>
 
-      {/* Summary */}
-      <div className="text-sm text-gray-600">
-        Total versions: {allBOMs.length} • Active: {allBOMs.filter((b) => b.is_active).length}
-      </div>
-
-      {/* Deactivate Confirmation Dialog */}
+      {/* ✅ NEW: Deactivate Confirmation Dialog */}
       <AlertDialog open={!!bomToDeactivate} onOpenChange={() => setBomToDeactivate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate this BOM?</AlertDialogTitle>
             <AlertDialogDescription>
               This will deactivate "{bomToDeactivate?.name || `Version ${bomToDeactivate?.version}`}
-              ". The product will have no active BOM until you activate a different version or create
-              a new one.
-              <span className="block mt-2 text-amber-600 font-medium">
-                Note: Orders cannot be created for products without an active BOM.
-              </span>
+              ". The product will have no active BOM until you activate a different version.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <AlertDialogAction 
               onClick={handleDeactivate}
               disabled={updateBOMMutation.isPending}
               className="bg-amber-600 hover:bg-amber-700"
@@ -312,6 +311,14 @@ export default function BOMVersionsList({ productId, allBOMs }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ✅ NEW: Create BOM Modal */}
+      <CreateBOMModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        productId={productId}
+        currentBOMsCount={allBOMs.length}
+      />
     </div>
   )
 }
