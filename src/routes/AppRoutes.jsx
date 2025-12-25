@@ -22,6 +22,7 @@ import LowStockAlertsPage from "@/features/inventory/pages/LowStockAlertsPage"
 // Products Pages
 import ProductsListPage from "@/features/products/pages/ProductsListPage"
 import ProductDetailPage from "@/features/products/pages/ProductDetailPage"
+import ProductFormPage from "../features/products/pages/ProductFormPage"
 
 /**
  * AppRoutes - Central routing configuration
@@ -73,7 +74,9 @@ export default function AppRoutes() {
 
         {/* Products - ADD THIS SECTION ⬇️ */}
         <Route path="/products" element={<ProductsListPage />} />
+        <Route path="/products/new" element={<ProductFormPage />} />
         <Route path="/products/:id" element={<ProductDetailPage />} />
+        <Route path="/products/:id/edit" element={<ProductFormPage />} />
 
         {/* Settings - Admin */}
         <Route path="/settings/measurement-charts" element={<MeasurementChartsSettings />} />
