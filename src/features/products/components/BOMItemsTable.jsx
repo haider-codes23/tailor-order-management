@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog"
 import { Alert, AlertDescription } from "../../../components/ui/alert"
+import BOMItemModal from "./BOMItemModal"
 
 const CATEGORY_COLORS = {
   FABRIC: "bg-purple-100 text-purple-800",
@@ -31,7 +32,13 @@ const CATEGORY_COLORS = {
 }
 
 export default function BOMItemsTable({ bom, productId }) {
+  // ✅ State for delete dialog
   const [itemToDelete, setItemToDelete] = useState(null)
+
+  // ✅ NEW: State for add/edit modal
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [itemToEdit, setItemToEdit] = useState(null)
+
   const deleteBOMItemMutation = useDeleteBOMItem()
 
   const handleDeleteItem = async () => {
@@ -61,7 +68,8 @@ export default function BOMItemsTable({ bom, productId }) {
           </h3>
           {bom.notes && <p className="text-sm text-gray-600 mt-1">{bom.notes}</p>}
         </div>
-        <Button>
+        {/* ✅ NEW: Add Item button opens modal */}
+        <Button onClick={() => setShowAddModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
@@ -79,7 +87,8 @@ export default function BOMItemsTable({ bom, productId }) {
       {items.length === 0 ? (
         <div className="border border-gray-200 rounded-lg p-12 text-center">
           <p className="text-gray-600 mb-4">No items in this BOM yet</p>
-          <Button>
+          {/* ✅ NEW: Add First Item button opens modal */}
+          <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add First Item
           </Button>
@@ -121,7 +130,8 @@ export default function BOMItemsTable({ bom, productId }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      {/* ✅ NEW: Edit button opens modal with item data */}
+                      <Button variant="ghost" size="sm" onClick={() => setItemToEdit(item)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="sm" onClick={() => setItemToDelete(item)}>
@@ -156,6 +166,18 @@ export default function BOMItemsTable({ bom, productId }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ✅ NEW: Add/Edit BOM Item Modal */}
+      <BOMItemModal
+        isOpen={showAddModal || !!itemToEdit}
+        onClose={() => {
+          setShowAddModal(false)
+          setItemToEdit(null)
+        }}
+        bomId={bom.id}
+        productId={productId}
+        itemToEdit={itemToEdit}
+      />
     </div>
   )
 }
