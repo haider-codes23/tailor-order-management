@@ -1,21 +1,14 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Edit, Trash2, Plus, Check, X } from "lucide-react"
+import { ArrowLeft, Edit, Trash2, AlertTriangle } from "lucide-react"
 import {
   useProduct,
   useProductBOMs,
   useActiveBOM,
   useDeleteProduct,
-  useUpdateBOM,
 } from "../../../hooks/useProducts"
 import { Button } from "../../../components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/card"
+import { Card, CardContent, CardHeader } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
 import { Skeleton } from "../../../components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
@@ -28,8 +21,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "../../../components/ui/alert-dialog"
+import { Alert, AlertDescription } from "../../../components/ui/alert"
 import BOMItemsTable from "../components/BOMItemsTable"
 import BOMVersionsList from "../components/BOMVersionsList"
 
@@ -37,14 +30,19 @@ export default function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState("overview")
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const { data: product, isLoading, error } = useProduct(id)
   const { data: activeBOM, isLoading: bomLoading } = useActiveBOM(id)
   const { data: allBOMs } = useProductBOMs(id)
   const deleteProductMutation = useDeleteProduct()
 
+  // ✅ NEW: Check if product has BOMs
+  const hasBOMs = allBOMs && allBOMs.length > 0
+  const canDeleteProduct = !hasBOMs
+
   const handleBack = () => {
-    navigate("/products")
+    navigate(-1)
   }
 
   const handleEdit = () => {
@@ -53,10 +51,13 @@ export default function ProductDetailPage() {
 
   const handleDelete = async () => {
     try {
+      console.log("Deleting product:", id)
       await deleteProductMutation.mutateAsync(id)
+      setShowDeleteDialog(false)
       navigate("/products")
     } catch (error) {
-      // Error toast already shown by mutation
+      console.error("Delete error:", error)
+      setShowDeleteDialog(false)
     }
   }
 
@@ -80,17 +81,28 @@ export default function ProductDetailPage() {
     )
   }
 
-  if (error || !product) {
+  if (error) {
     return (
-      <div className="h-full flex flex-col p-4 md:p-6 space-y-6">
-        <Button variant="ghost" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Products
-        </Button>
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="text-red-600 mb-2">Failed to load product</div>
-            <p className="text-sm text-gray-600">{error?.message || "Product not found"}</p>
+      <div className="h-full flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Product</h2>
+            <p className="text-gray-600 mb-4">{error.message || "Product not found"}</p>
+            <Button onClick={() => navigate("/products")}>Back to Products</Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Product Not Found</h2>
+            <p className="text-gray-600 mb-4">The product you're looking for doesn't exist.</p>
+            <Button onClick={() => navigate("/products")}>Back to Products</Button>
           </CardContent>
         </Card>
       </div>
@@ -99,36 +111,34 @@ export default function ProductDetailPage() {
 
   return (
     <div className="h-full flex flex-col p-4 md:p-6 space-y-6">
-      {/* Back Button */}
-      <Button variant="ghost" onClick={handleBack} className="w-fit">
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Products
-      </Button>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
+        </Button>
+      </div>
 
-      {/* Product Header */}
+      {/* Product Overview Card */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Product Image */}
             <div className="w-full md:w-64 h-64 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-              {product.primary_image ? (
-                <img
-                  src={product.primary_image}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No Image
-                </div>
-              )}
+              <img
+                src={
+                  product.primary_image || product.image_url || "/images/products/placeholder.jpg"
+                }
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Product Info */}
             <div className="flex-1 space-y-4">
               <div>
-                <div className="flex items-start justify-between mb-2">
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
+                <div className="flex items-center gap-2 mb-2">
+                  <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
                   <Badge variant={product.active ? "default" : "secondary"}>
                     {product.active ? "Active" : "Inactive"}
                   </Badge>
@@ -155,36 +165,34 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleEdit}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Product
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Product?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete "{product.name}". This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete Product
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+              {/* ✅ NEW: Action Buttons with conditional delete */}
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Button onClick={handleEdit}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Product
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                    disabled={!canDeleteProduct}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+
+                {/* ✅ NEW: Warning message when delete is disabled */}
+                {hasBOMs && (
+                  <Alert variant="destructive" className="bg-amber-50 border-amber-200">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-800">
+                      <strong>Cannot delete this product.</strong> Please delete all{" "}
+                      {allBOMs.length} BOM version{allBOMs.length > 1 ? "s" : ""} first in the "BOM
+                      Versions" tab.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
             </div>
           </div>
@@ -229,39 +237,26 @@ export default function ProductDetailPage() {
                   <div>
                     <p className="text-gray-600">Active BOM</p>
                     <p className="text-gray-900">
-                      {activeBOM ? (
-                        <span className="flex items-center gap-1">
-                          <Check className="h-3 w-3 text-green-600" />
-                          {activeBOM.name || `Version ${activeBOM.version}`}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-orange-600">
-                          <X className="h-3 w-3" />
-                          No active BOM
-                        </span>
-                      )}
+                      {activeBOM ? `Version ${activeBOM.version}` : "No active BOM"}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Shopify Integration */}
-              {(product.shopify_product_id || product.shopify_variant_id) && (
+              {product.shopify_product_id && (
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Shopify Integration</h3>
-                  <div className="grid grid-cols-1 gap-3 text-sm">
-                    {product.shopify_product_id && (
-                      <div>
-                        <p className="text-gray-600">Shopify Product ID</p>
-                        <p className="font-mono text-xs text-gray-900 break-all">
-                          {product.shopify_product_id}
-                        </p>
-                      </div>
-                    )}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Product ID</p>
+                      <p className="font-mono text-xs text-gray-900">
+                        {product.shopify_product_id}
+                      </p>
+                    </div>
                     {product.shopify_variant_id && (
                       <div>
-                        <p className="text-gray-600">Shopify Variant ID</p>
-                        <p className="font-mono text-xs text-gray-900 break-all">
+                        <p className="text-gray-600">Variant ID</p>
+                        <p className="font-mono text-xs text-gray-900">
                           {product.shopify_variant_id}
                         </p>
                       </div>
@@ -271,33 +266,51 @@ export default function ProductDetailPage() {
               )}
             </TabsContent>
 
-            {/* Active BOM Tab */}
+            {/* BOM Tab */}
             <TabsContent value="bom" className="mt-0">
               {bomLoading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-8 w-48" />
-                  <Skeleton className="h-64 w-full" />
+                <div className="text-center py-8">
+                  <p className="text-gray-600">Loading BOM...</p>
                 </div>
               ) : activeBOM ? (
                 <BOMItemsTable bom={activeBOM} productId={id} />
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-600 mb-4">No active BOM found for this product</p>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create BOM
-                  </Button>
+                  <p className="text-gray-600 mb-4">No active BOM for this product</p>
+                  <Button>Create First BOM</Button>
                 </div>
               )}
             </TabsContent>
 
             {/* BOM Versions Tab */}
             <TabsContent value="versions" className="mt-0">
-              <BOMVersionsList productId={id} allBOMs={allBOMs} />
+              <BOMVersionsList productId={id} allBOMs={allBOMs || []} />
             </TabsContent>
           </CardContent>
         </Tabs>
       </Card>
+
+      {/* Delete Confirmation Dialog - Only opens if BOMs are deleted */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{product.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteProductMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteProductMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteProductMutation.isPending ? "Deleting..." : "Delete Product"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
