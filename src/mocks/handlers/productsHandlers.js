@@ -5,8 +5,12 @@ import {
   mockBOMs,
   mockBOMItems,
   getActiveBOM,
+  getAllActiveBOMs,
   getBOMItems,
   getProductBOMs,
+  getAvailableSizes,
+  getNextVersionNumber,
+  STANDARD_SIZES,
 } from "../data/mockProducts"
 
 // ==================== PRODUCTS HANDLERS ====================
@@ -23,7 +27,7 @@ export const productsHandlers = [
 
     let filtered = [...mockProducts]
 
-    // Apply search filter - FIXED: Safe null/undefined handling
+    // Apply search filter
     if (search && search.trim() !== "") {
       const searchLower = search.toLowerCase()
       filtered = filtered.filter(
@@ -69,14 +73,14 @@ export const productsHandlers = [
       )
     }
 
-    // Include active BOM info
-    const activeBOM = getActiveBOM(id)
+    // Include available sizes
+    const availableSizes = getAvailableSizes(id)
 
     return HttpResponse.json({
       success: true,
       data: {
         ...product,
-        active_bom: activeBOM || null,
+        available_sizes: availableSizes, // NEW: List of sizes with BOMs
       },
     })
   }),
@@ -88,40 +92,42 @@ export const productsHandlers = [
     const body = await request.json()
 
     // Validation
-    if (!body.name || !body.sku) {
+    if (!body.name || !body.sku || !body.category) {
       return HttpResponse.json(
         {
           success: false,
-          error: "Name and SKU are required",
+          error: "Validation failed",
+          message: "Name, SKU, and category are required",
         },
         { status: 400 }
       )
     }
 
-    // Check SKU uniqueness
+    // Check for duplicate SKU
     const existingSKU = mockProducts.find((p) => p.sku === body.sku)
     if (existingSKU) {
       return HttpResponse.json(
         {
           success: false,
           error: "SKU already exists",
+          message: `Product with SKU "${body.sku}" already exists`,
         },
         { status: 400 }
       )
     }
 
     const newProduct = {
-      id: `prod_${Date.now()}`,
+      id: `prod_${Math.max(...mockProducts.map((p) => parseInt(p.id.split("_")[1])), 0) + 1}`,
       name: body.name,
       sku: body.sku,
       description: body.description || "",
-      category: body.category || "CASUAL",
-      active: body.active !== undefined ? body.active : true,
-      base_price: body.base_price || 0,
+      category: body.category,
+      active: body.is_active !== undefined ? body.is_active : true,
       shopify_product_id: body.shopify_product_id || null,
       shopify_variant_id: body.shopify_variant_id || null,
-      image_url: body.image_url || "/images/products/placeholder.jpg",
-      primary_image: body.primary_image || body.image_url || "/images/products/placeholder.jpg",
+      images: body.images || [],
+      primary_image: body.image_url || null,
+      base_price: body.base_price || 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -144,7 +150,6 @@ export const productsHandlers = [
 
     const { id } = params
     const body = await request.json()
-
     const productIndex = mockProducts.findIndex((p) => p.id === id)
 
     if (productIndex === -1) {
@@ -157,25 +162,24 @@ export const productsHandlers = [
       )
     }
 
-    // Check SKU uniqueness (excluding current product)
-    if (body.sku) {
-      const existingSKU = mockProducts.find((p) => p.sku === body.sku && p.id !== id)
-      if (existingSKU) {
-        return HttpResponse.json(
-          {
-            success: false,
-            error: "SKU already exists",
-          },
-          { status: 400 }
-        )
-      }
-    }
+    const product = mockProducts[productIndex]
 
-    // Update product
     mockProducts[productIndex] = {
-      ...mockProducts[productIndex],
-      ...body,
-      id, // Prevent ID change
+      ...product,
+      name: body.name !== undefined ? body.name : product.name,
+      description: body.description !== undefined ? body.description : product.description,
+      category: body.category !== undefined ? body.category : product.category,
+      active: body.is_active !== undefined ? body.is_active : product.active,
+      base_price: body.base_price !== undefined ? body.base_price : product.base_price,
+      primary_image: body.image_url !== undefined ? body.image_url : product.primary_image,
+      shopify_product_id:
+        body.shopify_product_id !== undefined
+          ? body.shopify_product_id
+          : product.shopify_product_id,
+      shopify_variant_id:
+        body.shopify_variant_id !== undefined
+          ? body.shopify_variant_id
+          : product.shopify_variant_id,
       updated_at: new Date().toISOString(),
     }
 
@@ -226,50 +230,89 @@ export const productsHandlers = [
     })
   }),
 
-  // ==================== BOM HANDLERS ====================
+  // ==================== BOM HANDLERS (SIZE-BASED) ====================
 
-  // GET /products/:productId/boms - Get all BOMs for a product
-  http.get(`${appConfig.apiBaseUrl}/products/:productId/boms`, async ({ params }) => {
+  // GET /products/:productId/boms - Get all BOMs for a product (with optional size filter)
+  http.get(`${appConfig.apiBaseUrl}/products/:productId/boms`, async ({ request, params }) => {
     await new Promise((resolve) => setTimeout(resolve, 200))
 
     const { productId } = params
-    const boms = getProductBOMs(productId)
+    const url = new URL(request.url)
+    const size = url.searchParams.get("size") // NEW: Optional size filter
+
+    let boms = getProductBOMs(productId, size)
 
     return HttpResponse.json({
       success: true,
       data: boms,
       total: boms.length,
+      available_sizes: getAvailableSizes(productId), // NEW: Include available sizes
     })
   }),
 
-  // GET /products/:productId/boms/active - Get active BOM
-  http.get(`${appConfig.apiBaseUrl}/products/:productId/boms/active`, async ({ params }) => {
-    await new Promise((resolve) => setTimeout(resolve, 200))
+  // GET /products/:productId/boms/active - Get active BOM(s)
+  // If size is provided: returns single active BOM for that size
+  // If size is NOT provided: returns all active BOMs (one per size)
+  http.get(
+    `${appConfig.apiBaseUrl}/products/:productId/boms/active`,
+    async ({ request, params }) => {
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
-    const { productId } = params
-    const activeBOM = getActiveBOM(productId)
+      const { productId } = params
+      const url = new URL(request.url)
+      const size = url.searchParams.get("size")
 
-    if (!activeBOM) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "No active BOM found",
-        },
-        { status: 404 }
-      )
+      if (size) {
+        // Get active BOM for specific size
+        const activeBOM = getActiveBOM(productId, size)
+
+        if (!activeBOM) {
+          return HttpResponse.json(
+            {
+              success: false,
+              error: `No active BOM found for size ${size}`,
+            },
+            { status: 404 }
+          )
+        }
+
+        // Include BOM items
+        const items = getBOMItems(activeBOM.id)
+
+        return HttpResponse.json({
+          success: true,
+          data: {
+            ...activeBOM,
+            items,
+          },
+        })
+      } else {
+        // Get all active BOMs (one per size)
+        const activeBOMs = getAllActiveBOMs(productId)
+
+        if (activeBOMs.length === 0) {
+          return HttpResponse.json(
+            {
+              success: false,
+              error: "No active BOMs found",
+            },
+            { status: 404 }
+          )
+        }
+
+        // Include items for each BOM
+        const bomsWithItems = activeBOMs.map((bom) => ({
+          ...bom,
+          items: getBOMItems(bom.id),
+        }))
+
+        return HttpResponse.json({
+          success: true,
+          data: bomsWithItems,
+        })
+      }
     }
-
-    // Include BOM items
-    const items = getBOMItems(activeBOM.id)
-
-    return HttpResponse.json({
-      success: true,
-      data: {
-        ...activeBOM,
-        items,
-      },
-    })
-  }),
+  ),
 
   // GET /boms/:bomId - Get single BOM with items
   http.get(`${appConfig.apiBaseUrl}/boms/:bomId`, async ({ params }) => {
@@ -299,7 +342,7 @@ export const productsHandlers = [
     })
   }),
 
-  // POST /products/:productId/boms - Create new BOM
+  // POST /products/:productId/boms - Create new BOM (SIZE REQUIRED)
   http.post(`${appConfig.apiBaseUrl}/products/:productId/boms`, async ({ params, request }) => {
     await new Promise((resolve) => setTimeout(resolve, 400))
 
@@ -318,21 +361,53 @@ export const productsHandlers = [
       )
     }
 
+    // NEW: Validate size is provided
+    if (!body.size) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Size is required",
+          message: "Please specify a size for this BOM (XS, S, M, L, XL, XXL, or CUSTOM)",
+        },
+        { status: 400 }
+      )
+    }
+
+    // NEW: Validate size is valid
+    const validSizes = [...STANDARD_SIZES, "CUSTOM"]
+    if (!validSizes.includes(body.size)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Invalid size",
+          message: `Size must be one of: ${validSizes.join(", ")}`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // NEW: Generate version number for this product+size combination
+    const version = getNextVersionNumber(productId, body.size)
+
+    // NEW: Auto-generate name if not provided
+    const autoName = `Size ${body.size} - Version ${version}`
+
     const newBOM = {
       id: `bom_${Math.max(...mockBOMs.map((b) => parseInt(b.id.split("_")[1])), 0) + 1}`,
       product_id: productId,
-      version: body.version || mockBOMs.filter((b) => b.product_id === productId).length + 1,
+      size: body.size, // NEW: Size field
+      version: version,
       is_active: body.is_active || false,
-      name: body.name || "",
+      name: body.name || autoName, // Use auto-generated name if not provided
       notes: body.notes || "",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
 
-    // If setting as active, deactivate others
+    // NEW: If setting as active, deactivate OTHER BOMs for SAME product+size combination
     if (newBOM.is_active) {
       mockBOMs.forEach((bom) => {
-        if (bom.product_id === productId) {
+        if (bom.product_id === productId && bom.size === body.size && bom.id !== newBOM.id) {
           bom.is_active = false
         }
       })
@@ -371,21 +446,30 @@ export const productsHandlers = [
 
     const bom = mockBOMs[bomIndex]
 
-    // If activating this BOM, deactivate others for same product
+    // ✅ FIX: If activating this BOM, deactivate others for SAME product+size ONLY
     if (body.is_active === true) {
+      console.log(`🔄 Activating BOM ${bomId} for product ${bom.product_id}, size ${bom.size}`)
+
       mockBOMs.forEach((b) => {
-        if (b.product_id === bom.product_id && b.id !== bomId) {
+        // ✅ Only deactivate if SAME product AND SAME size
+        if (b.product_id === bom.product_id && b.size === bom.size && b.id !== bomId) {
+          console.log(`  → Deactivating BOM ${b.id} (${b.size})`)
           b.is_active = false
         }
       })
     }
 
+    // Update the BOM
     mockBOMs[bomIndex] = {
       ...bom,
       ...body,
       id: bomId, // Prevent ID change
+      product_id: bom.product_id, // Prevent product ID change
+      size: bom.size, // Prevent size change
       updated_at: new Date().toISOString(),
     }
+
+    console.log(`✅ BOM ${bomId} updated:`, mockBOMs[bomIndex])
 
     return HttpResponse.json({
       success: true,
@@ -394,7 +478,7 @@ export const productsHandlers = [
     })
   }),
 
-  // ✅ DELETE /boms/:bomId - Delete BOM
+  // DELETE /boms/:bomId - Delete BOM
   http.delete(`${appConfig.apiBaseUrl}/boms/:bomId`, async ({ params }) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
 
@@ -446,6 +530,7 @@ export const productsHandlers = [
   }),
 
   // ==================== BOM ITEMS HANDLERS ====================
+  // (No changes needed - these remain the same)
 
   // GET /boms/:bomId/items - Get all items for a BOM
   http.get(`${appConfig.apiBaseUrl}/boms/:bomId/items`, async ({ params }) => {
@@ -535,8 +620,10 @@ export const productsHandlers = [
       )
     }
 
+    const item = mockBOMItems[itemIndex]
+
     mockBOMItems[itemIndex] = {
-      ...mockBOMItems[itemIndex],
+      ...item,
       ...body,
       id: itemId, // Prevent ID change
       bom_id: bomId, // Prevent BOM ID change
@@ -549,7 +636,7 @@ export const productsHandlers = [
     })
   }),
 
-  // ✅ DELETE /boms/:bomId/items/:itemId - Delete BOM item
+  // DELETE /boms/:bomId/items/:itemId - Delete BOM item
   http.delete(`${appConfig.apiBaseUrl}/boms/:bomId/items/:itemId`, async ({ params }) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
 

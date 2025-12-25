@@ -5,7 +5,8 @@ import { QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider } from "@/features/auth/hooks/useAuth"
 import App from "./App.jsx"
 import { queryClient } from "./services/queryClient"
-import { Toaster } from "@/components/ui/toaster"
+// import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "sonner"
 import "./index.css"
 
 // Initialize MSW in development

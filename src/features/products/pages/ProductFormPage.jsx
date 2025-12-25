@@ -79,36 +79,36 @@ export default function ProductFormPage() {
   }, [product, isEditMode, reset])
 
   const onSubmit = async (data) => {
-    try {
-      const productData = {
-        name: data.name,
-        sku: data.sku,
-        description: data.description || null,
-        category: data.category,
-        base_price: parseFloat(data.base_price),
-        image_url: data.image_url || null,
-        shopify_product_id: data.shopify_product_id || null,
-        shopify_variant_id: data.shopify_variant_id || null,
-        is_active: data.is_active,
-      }
-
-      let result
-      if (isEditMode) {
-        result = await updateProductMutation.mutateAsync({
-          productId: id,
-          updates: productData,
-        })
-      } else {
-        result = await createProductMutation.mutateAsync(productData)
-      }
-
-      // Navigate to product detail page on success
-      const productId = isEditMode ? id : result.data.id
-      navigate(`/products/${productId}`)
-    } catch (error) {
-      // Error toast already shown by mutation
+  try {
+    const productData = {
+      name: data.name,
+      sku: data.sku,
+      description: data.description || null,
+      category: data.category,
+      base_price: parseFloat(data.base_price),
+      image_url: data.image_url || null,
+      shopify_product_id: data.shopify_product_id || null,
+      shopify_variant_id: data.shopify_variant_id || null,
+      is_active: data.is_active,
     }
+
+    let result
+    if (isEditMode) {
+      result = await updateProductMutation.mutateAsync({
+        productId: id,
+        updates: productData,
+      })
+    } else {
+      result = await createProductMutation.mutateAsync(productData)
+    }
+
+    // Navigate to product detail page on success
+    const productId = isEditMode ? id : result.id  // ✅ FIXED: result.id instead of result.data.id
+    navigate(`/products/${productId}`)
+  } catch (error) {
+    // Error toast already shown by mutation
   }
+}
 
   if (isEditMode && productLoading) {
     return (
@@ -176,7 +176,7 @@ export default function ProductFormPage() {
                 id="sku"
                 placeholder="e.g., LAWN-001"
                 disabled={isEditMode} // SKU cannot be changed in edit mode
-                {...register("sku", { required: "SKU is required" })}
+                {...register("sku", { required: !isEditMode && "SKU is required" })}
               />
               {errors.sku && <p className="text-sm text-red-500">{errors.sku.message}</p>}
               {isEditMode && (

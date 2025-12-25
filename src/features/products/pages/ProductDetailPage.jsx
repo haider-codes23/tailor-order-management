@@ -1,12 +1,7 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, Edit, Trash2, AlertTriangle } from "lucide-react"
-import {
-  useProduct,
-  useProductBOMs,
-  useActiveBOM,
-  useDeleteProduct,
-} from "../../../hooks/useProducts"
+import { ArrowLeft, Edit, Trash2 } from "lucide-react"
+import { useProduct, useDeleteProduct } from "../../../hooks/useProducts"
 import { Button } from "../../../components/ui/button"
 import { Card, CardContent, CardHeader } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
@@ -22,8 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog"
-import { Alert, AlertDescription } from "../../../components/ui/alert"
-import BOMItemsTable from "../components/BOMItemsTable"
 import BOMVersionsList from "../components/BOMVersionsList"
 
 export default function ProductDetailPage() {
@@ -32,17 +25,13 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState("overview")
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  const { data: product, isLoading, error } = useProduct(id)
-  const { data: activeBOM, isLoading: bomLoading } = useActiveBOM(id)
-  const { data: allBOMs } = useProductBOMs(id)
+  const { data: productResponse, isLoading, error } = useProduct(id)
   const deleteProductMutation = useDeleteProduct()
 
-  // ✅ NEW: Check if product has BOMs
-  const hasBOMs = allBOMs && allBOMs.length > 0
-  const canDeleteProduct = !hasBOMs
+  const product = productResponse?.data
 
   const handleBack = () => {
-    navigate(-1)
+    navigate("/products")
   }
 
   const handleEdit = () => {
@@ -51,51 +40,26 @@ export default function ProductDetailPage() {
 
   const handleDelete = async () => {
     try {
-      console.log("Deleting product:", id)
       await deleteProductMutation.mutateAsync(id)
-      setShowDeleteDialog(false)
       navigate("/products")
     } catch (error) {
-      console.error("Delete error:", error)
-      setShowDeleteDialog(false)
+      // Error toast already shown by mutation
     }
   }
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="h-full flex flex-col p-4 md:p-6 space-y-6">
         <Skeleton className="h-10 w-48" />
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <Skeleton className="w-full md:w-64 h-64" />
-              <div className="flex-1 space-y-4">
-                <Skeleton className="h-8 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-20 w-full" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-96 w-full" />
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <div className="h-full flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Product</h2>
-            <p className="text-gray-600 mb-4">{error.message || "Product not found"}</p>
-            <Button onClick={() => navigate("/products")}>Back to Products</Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (!product) {
+  // Error state
+  if (error || !product) {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -165,50 +129,29 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* ✅ NEW: Action Buttons with conditional delete */}
-              <div className="space-y-3">
-                <div className="flex gap-2">
-                  <Button onClick={handleEdit}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Product
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => setShowDeleteDialog(true)}
-                    disabled={!canDeleteProduct}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
-
-                {/* ✅ NEW: Warning message when delete is disabled */}
-                {hasBOMs && (
-                  <Alert variant="destructive" className="bg-amber-50 border-amber-200">
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                    <AlertDescription className="text-amber-800">
-                      <strong>Cannot delete this product.</strong> Please delete all{" "}
-                      {allBOMs.length} BOM version{allBOMs.length > 1 ? "s" : ""} first in the "BOM
-                      Versions" tab.
-                    </AlertDescription>
-                  </Alert>
-                )}
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <Button onClick={handleEdit}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Product
+                </Button>
+                <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabs */}
+      {/* Tabs - ONLY 2 TABS! */}
       <Card>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <CardHeader className="border-b">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="bom">BOM {activeBOM && "(Active)"}</TabsTrigger>
-              <TabsTrigger value="versions">
-                BOM Versions {allBOMs && `(${allBOMs.length})`}
-              </TabsTrigger>
+              <TabsTrigger value="versions">BOM Versions</TabsTrigger>
             </TabsList>
           </CardHeader>
 
@@ -235,10 +178,18 @@ export default function ProductDetailPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Active BOM</p>
-                    <p className="text-gray-900">
-                      {activeBOM ? `Version ${activeBOM.version}` : "No active BOM"}
-                    </p>
+                    <p className="text-gray-600">Available Sizes</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {product.available_sizes && product.available_sizes.length > 0 ? (
+                        product.available_sizes.map((size) => (
+                          <Badge key={size} variant="outline" className="text-xs">
+                            {size}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-gray-500 text-xs">No sizes defined</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -266,31 +217,15 @@ export default function ProductDetailPage() {
               )}
             </TabsContent>
 
-            {/* BOM Tab */}
-            <TabsContent value="bom" className="mt-0">
-              {bomLoading ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">Loading BOM...</p>
-                </div>
-              ) : activeBOM ? (
-                <BOMItemsTable bom={activeBOM} productId={id} />
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 mb-4">No active BOM for this product</p>
-                  <Button>Create First BOM</Button>
-                </div>
-              )}
-            </TabsContent>
-
-            {/* BOM Versions Tab */}
+            {/* BOM Versions Tab - ONLY THIS ONE! */}
             <TabsContent value="versions" className="mt-0">
-              <BOMVersionsList productId={id} allBOMs={allBOMs || []} />
+              <BOMVersionsList productId={id} />
             </TabsContent>
           </CardContent>
         </Tabs>
       </Card>
 
-      {/* Delete Confirmation Dialog - Only opens if BOMs are deleted */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -300,7 +235,9 @@ export default function ProductDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteProductMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteProductMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteProductMutation.isPending}

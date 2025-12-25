@@ -9,8 +9,11 @@ export const productKeys = {
   list: (filters) => [...productKeys.lists(), filters],
   details: () => [...productKeys.all, "detail"],
   detail: (id) => [...productKeys.details(), id],
-  boms: (productId) => [...productKeys.detail(productId), "boms"],
-  activeBom: (productId) => [...productKeys.detail(productId), "active-bom"],
+  // ✅ SIZE-BASED: BOM keys now include size parameter
+  boms: (productId, size = null) => 
+    size ? [...productKeys.detail(productId), "boms", size] : [...productKeys.detail(productId), "boms"],
+  activeBom: (productId, size = null) => 
+    size ? [...productKeys.detail(productId), "active-bom", size] : [...productKeys.detail(productId), "active-bom"],
   bom: (bomId) => ["boms", bomId],
   bomItems: (bomId) => [...productKeys.bom(bomId), "items"],
 }
@@ -99,21 +102,12 @@ export function useUpdateProduct() {
 /**
  * Delete a product
  */
-// ==================== FIX FOR useProducts.js ====================
-// Find the useDeleteProduct function in src/hooks/useProducts.js
-// Replace it with this version:
-
-/**
- * Delete a product
- */
 export function useDeleteProduct() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: productsApi.deleteProduct,
     onSuccess: (data, productId) => {
-      console.log("Product deleted successfully:", data) // Debug log
-
       // Remove from cache and refetch lists
       queryClient.removeQueries({ queryKey: productKeys.detail(productId) })
       queryClient.invalidateQueries({ queryKey: productKeys.lists() })
@@ -122,9 +116,6 @@ export function useDeleteProduct() {
       toast.success("Product deleted successfully")
     },
     onError: (error) => {
-      // ✅ FIXED: Better error parsing
-      console.error("Delete product error:", error) // Debug log
-
       let message = "Failed to delete product"
 
       // Try to extract error message from different possible locations
@@ -136,43 +127,38 @@ export function useDeleteProduct() {
         message = error.message
       }
 
-      console.log("Error message:", message) // Debug log
       toast.error(message)
     },
   })
 }
 
-// Instructions:
-// 1. Open src/hooks/useProducts.js
-// 2. Find the useDeleteProduct function (around line 80-100)
-// 3. Replace it with the code above
-// 4. Save the file
-
-// ==================== BOMs QUERIES ====================
+// ==================== BOMs QUERIES (SIZE-BASED) ====================
 
 /**
- * Get all BOMs for a product (including inactive versions)
+ * Get all BOMs for a product, optionally filtered by size
  * @param {string} productId - Product ID
+ * @param {string|null} size - Size to filter (null = all sizes)
  * @param {Object} options - React Query options
  */
-export function useProductBOMs(productId, options = {}) {
+export function useProductBOMs(productId, size = null, options = {}) {
   return useQuery({
-    queryKey: productKeys.boms(productId),
-    queryFn: () => productsApi.getProductBOMs(productId),
+    queryKey: productKeys.boms(productId, size),
+    queryFn: () => productsApi.getProductBOMs(productId, size),
     enabled: !!productId && options.enabled !== false,
     staleTime: 5 * 60 * 1000,
   })
 }
 
 /**
- * Get the active BOM for a product
+ * Get the active BOM for a product and size
  * @param {string} productId - Product ID
+ * @param {string|null} size - Size (required for size-specific active BOM)
  * @param {Object} options - React Query options
  */
-export function useActiveBOM(productId, options = {}) {
+export function useActiveBOM(productId, size = null, options = {}) {
   return useQuery({
-    queryKey: productKeys.activeBom(productId),
-    queryFn: () => productsApi.getActiveBOM(productId),
+    queryKey: productKeys.activeBom(productId, size),
+    queryFn: () => productsApi.getActiveBOM(productId, size),
     enabled: !!productId && options.enabled !== false,
     staleTime: 5 * 60 * 1000,
   })
@@ -192,10 +178,10 @@ export function useBOM(bomId, options = {}) {
   })
 }
 
-// ==================== BOMs MUTATIONS ====================
+// ==================== BOMs MUTATIONS (SIZE-BASED) ====================
 
 /**
- * Create a new BOM for a product
+ * Create a new BOM for a product (now requires size)
  */
 export function useCreateBOM() {
   const queryClient = useQueryClient()
@@ -203,14 +189,18 @@ export function useCreateBOM() {
   return useMutation({
     mutationFn: ({ productId, bomData }) => productsApi.createBOM(productId, bomData),
     onSuccess: (data, variables) => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId) })
-      queryClient.invalidateQueries({ queryKey: productKeys.activeBom(variables.productId) })
+      const size = data.size
+
+      // Invalidate related queries for this product+size
+      queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, size) })
+      queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) }) // All sizes
+      queryClient.invalidateQueries({ queryKey: productKeys.activeBom(variables.productId, size) })
       queryClient.invalidateQueries({ queryKey: productKeys.detail(variables.productId) })
 
       // Refetch
-      queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId) })
-      queryClient.refetchQueries({ queryKey: productKeys.activeBom(variables.productId) })
+      queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, size) })
+      queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
+      queryClient.refetchQueries({ queryKey: productKeys.activeBom(variables.productId, size) })
 
       toast.success("BOM created successfully")
     },
@@ -222,7 +212,8 @@ export function useCreateBOM() {
 }
 
 /**
- * Update a BOM
+ * Update a BOM (activate/deactivate, edit details)
+ * NOTE: Activating a BOM will deactivate other BOMs for the SAME product+size only
  */
 export function useUpdateBOM() {
   const queryClient = useQueryClient()
@@ -230,31 +221,58 @@ export function useUpdateBOM() {
   return useMutation({
     mutationFn: ({ bomId, updates }) => productsApi.updateBOM(bomId, updates),
     onSuccess: (data) => {
-      console.log("BOM Update - Raw response:", data) // Debug log
-
       const bom = data
-      console.log("BOM Update - Extracted BOM:", bom) // Debug log
-      console.log("BOM Update - Product ID:", bom.product_id) // Debug log
+      const productId = bom.product_id
+      const size = bom.size
 
-      // Invalidate all related queries
-      console.log("Invalidating queries for product:", bom.product_id) // Debug log
+      console.log("🔄 BOM Updated - Starting AGGRESSIVE cache clear", {
+        bomId: bom.id,
+        productId,
+        size,
+        isActive: bom.is_active,
+        updates: bom,
+      })
 
-      queryClient.invalidateQueries({ queryKey: productKeys.bom(bom.id) })
-      queryClient.invalidateQueries({ queryKey: productKeys.boms(bom.product_id) })
-      queryClient.invalidateQueries({ queryKey: productKeys.activeBom(bom.product_id) })
-      queryClient.invalidateQueries({ queryKey: productKeys.detail(bom.product_id) })
+      // STEP 1: Remove ALL related queries from cache completely
+      console.log("Step 1: Removing queries from cache...")
+      queryClient.removeQueries({ queryKey: productKeys.bom(bom.id), exact: true })
+      queryClient.removeQueries({ queryKey: productKeys.boms(productId, size), exact: true })
+      queryClient.removeQueries({ queryKey: productKeys.boms(productId, null), exact: true })
+      queryClient.removeQueries({ queryKey: productKeys.activeBom(productId, size), exact: true })
+      queryClient.removeQueries({ queryKey: productKeys.detail(productId), exact: true })
 
-      // Force refetch immediately
-      queryClient.refetchQueries({ queryKey: productKeys.bom(bom.id) })
-      queryClient.refetchQueries({ queryKey: productKeys.boms(bom.product_id) })
-      queryClient.refetchQueries({ queryKey: productKeys.activeBom(bom.product_id) })
+      // STEP 2: Invalidate with type: 'all' to mark stale
+      console.log("Step 2: Invalidating queries...")
+      queryClient.invalidateQueries({ 
+        queryKey: productKeys.boms(productId),
+        exact: false, // Match all size variations
+        refetchType: 'all'
+      })
+      queryClient.invalidateQueries({ 
+        queryKey: productKeys.activeBom(productId),
+        exact: false,
+        refetchType: 'all'
+      })
 
-      console.log("BOM Update - Queries invalidated and refetched") // Debug log
+      // STEP 3: Force immediate refetch
+      console.log("Step 3: Forcing refetch...")
+      setTimeout(() => {
+        queryClient.refetchQueries({ 
+          queryKey: productKeys.boms(productId, size),
+          exact: true,
+          type: 'active'
+        })
+        queryClient.refetchQueries({ 
+          queryKey: productKeys.boms(productId, null),
+          exact: true,
+          type: 'active'
+        })
+        console.log("✅ Refetch complete!")
+      }, 0)
 
       toast.success("BOM updated successfully")
     },
     onError: (error) => {
-      console.error("BOM Update Error:", error) // Debug log
       const message = error.response?.data?.error || "Failed to update BOM"
       toast.error(message)
     },
@@ -268,15 +286,17 @@ export function useDeleteBOM() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ bomId, productId }) => productsApi.deleteBOM(bomId),
+    mutationFn: ({ bomId, productId, size }) => productsApi.deleteBOM(bomId),
     onSuccess: (data, variables) => {
       // Remove from cache and invalidate related queries
       queryClient.removeQueries({ queryKey: productKeys.bom(variables.bomId) })
-      queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId) })
+      queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+      queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
       queryClient.invalidateQueries({ queryKey: productKeys.detail(variables.productId) })
 
       // Refetch
-      queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId) })
+      queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+      queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
 
       toast.success("BOM deleted successfully")
     },
@@ -312,15 +332,28 @@ export function useCreateBOMItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ bomId, itemData }) => productsApi.createBOMItem(bomId, itemData),
+    mutationFn: ({ bomId, itemData, productId, size }) => 
+      productsApi.createBOMItem(bomId, itemData),
     onSuccess: (data, variables) => {
       // Invalidate BOM items and the BOM itself
       queryClient.invalidateQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.invalidateQueries({ queryKey: productKeys.bom(variables.bomId) })
 
+      // Also invalidate BOMs list for this product+size
+      if (variables.productId && variables.size) {
+        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
+        queryClient.invalidateQueries({ queryKey: productKeys.activeBom(variables.productId, variables.size) })
+      }
+
       // Refetch
       queryClient.refetchQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.refetchQueries({ queryKey: productKeys.bom(variables.bomId) })
+      
+      if (variables.productId && variables.size) {
+        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
+      }
 
       toast.success("BOM item added successfully")
     },
@@ -338,15 +371,27 @@ export function useUpdateBOMItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ bomId, itemId, updates }) => productsApi.updateBOMItem(bomId, itemId, updates),
+    mutationFn: ({ bomId, itemId, updates, productId, size }) => 
+      productsApi.updateBOMItem(bomId, itemId, updates),
     onSuccess: (data, variables) => {
       // Invalidate BOM items and the BOM itself
       queryClient.invalidateQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.invalidateQueries({ queryKey: productKeys.bom(variables.bomId) })
 
+      // Also invalidate BOMs list for this product+size
+      if (variables.productId && variables.size) {
+        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
+      }
+
       // Refetch
       queryClient.refetchQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.refetchQueries({ queryKey: productKeys.bom(variables.bomId) })
+      
+      if (variables.productId && variables.size) {
+        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
+      }
 
       toast.success("BOM item updated successfully")
     },
@@ -364,23 +409,27 @@ export function useDeleteBOMItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ bomId, itemId, productId }) => productsApi.deleteBOMItem(bomId, itemId),
+    mutationFn: ({ bomId, itemId, productId, size }) => 
+      productsApi.deleteBOMItem(bomId, itemId),
     onSuccess: (data, variables) => {
       // Invalidate BOM items and the BOM itself
       queryClient.invalidateQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.invalidateQueries({ queryKey: productKeys.bom(variables.bomId) })
 
-      // ✅ FIX: Also invalidate activeBOM query
-      if (variables.productId) {
-        queryClient.invalidateQueries({ queryKey: productKeys.activeBom(variables.productId) })
+      // Also invalidate BOMs list for this product+size
+      if (variables.productId && variables.size) {
+        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
+        queryClient.invalidateQueries({ queryKey: productKeys.activeBom(variables.productId, variables.size) })
       }
 
       // Refetch
       queryClient.refetchQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.refetchQueries({ queryKey: productKeys.bom(variables.bomId) })
-
-      if (variables.productId) {
-        queryClient.refetchQueries({ queryKey: productKeys.activeBom(variables.productId) })
+      
+      if (variables.productId && variables.size) {
+        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
       }
 
       toast.success("BOM item deleted successfully")

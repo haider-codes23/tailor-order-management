@@ -1,8 +1,17 @@
-import { useState, useEffect } from "react"
-import { Plus, Eye, Check, Trash2, XCircle } from "lucide-react"
-import { useUpdateBOM, useDeleteBOM } from "../../../hooks/useProducts"
+import { useState } from "react"
+import { Plus, ChevronDown, ChevronUp, Check, XCircle, Trash2 } from "lucide-react"
+import { useProductBOMs, useUpdateBOM, useDeleteBOM } from "../../../hooks/useProducts"
 import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
+import { Card } from "../../../components/ui/card"
+import { Skeleton } from "../../../components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../../components/ui/select"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,312 +22,308 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog"
+import BOMItemsTable from "./BOMItemsTable"
 import CreateBOMModal from "./CreateBOMModal"
 
-export default function BOMVersionsList({ productId, allBOMs }) {
+// Available sizes from measurement chart
+const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL"]
+
+export default function BOMVersionsList({ productId }) {
+  const [selectedSize, setSelectedSize] = useState("M")
+  const [expandedBOMId, setExpandedBOMId] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [bomToActivate, setBomToActivate] = useState(null)
   const [bomToDeactivate, setBomToDeactivate] = useState(null)
   const [bomToDelete, setBomToDelete] = useState(null)
-  
-  // ✅ NEW: State for create modal
-  const [showCreateModal, setShowCreateModal] = useState(false)
 
+  // Fetch BOMs for selected size
+  const { data: bomsResponse, isLoading } = useProductBOMs(productId, selectedSize)
   const updateBOMMutation = useUpdateBOM()
   const deleteBOMMutation = useDeleteBOM()
 
-  // ✅ DEBUG: Log when allBOMs changes
-  useEffect(() => {
-    console.log('🔍 BOMVersionsList - allBOMs updated:', allBOMs)
-    console.log('🔍 BOMVersionsList - Active BOMs:', allBOMs?.filter(b => b.is_active))
-    console.log('🔍 BOMVersionsList - Inactive BOMs:', allBOMs?.filter(b => !b.is_active))
-  }, [allBOMs])
+  // Extract BOMs array from response
+  const boms = bomsResponse?.data || []
 
-  // ✅ EXISTING: Activate a BOM
+  console.log(`📊 BOMVersionsList: productId=${productId}, size=${selectedSize}, boms=`, boms)
+
+  // Toggle expand/collapse
+  const toggleExpand = (bomId) => {
+    console.log(`🔄 Toggling expand for BOM ${bomId}`)
+    setExpandedBOMId(expandedBOMId === bomId ? null : bomId)
+  }
+
+  // Activate BOM
   const handleActivate = async () => {
     if (!bomToActivate) return
 
-    console.log('🔄 Activating BOM:', bomToActivate.id) // Debug log
-
     try {
-      const result = await updateBOMMutation.mutateAsync({
+      console.log(`✅ Activating BOM ${bomToActivate.id}`)
+      await updateBOMMutation.mutateAsync({
         bomId: bomToActivate.id,
         updates: { is_active: true },
       })
-      console.log('✅ Activate successful:', result) // Debug log
       setBomToActivate(null)
     } catch (error) {
-      console.error('❌ Activate failed:', error) // Debug log
-      // Error toast already shown by mutation
+      console.error("❌ Activate failed:", error)
     }
   }
 
-  // ✅ NEW: Deactivate a BOM
+  // Deactivate BOM
   const handleDeactivate = async () => {
     if (!bomToDeactivate) return
 
-    console.log('🔄 Deactivating BOM:', bomToDeactivate.id) // Debug log
-
     try {
-      const result = await updateBOMMutation.mutateAsync({
+      console.log(`⏸️ Deactivating BOM ${bomToDeactivate.id}`)
+      await updateBOMMutation.mutateAsync({
         bomId: bomToDeactivate.id,
         updates: { is_active: false },
       })
-      console.log('✅ Deactivate successful:', result) // Debug log
       setBomToDeactivate(null)
     } catch (error) {
-      console.error('❌ Deactivate failed:', error) // Debug log
-      // Error toast already shown by mutation
+      console.error("❌ Deactivate failed:", error)
     }
   }
 
-  // ✅ EXISTING: Delete a BOM
+  // Delete BOM
   const handleDelete = async () => {
     if (!bomToDelete) return
 
-    console.log('🗑️ Deleting BOM:', bomToDelete.id) // Debug log
-
     try {
-      const result = await deleteBOMMutation.mutateAsync({
+      console.log(`🗑️ Deleting BOM ${bomToDelete.id}`)
+      await deleteBOMMutation.mutateAsync({
         bomId: bomToDelete.id,
         productId,
+        size: selectedSize,
       })
-      console.log('✅ Delete successful:', result) // Debug log
       setBomToDelete(null)
     } catch (error) {
-      console.error('❌ Delete failed:', error) // Debug log
-      // Error toast already shown by mutation
+      console.error("❌ Delete failed:", error)
     }
   }
 
-  // ✅ EXISTING: View button handler
-  const handleViewBOM = (bomId) => {
-    window.alert(
-      `View BOM feature coming soon!\n\nBOM ID: ${bomId}\n\nThis will open a detailed view of the BOM in a future update.`
-    )
-  }
-
-  if (!allBOMs || allBOMs.length === 0) {
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-600 mb-4">No BOMs created for this product</p>
-        {/* ✅ NEW: Create First BOM button opens modal */}
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create First BOM
-        </Button>
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">BOM Version History</h3>
-        {/* ✅ NEW: Create New Version button opens modal */}
+      {/* Header with Size Filter */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium">Filter by Size:</label>
+          <Select value={selectedSize} onValueChange={setSelectedSize}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Sizes</SelectItem>
+              {AVAILABLE_SIZES.map((size) => (
+                <SelectItem key={size} value={size}>
+                  Size {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">
+            Showing {boms.length} BOM{boms.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create New Version
         </Button>
       </div>
 
-      {/* ✅ DEBUG: Show current state */}
-      <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-        <strong>Debug Info:</strong> Total BOMs: {allBOMs.length} | 
-        Active: {allBOMs.filter(b => b.is_active).length} | 
-        Inactive: {allBOMs.filter(b => !b.is_active).length}
-      </div>
+      {/* BOM Cards */}
+      {boms.length === 0 ? (
+        <Card className="p-12">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">
+              {selectedSize === "ALL"
+                ? "No BOMs created yet"
+                : `No BOMs for Size ${selectedSize} yet`}
+            </p>
+            <Button onClick={() => setShowCreateModal(true)}>Create First BOM</Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {boms.map((bom) => {
+            const isExpanded = expandedBOMId === bom.id
 
-      {/* BOM List */}
-      <div className="space-y-3">
-        {allBOMs.map((bom) => {
-          // ✅ DEBUG: Log each BOM as it renders
-          console.log(`🎨 Rendering BOM ${bom.id}:`, { 
-            is_active: bom.is_active, 
-            version: bom.version 
-          })
-          
-          return (
-            <div
-              key={bom.id}
-              className={`border-2 rounded-lg p-4 ${
-                bom.is_active ? "border-green-200 bg-green-50" : "border-gray-200 bg-white"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900">
-                      {bom.name || `Version ${bom.version}`}
-                    </h4>
-                    <Badge
-                      variant={bom.is_active ? "default" : "secondary"}
-                      className={bom.is_active ? "bg-green-100 text-green-800" : ""}
-                    >
-                      {bom.is_active ? "ACTIVE" : "INACTIVE"}
-                    </Badge>
-                    {/* ✅ DEBUG: Show actual status */}
-                    <span className="text-xs text-gray-500">
-                      (is_active: {bom.is_active ? 'true' : 'false'})
-                    </span>
+            return (
+              <Card
+                key={bom.id}
+                className={`p-4 ${bom.is_active ? "border-green-200 bg-green-50/50" : ""}`}
+              >
+                {/* BOM Header */}
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold">{bom.name}</h3>
+                      <Badge variant={bom.is_active ? "default" : "secondary"}>
+                        {bom.is_active ? "ACTIVE" : "INACTIVE"}
+                      </Badge>
+                      {selectedSize === "ALL" && (
+                        <Badge variant="outline">Size {bom.size}</Badge>
+                      )}
+                    </div>
+                    {bom.notes && (
+                      <p className="text-sm text-muted-foreground mb-2">{bom.notes}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>Items: {bom.items?.length || 0}</span>
+                      <span>•</span>
+                      <span>Created: {new Date(bom.created_at).toLocaleDateString()}</span>
+                      <span>•</span>
+                      <span>Version {bom.version}</span>
+                    </div>
                   </div>
 
-                  {bom.notes && <p className="text-sm text-gray-600 mb-2">{bom.notes}</p>}
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    {/* Expand/Collapse */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleExpand(bom.id)}
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 mr-1" />
+                          Hide Items
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4 mr-1" />
+                          View Items
+                        </>
+                      )}
+                    </Button>
 
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span>Created {new Date(bom.created_at).toLocaleDateString()}</span>
-                    <span>•</span>
-                    <span>Version {bom.version}</span>
-                    {bom.created_by && (
+                    {/* Active BOM: Deactivate */}
+                    {bom.is_active && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setBomToDeactivate(bom)}
+                        disabled={updateBOMMutation.isPending}
+                        className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Deactivate
+                      </Button>
+                    )}
+
+                    {/* Inactive BOM: Activate + Delete */}
+                    {!bom.is_active && (
                       <>
-                        <span>•</span>
-                        <span>by {bom.created_by}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setBomToActivate(bom)}
+                          disabled={updateBOMMutation.isPending}
+                          className="border-green-300 text-green-700 hover:bg-green-50"
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Activate
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setBomToDelete(bom)}
+                          disabled={deleteBOMMutation.isPending}
+                          className="border-red-300 text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </>
                     )}
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 shrink-0">
-                  {/* View button - always visible */}
-                  <Button variant="outline" size="sm" onClick={() => handleViewBOM(bom.id)}>
-                    <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
+                {/* Expanded: Show BOM Items */}
+                {isExpanded && (
+                  <div className="mt-4 pt-4 border-t">
+                    <BOMItemsTable bomId={bom.id} productId={productId} size={bom.size} />
+                  </div>
+                )}
+              </Card>
+            )
+          })}
+        </div>
+      )}
 
-                  {/* ACTIVE BOM: Show Deactivate button */}
-                  {bom.is_active && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        console.log('🔘 Deactivate button clicked for:', bom.id)
-                        setBomToDeactivate(bom)
-                      }}
-                      disabled={updateBOMMutation.isPending}
-                      className="border-amber-300 text-amber-700 hover:bg-amber-50"
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      {updateBOMMutation.isPending ? "Processing..." : "Deactivate"}
-                    </Button>
-                  )}
+      {/* Create BOM Modal */}
+      <CreateBOMModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        productId={productId}
+      />
 
-                  {/* INACTIVE BOM: Show Activate and Delete buttons */}
-                  {!bom.is_active && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          console.log('🔘 Activate button clicked for:', bom.id)
-                          setBomToActivate(bom)
-                        }}
-                        disabled={updateBOMMutation.isPending}
-                        className="border-green-300 text-green-700 hover:bg-green-50"
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        {updateBOMMutation.isPending ? "Processing..." : "Activate"}
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          console.log('🔘 Delete button clicked for:', bom.id)
-                          setBomToDelete(bom)
-                        }}
-                        disabled={deleteBOMMutation.isPending}
-                        className="border-red-300 text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        {deleteBOMMutation.isPending ? "Deleting..." : "Delete"}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* ✅ NEW: Deactivate Confirmation Dialog */}
-      <AlertDialog open={!!bomToDeactivate} onOpenChange={() => setBomToDeactivate(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate this BOM?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will deactivate "{bomToDeactivate?.name || `Version ${bomToDeactivate?.version}`}
-              ". The product will have no active BOM until you activate a different version.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeactivate}
-              disabled={updateBOMMutation.isPending}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              {updateBOMMutation.isPending ? "Deactivating..." : "Deactivate BOM"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Activate Confirmation Dialog */}
+      {/* Activate Confirmation */}
       <AlertDialog open={!!bomToActivate} onOpenChange={() => setBomToActivate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Activate this BOM?</AlertDialogTitle>
+            <AlertDialogTitle>Activate BOM?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will set "{bomToActivate?.name || `Version ${bomToActivate?.version}`}" as the
-              active BOM. Any currently active BOM will be deactivated. This affects all future
-              orders for this product.
+              This will deactivate any other active BOM for Size {bomToActivate?.size}. The active
+              BOM is used for production and inventory calculations.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleActivate}
-              disabled={updateBOMMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              {updateBOMMutation.isPending ? "Activating..." : "Activate BOM"}
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleActivate}>Activate</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Deactivate Confirmation */}
+      <AlertDialog open={!!bomToDeactivate} onOpenChange={() => setBomToDeactivate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate BOM?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will deactivate the current BOM for Size {bomToDeactivate?.size}. You can
+              reactivate it later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeactivate}>Deactivate</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation */}
       <AlertDialog open={!!bomToDelete} onOpenChange={() => setBomToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this BOM?</AlertDialogTitle>
+            <AlertDialogTitle>Delete BOM?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{bomToDelete?.name || `Version ${bomToDelete?.version}`}
-              " and all its items. This action cannot be undone.
+              This will permanently delete "{bomToDelete?.name}" and all its items. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={deleteBOMMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleteBOMMutation.isPending ? "Deleting..." : "Delete BOM"}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* ✅ NEW: Create BOM Modal */}
-      <CreateBOMModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        productId={productId}
-        currentBOMsCount={allBOMs.length}
-      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Plus, Edit, Trash2 } from "lucide-react"
-import { useDeleteBOMItem } from "../../../hooks/useProducts"
+import { useBOMItems, useDeleteBOMItem } from "../../../hooks/useProducts"
 import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
 import {
@@ -35,11 +35,15 @@ export default function BOMItemsTable({ bom, productId }) {
   // ✅ State for delete dialog
   const [itemToDelete, setItemToDelete] = useState(null)
 
-  // ✅ NEW: State for add/edit modal
+  // ✅ State for add/edit modal
   const [showAddModal, setShowAddModal] = useState(false)
   const [itemToEdit, setItemToEdit] = useState(null)
 
   const deleteBOMItemMutation = useDeleteBOMItem()
+
+  // ✅ FIX: Fetch items directly instead of using bom.items prop
+  const { data: itemsResponse, isLoading } = useBOMItems(bom.id)
+  const items = itemsResponse?.data || []
 
   const handleDeleteItem = async () => {
     if (!itemToDelete) return
@@ -49,14 +53,13 @@ export default function BOMItemsTable({ bom, productId }) {
         bomId: bom.id,
         itemId: itemToDelete.id,
         productId: productId,
+        size: bom.size, // ✅ Add size for proper cache invalidation
       })
       setItemToDelete(null)
     } catch (error) {
       // Error toast already shown by mutation
     }
   }
-
-  const items = bom.items || []
 
   return (
     <div className="space-y-4">
@@ -68,7 +71,7 @@ export default function BOMItemsTable({ bom, productId }) {
           </h3>
           {bom.notes && <p className="text-sm text-gray-600 mt-1">{bom.notes}</p>}
         </div>
-        {/* ✅ NEW: Add Item button opens modal */}
+        {/* Add Item button opens modal */}
         <Button onClick={() => setShowAddModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item
@@ -83,17 +86,22 @@ export default function BOMItemsTable({ bom, productId }) {
         </AlertDescription>
       </Alert>
 
-      {/* Table */}
-      {items.length === 0 ? (
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="border border-gray-200 rounded-lg p-12 text-center">
+          <p className="text-gray-600">Loading items...</p>
+        </div>
+      ) : items.length === 0 ? (
+        /* Empty State */
         <div className="border border-gray-200 rounded-lg p-12 text-center">
           <p className="text-gray-600 mb-4">No items in this BOM yet</p>
-          {/* ✅ NEW: Add First Item button opens modal */}
           <Button onClick={() => setShowAddModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add First Item
           </Button>
         </div>
       ) : (
+        /* Table */
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
@@ -130,7 +138,7 @@ export default function BOMItemsTable({ bom, productId }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
-                      {/* ✅ NEW: Edit button opens modal with item data */}
+                      {/* Edit button opens modal with item data */}
                       <Button variant="ghost" size="sm" onClick={() => setItemToEdit(item)}>
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -149,25 +157,7 @@ export default function BOMItemsTable({ bom, productId }) {
       {/* Summary */}
       {items.length > 0 && <div className="text-sm text-gray-600">Total items: {items.length}</div>}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete BOM Item?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove this material from the BOM. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteItem} className="bg-red-600 hover:bg-red-700">
-              Delete Item
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* ✅ NEW: Add/Edit BOM Item Modal */}
+      {/* BOM Item Modal (Add/Edit) */}
       <BOMItemModal
         isOpen={showAddModal || !!itemToEdit}
         onClose={() => {
@@ -178,6 +168,30 @@ export default function BOMItemsTable({ bom, productId }) {
         productId={productId}
         itemToEdit={itemToEdit}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={!!itemToDelete}
+        onOpenChange={(open) => !open && setItemToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete BOM Item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this item from the BOM. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteItem}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

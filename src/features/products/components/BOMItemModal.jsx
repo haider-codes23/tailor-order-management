@@ -32,7 +32,7 @@ const UNITS = ["Meter", "Yard", "Kg", "Gram", "Piece", "Set"]
 // Garment pieces
 const GARMENT_PIECES = ["Shirt", "Trouser", "Dupatta", "Kameez", "Shalwar", "Waistcoat", "Kurta"]
 
-export default function BOMItemModal({ isOpen, onClose, bomId, productId, itemToEdit = null }) {
+export default function BOMItemModal({ isOpen, onClose, bomId, productId, size, itemToEdit = null }) {
   const isEditMode = !!itemToEdit
 
   const {
@@ -96,12 +96,14 @@ export default function BOMItemModal({ isOpen, onClose, bomId, productId, itemTo
           itemId: itemToEdit.id,
           updates: itemData,
           productId,
+          size
         })
       } else {
         await createBOMItemMutation.mutateAsync({
           bomId,
           itemData,
           productId,
+          size
         })
       }
 
