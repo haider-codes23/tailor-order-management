@@ -51,6 +51,10 @@ import ProductFormPage from "@/features/products/pages/ProductFormPage"
 export default function AppRoutes() {
   return (
     <Routes>
+      {/* ==================== ROOT REDIRECT ==================== */}
+      {/* Redirect root to login - users must authenticate first */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
       {/* ==================== PUBLIC ROUTES ==================== */}
       {/* Auth Layout - Login page */}
       <Route element={<AuthLayout />}>
@@ -67,7 +71,7 @@ export default function AppRoutes() {
         }
       >
         {/* Dashboard - Everyone can access */}
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
 
         {/* Orders - Placeholder for future */}
         <Route path="/orders" element={<OrdersPage />} />

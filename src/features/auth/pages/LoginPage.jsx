@@ -26,8 +26,8 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Get the page the user was trying to access
-  const from = location.state?.from?.pathname || "/"
+  // Get the page the user was trying to access, default to /dashboard
+  const from = location.state?.from?.pathname || "/dashboard"
 
   // Get the login mutation hook
   const loginMutation = useLogin()
@@ -89,103 +89,170 @@ export default function LoginPage() {
     }
   }
 
+  const errorMessage = getErrorMessage(loginMutation.error)
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Welcome Back</CardTitle>
-        <CardDescription>Sign in to your account to continue</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Display error if login failed */}
-        {loginMutation.error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{getErrorMessage(loginMutation.error)}</AlertDescription>
-          </Alert>
-        )}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
+          <CardDescription className="text-base">
+            Sign in to your Tailor Order Management account
+          </CardDescription>
+        </CardHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email Field */}
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Please enter a valid email address",
-                },
-                onChange: handleInputChange,
-              })}
+        <CardContent>
+          {/* Error Alert */}
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-slate-700">
+                Email Address
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@tailor.com"
+                disabled={loginMutation.isPending}
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Invalid email address",
+                  },
+                })}
+                onChange={handleInputChange}
+                className={errors.email ? "border-red-500" : ""}
+              />
+              {errors.email && (
+                <p className="text-sm text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                disabled={loginMutation.isPending}
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 6,
+                    message: "Password must be at least 6 characters",
+                  },
+                })}
+                onChange={handleInputChange}
+                className={errors.password ? "border-red-500" : ""}
+              />
+              {errors.password && (
+                <p className="text-sm text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full"
               disabled={loginMutation.isPending}
-            />
-            {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
-          </div>
+              size="lg"
+            >
+              {loginMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
 
-          {/* Password Field */}
-          <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters",
-                },
-                onChange: handleInputChange,
-              })}
-              disabled={loginMutation.isPending}
-            />
-            {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
-          </div>
-
-          {/* Submit Button */}
-          <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-            {loginMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </Button>
-
-          {/* Test Accounts */}
-          <div className="mt-4 p-3 bg-slate-50 rounded-md border border-slate-200">
-            <p className="text-xs font-medium text-slate-700 mb-2">Test Accounts:</p>
-            <div className="text-xs text-slate-600 space-y-1">
-              <p>
-                <strong>Admin:</strong> admin@tailor.com / admin123
-              </p>
-              <p>
-                <strong>Sales:</strong> sales@tailor.com / sales123
-              </p>
-              <p>
-                <strong>Supervisor:</strong> supervisor@tailor.com / super123
-              </p>
-              <p>
-                <strong>Worker:</strong> worker@tailor.com / worker123
-              </p>
-              <p>
-                <strong>Purchaser:</strong> purchaser@tailor.com / purchase123
-              </p>
-              <p>
-                <strong>QA:</strong> qa@tailor.com / qa1234
-              </p>
+          {/* Development Credentials Hint */}
+          <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <p className="text-xs font-semibold text-slate-700 mb-3 text-center">
+              🔐 Demo Test Accounts
+            </p>
+            <div className="space-y-2 text-xs">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-medium text-slate-700">Email</div>
+                <div className="font-medium text-slate-700">Password</div>
+              </div>
+              <div className="border-t border-slate-200 pt-2 space-y-1.5">
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div className="font-medium">Admin User</div>
+                  <div></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-slate-500 text-[11px]">
+                  <div>admin@tailor.com</div>
+                  <div>admin123</div>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-2 space-y-1.5">
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div className="font-medium">Sales Rep</div>
+                  <div></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-slate-500 text-[11px]">
+                  <div>sales@tailor.com</div>
+                  <div>sales123</div>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-2 space-y-1.5">
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div className="font-medium">Supervisor</div>
+                  <div></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-slate-500 text-[11px]">
+                  <div>supervisor@tailor.com</div>
+                  <div>super123</div>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-2 space-y-1.5">
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div className="font-medium">Worker</div>
+                  <div></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-slate-500 text-[11px]">
+                  <div>worker@tailor.com</div>
+                  <div>worker123</div>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-2 space-y-1.5">
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div className="font-medium">Purchaser</div>
+                  <div></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-slate-500 text-[11px]">
+                  <div>purchaser@tailor.com</div>
+                  <div>purchase123</div>
+                </div>
+              </div>
+              <div className="border-t border-slate-200 pt-2 space-y-1.5">
+                <div className="grid grid-cols-2 gap-2 text-slate-600">
+                  <div className="font-medium">QA Manager</div>
+                  <div></div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-slate-500 text-[11px]">
+                  <div>qa@tailor.com</div>
+                  <div>qa123</div>
+                </div>
+              </div>
             </div>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

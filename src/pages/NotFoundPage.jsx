@@ -9,7 +9,7 @@ export default function NotFoundPage() {
         <p className="text-xl text-slate-600 mt-4">Page not found</p>
         <p className="text-slate-500 mt-2">The page you're looking for doesn't exist.</p>
         <Button asChild className="mt-6">
-          <Link to="/">Go Home</Link>
+          <Link to="/dashboard">Go Home</Link>
         </Button>
       </div>
     </div>
