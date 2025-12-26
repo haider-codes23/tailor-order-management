@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   Ruler,
   Box,
-  LogOut,
 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
@@ -125,7 +124,9 @@ export default function Sidebar() {
         <div className="flex flex-col flex-grow bg-white border-r border-slate-200 pt-5 pb-4 overflow-y-auto">
           {/* Logo/Brand */}
           <div className="flex items-center flex-shrink-0 px-4 mb-5">
-            <h1 className="text-xl font-bold text-slate-900">Tailor Order System</h1>
+            <h1 className="text-md font-bold text-slate-900">
+              Orders & Inventory Management System
+            </h1>
           </div>
 
           {/* Navigation Menu */}
@@ -180,16 +181,6 @@ export default function Sidebar() {
             </div>
 
             {/* Logout Button */}
-            <div className="px-4 pb-4">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                onClick={logout}
-              >
-                <LogOut className="h-4 w-4 mr-3" />
-                <span>Logout</span>
-              </Button>
-            </div>
 
             {/* Footer info */}
             <div className="px-4 pb-4">
