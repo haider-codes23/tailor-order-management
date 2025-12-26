@@ -31,29 +31,29 @@ const CATEGORY_COLORS = {
   ADDA_MATERIAL: "bg-orange-100 text-orange-800",
 }
 
-export default function BOMItemsTable({ bom, productId }) {
-  // ✅ State for delete dialog
+// ✅ FIXED: Accept bomId, productId, size as separate props
+export default function BOMItemsTable({ bomId, productId, size }) {
   const [itemToDelete, setItemToDelete] = useState(null)
-
-  // ✅ State for add/edit modal
   const [showAddModal, setShowAddModal] = useState(false)
   const [itemToEdit, setItemToEdit] = useState(null)
 
   const deleteBOMItemMutation = useDeleteBOMItem()
 
-  // ✅ FIX: Fetch items directly instead of using bom.items prop
-  const { data: itemsResponse, isLoading } = useBOMItems(bom.id)
+  // ✅ Fetch items using bomId
+  const { data: itemsResponse, isLoading } = useBOMItems(bomId)
   const items = itemsResponse?.data || []
+
+  console.log(`📋 BOMItemsTable: bomId=${bomId}, items=`, items)
 
   const handleDeleteItem = async () => {
     if (!itemToDelete) return
 
     try {
       await deleteBOMItemMutation.mutateAsync({
-        bomId: bom.id,
+        bomId,
         itemId: itemToDelete.id,
-        productId: productId,
-        size: bom.size, // ✅ Add size for proper cache invalidation
+        productId,
+        size,
       })
       setItemToDelete(null)
     } catch (error) {
@@ -65,14 +65,8 @@ export default function BOMItemsTable({ bom, productId }) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-gray-900">
-            {bom.name || `BOM Version ${bom.version}`}
-          </h3>
-          {bom.notes && <p className="text-sm text-gray-600 mt-1">{bom.notes}</p>}
-        </div>
-        {/* Add Item button opens modal */}
-        <Button onClick={() => setShowAddModal(true)}>
+        <h3 className="font-semibold text-gray-900">BOM Items</h3>
+        <Button onClick={() => setShowAddModal(true)} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
@@ -82,20 +76,20 @@ export default function BOMItemsTable({ bom, productId }) {
       <Alert>
         <AlertDescription className="text-sm">
           <strong>Note:</strong> BOM items can only reference FABRIC, RAW_MATERIAL, MULTI_HEAD, and
-          ADDA_MATERIAL inventory categories. READY_STOCK and READY_SAMPLE are not allowed in BOMs.
+          ADDA_MATERIAL inventory categories.
         </AlertDescription>
       </Alert>
 
       {/* Loading State */}
       {isLoading ? (
-        <div className="border border-gray-200 rounded-lg p-12 text-center">
+        <div className="border border-gray-200 rounded-lg p-8 text-center">
           <p className="text-gray-600">Loading items...</p>
         </div>
       ) : items.length === 0 ? (
         /* Empty State */
-        <div className="border border-gray-200 rounded-lg p-12 text-center">
+        <div className="border border-gray-200 rounded-lg p-8 text-center">
           <p className="text-gray-600 mb-4">No items in this BOM yet</p>
-          <Button onClick={() => setShowAddModal(true)}>
+          <Button onClick={() => setShowAddModal(true)} size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Add First Item
           </Button>
@@ -138,7 +132,6 @@ export default function BOMItemsTable({ bom, productId }) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-2">
-                      {/* Edit button opens modal with item data */}
                       <Button variant="ghost" size="sm" onClick={() => setItemToEdit(item)}>
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -155,25 +148,25 @@ export default function BOMItemsTable({ bom, productId }) {
       )}
 
       {/* Summary */}
-      {items.length > 0 && <div className="text-sm text-gray-600">Total items: {items.length}</div>}
+      {items.length > 0 && (
+        <div className="text-sm text-gray-600">Total items: {items.length}</div>
+      )}
 
-      {/* BOM Item Modal (Add/Edit) */}
+      {/* Add/Edit BOM Item Modal */}
       <BOMItemModal
         isOpen={showAddModal || !!itemToEdit}
         onClose={() => {
           setShowAddModal(false)
           setItemToEdit(null)
         }}
-        bomId={bom.id}
+        bomId={bomId}
         productId={productId}
+        size={size}
         itemToEdit={itemToEdit}
       />
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!itemToDelete}
-        onOpenChange={(open) => !open && setItemToDelete(null)}
-      >
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete BOM Item?</AlertDialogTitle>
@@ -183,10 +176,7 @@ export default function BOMItemsTable({ bom, productId }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteItem}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={handleDeleteItem} className="bg-red-600 hover:bg-red-700">
               Delete Item
             </AlertDialogAction>
           </AlertDialogFooter>

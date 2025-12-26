@@ -220,61 +220,50 @@ export function useUpdateBOM() {
 
   return useMutation({
     mutationFn: ({ bomId, updates }) => productsApi.updateBOM(bomId, updates),
-    onSuccess: (data) => {
-      const bom = data
-      const productId = bom.product_id
-      const size = bom.size
+    
+    onSuccess: (response) => {
+      console.log('✅ BOM Update Response:', response)
+      
+      // Extract the updated BOM from response
+      const updatedBOM = response?.data
+      
+      if (!updatedBOM) {
+        console.error('❌ No BOM data in response!')
+        return
+      }
 
-      console.log("🔄 BOM Updated - Starting AGGRESSIVE cache clear", {
-        bomId: bom.id,
-        productId,
-        size,
-        isActive: bom.is_active,
-        updates: bom,
+      const { id: bomId, product_id: productId, size } = updatedBOM
+      
+      console.log(`🔄 Invalidating queries for BOM ${bomId}, Product ${productId}, Size ${size}`)
+
+      // SIMPLE APPROACH: Just invalidate all related queries
+      // React Query will automatically refetch active queries
+      queryClient.invalidateQueries({ 
+        queryKey: productKeys.bom(bomId),
+        refetchType: 'active' 
       })
-
-      // STEP 1: Remove ALL related queries from cache completely
-      console.log("Step 1: Removing queries from cache...")
-      queryClient.removeQueries({ queryKey: productKeys.bom(bom.id), exact: true })
-      queryClient.removeQueries({ queryKey: productKeys.boms(productId, size), exact: true })
-      queryClient.removeQueries({ queryKey: productKeys.boms(productId, null), exact: true })
-      queryClient.removeQueries({ queryKey: productKeys.activeBom(productId, size), exact: true })
-      queryClient.removeQueries({ queryKey: productKeys.detail(productId), exact: true })
-
-      // STEP 2: Invalidate with type: 'all' to mark stale
-      console.log("Step 2: Invalidating queries...")
+      
+      queryClient.invalidateQueries({ 
+        queryKey: productKeys.boms(productId, size),
+        refetchType: 'active'
+      })
+      
+      queryClient.invalidateQueries({ 
+        queryKey: productKeys.activeBom(productId, size),
+        refetchType: 'active'
+      })
+      
+      // Also invalidate the "all BOMs" query (without size filter)
       queryClient.invalidateQueries({ 
         queryKey: productKeys.boms(productId),
-        exact: false, // Match all size variations
-        refetchType: 'all'
-      })
-      queryClient.invalidateQueries({ 
-        queryKey: productKeys.activeBom(productId),
-        exact: false,
-        refetchType: 'all'
+        refetchType: 'active'
       })
 
-      // STEP 3: Force immediate refetch
-      console.log("Step 3: Forcing refetch...")
-      setTimeout(() => {
-        queryClient.refetchQueries({ 
-          queryKey: productKeys.boms(productId, size),
-          exact: true,
-          type: 'active'
-        })
-        queryClient.refetchQueries({ 
-          queryKey: productKeys.boms(productId, null),
-          exact: true,
-          type: 'active'
-        })
-        console.log("✅ Refetch complete!")
-      }, 0)
-
-      toast.success("BOM updated successfully")
+      console.log('✅ All queries invalidated - React Query will refetch automatically')
     },
+    
     onError: (error) => {
-      const message = error.response?.data?.error || "Failed to update BOM"
-      toast.error(message)
+      console.error('❌ BOM Update Failed:', error)
     },
   })
 }
