@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { useUser, useCreateUser, useUpdateUser } from "@/hooks/useUsers"
 import { USER_ROLES, ROLE_LABELS } from "@/mocks/data/mockUser"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,6 +42,7 @@ export default function UserFormPage() {
     formState: { errors, isSubmitting },
     setValue,
     watch,
+    control,
   } = useForm({
     defaultValues: {
       name: "",
@@ -68,6 +69,11 @@ export default function UserFormPage() {
 
   // Form submission
   const onSubmit = async (data) => {
+    // Validation: Must select a role
+    if (!data.role) {
+      return // Form validation will show error
+    }
+
     // Validation: Must have at least one permission
     if (selectedPermissions.length === 0) {
       alert("Please select at least one permission for this user")
@@ -193,27 +199,34 @@ export default function UserFormPage() {
               {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
             </div>
 
-            {/* Role Label */}
+            {/* Role Label - WITH VALIDATION */}
             <div className="space-y-2">
               <Label htmlFor="role">
                 Role Label <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={selectedRole}
-                onValueChange={(value) => setValue("role", value)}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Select a role label" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                name="role"
+                control={control}
+                rules={{ required: "Role is required" }} // ✅ ADDED VALIDATION
+                render={({ field }) => (
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Select a role label" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.role && <p className="text-sm text-red-500">{errors.role.message}</p>}
               <p className="text-sm text-muted-foreground">
                 Role is just a label for categorization. Actual access is controlled by permissions
