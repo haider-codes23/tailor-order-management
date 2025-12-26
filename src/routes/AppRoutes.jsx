@@ -13,7 +13,7 @@ import NotFoundPage from "@/pages/NotFoundPage"
 
 // Admin pages
 import { MeasurementChartsSettings } from "@/features/admin/pages/MeasurementChartsSettings"
-import UsersListPage from "@/features/admin/pages/UsersListPage"
+import UserListPage from "@/features/admin/pages/UserListPage"
 import UserFormPage from "@/features/admin/pages/UserFormPage"
 
 // Inventory pages
@@ -169,7 +169,7 @@ export default function AppRoutes() {
             path="users"
             element={
               <ProtectedRoute requiredPermissions={["users.view"]}>
-                <UsersListPage />
+                <UserListPage />
               </ProtectedRoute>
             }
           />

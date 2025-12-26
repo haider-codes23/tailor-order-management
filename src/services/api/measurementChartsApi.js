@@ -7,7 +7,7 @@
  * These functions are used by React Query hooks in useMeasurementCharts.js
  */
 
-import httpClient from "../httpClient"
+import { httpClient } from "@/services/http/httpClient"
 
 /**
  * Get the Standard Size Chart
@@ -58,6 +58,10 @@ export async function getStandardHeightChart() {
 export async function updateStandardHeightChart(rows) {
   return httpClient.put("/admin/measurements/standard-height-chart", { rows })
 }
+
+/**
+ * Barrel export for convenient importing
+ */
 export const measurementChartsApi = {
   getStandardSizeChart,
   updateStandardSizeChart,

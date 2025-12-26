@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useUsers, useDeleteUser, useActivateUser } from "@/hooks/useUsers"
-import { USER_ROLES, ROLE_LABELS } from "@/mocks/data/mockUsers"
+import { useUsers, useDeleteUser, useActivateUser } from "@/hooks"
+import { USER_ROLES, ROLE_LABELS } from "@/mocks/data/mockUser"
 import { getUserPermissionCount } from "@/lib/rbac"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -35,32 +35,34 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Loader2, Plus, Edit, UserX, UserCheck, AlertCircle, Users, Shield } from "lucide-react"
 
-export default function UsersListPage() {
+export default function UserListPage() {
   const navigate = useNavigate()
 
-  // Filters state
-  const [roleFilter, setRoleFilter] = useState("")
-  const [statusFilter, setStatusFilter] = useState("")
+  // Filters state - using "all" instead of empty string
+  const [roleFilter, setRoleFilter] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
 
   // Deletion/Activation state
   const [userToDelete, setUserToDelete] = useState(null)
   const [userToActivate, setUserToActivate] = useState(null)
 
-  // Build filters object
+  // Build filters object - only add filters if not "all"
   const filters = {}
-  if (roleFilter) filters.role = roleFilter
-  if (statusFilter) filters.is_active = statusFilter === "active"
+  if (roleFilter && roleFilter !== "all") filters.role = roleFilter
+  if (statusFilter && statusFilter !== "all") {
+    filters.is_active = statusFilter === "active"
+  }
   if (searchQuery) filters.search = searchQuery
 
   // Fetch users with filters
-  const { data, isLoading, isError, error } = useUsers(filters)
+  const { data, isLoading, error } = useUsers(filters)
 
   // Mutations
   const deleteUserMutation = useDeleteUser()
   const activateUserMutation = useActivateUser()
 
-  // Handlers
+  // Event handlers
   const handleCreateNew = () => {
     navigate("/admin/users/new")
   }
@@ -69,38 +71,38 @@ export default function UsersListPage() {
     navigate(`/admin/users/${userId}/edit`)
   }
 
-  const handleDeactivate = async () => {
-    if (!userToDelete) return
+  const handleDeleteClick = (user) => {
+    setUserToDelete(user)
+  }
 
-    try {
+  const handleDeleteConfirm = async () => {
+    if (userToDelete) {
       await deleteUserMutation.mutateAsync(userToDelete.id)
       setUserToDelete(null)
-    } catch (error) {
-      // Error already handled by mutation
     }
   }
 
-  const handleActivate = async () => {
-    if (!userToActivate) return
+  const handleActivateClick = (user) => {
+    setUserToActivate(user)
+  }
 
-    try {
+  const handleActivateConfirm = async () => {
+    if (userToActivate) {
       await activateUserMutation.mutateAsync(userToActivate.id)
       setUserToActivate(null)
-    } catch (error) {
-      // Error already handled by mutation
     }
   }
 
   const clearFilters = () => {
-    setRoleFilter("")
-    setStatusFilter("")
+    setRoleFilter("all")
+    setStatusFilter("all")
     setSearchQuery("")
   }
 
   // Loading state
   if (isLoading) {
     return (
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
@@ -112,9 +114,9 @@ export default function UsersListPage() {
   }
 
   // Error state
-  if (isError) {
+  if (error) {
     return (
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-6 px-4 max-w-7xl">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -126,7 +128,7 @@ export default function UsersListPage() {
   }
 
   const users = data?.data || []
-  const hasActiveFilters = roleFilter || statusFilter || searchQuery
+  const hasActiveFilters = roleFilter !== "all" || statusFilter !== "all" || searchQuery
 
   return (
     <div className="container mx-auto py-6 px-4 max-w-7xl">
@@ -168,7 +170,7 @@ export default function UsersListPage() {
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Roles</SelectItem>
+                <SelectItem value="all">All Roles</SelectItem>
                 {Object.entries(ROLE_LABELS).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
                     {label}
@@ -183,7 +185,7 @@ export default function UsersListPage() {
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
@@ -225,103 +227,83 @@ export default function UsersListPage() {
               <h3 className="text-lg font-semibold mb-2">No users found</h3>
               <p className="text-muted-foreground mb-4">
                 {hasActiveFilters
-                  ? "Try adjusting your filters"
-                  : "Get started by creating your first user"}
+                  ? "No users match your current filters. Try adjusting your search criteria."
+                  : "Get started by creating your first user."}
               </p>
               {!hasActiveFilters && (
                 <Button onClick={handleCreateNew}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add User
+                  Add Your First User
                 </Button>
               )}
             </div>
           ) : (
-            <div className="border rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Role Label</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Permissions</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => {
-                    const permissionCount = getUserPermissionCount(user)
-
-                    return (
-                      <TableRow key={user.id}>
-                        {/* Name */}
-                        <TableCell className="font-medium">{user.name}</TableCell>
-
-                        {/* Email */}
-                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
-
-                        {/* Role Label */}
-                        <TableCell>
-                          <Badge variant="outline">{ROLE_LABELS[user.role] || user.role}</Badge>
-                        </TableCell>
-
-                        {/* Permissions Count */}
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              {permissionCount} permission{permissionCount !== 1 ? "s" : ""}
-                            </span>
-                          </div>
-                        </TableCell>
-
-                        {/* Status */}
-                        <TableCell>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{ROLE_LABELS[user.role] || user.role}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {getUserPermissionCount(user)} permissions
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_active ? "default" : "secondary"}>
+                          {user.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(user.id)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
                           {user.is_active ? (
-                            <Badge variant="default" className="bg-green-600">
-                              Active
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">Inactive</Badge>
-                          )}
-                        </TableCell>
-
-                        {/* Actions */}
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => handleEdit(user.id)}
+                              onClick={() => handleDeleteClick(user)}
                             >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
+                              <UserX className="h-4 w-4 mr-1" />
+                              Deactivate
                             </Button>
-
-                            {user.is_active ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setUserToDelete(user)}
-                              >
-                                <UserX className="h-4 w-4 mr-1" />
-                                Deactivate
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setUserToActivate(user)}
-                              >
-                                <UserCheck className="h-4 w-4 mr-1" />
-                                Activate
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleActivateClick(user)}
+                            >
+                              <UserCheck className="h-4 w-4 mr-1" />
+                              Activate
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
@@ -329,41 +311,36 @@ export default function UsersListPage() {
         </CardContent>
       </Card>
 
-      {/* Deactivate User Dialog */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate User</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to deactivate <strong>{userToDelete?.name}</strong>? They will
-              no longer be able to access the system.
+              no longer be able to log in to the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeactivate}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Deactivate User
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConfirm}>Deactivate</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Activate User Dialog */}
+      {/* Activate Confirmation Dialog */}
       <AlertDialog open={!!userToActivate} onOpenChange={() => setUserToActivate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Activate User</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to activate <strong>{userToActivate?.name}</strong>? They will
-              regain access to the system.
+              be able to log in to the system again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleActivate}>Activate User</AlertDialogAction>
+            <AlertDialogAction onClick={handleActivateConfirm}>Activate</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

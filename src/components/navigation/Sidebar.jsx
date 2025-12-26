@@ -14,7 +14,7 @@ import {
   Box,
   LogOut,
 } from "lucide-react"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
 import { Button } from "@/components/ui/button"
 

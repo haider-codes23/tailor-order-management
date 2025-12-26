@@ -26,6 +26,16 @@ export {
   measurementChartsKeys,
 } from "./useMeasurementCharts"
 
+export {
+  useUsers,
+  useUser,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+  useActivateUser,
+  userKeys,
+} from "./useUsers"
+
 // Future hook exports will be added here as we build more features:
 // export { useProducts, useCreateProduct, useUpdateProduct } from "./useProducts"
 // export { useInventoryItems, useStockMovements } from "./useInventory"

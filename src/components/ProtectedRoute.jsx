@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom"
-import { useAuth } from "../contexts/AuthContext"
+import { useAuth } from "@/features/auth/hooks/useAuth"
 import { canAccessRoute } from "../lib/rbac"
 import { Alert, AlertDescription } from "./ui/alert"
 import { Button } from "./ui/button"

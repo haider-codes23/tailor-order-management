@@ -6,9 +6,11 @@
  */
 
 import { http, HttpResponse } from "msw"
-import { mockUsers, getUserById } from "../data/mockUsers"
+// import { mockUsers, getUserById } from "../data/mockUsers"
+import { mockUsers, getUserById } from "../data/mockUser"
+import { appConfig } from "@/config/appConfig"
 
-const API_BASE = "/api"
+// const appConfig.apiBaseUrl = "/api"
 
 /**
  * Users Handlers
@@ -19,7 +21,7 @@ export const usersHandlers = [
    * List all users with optional filtering
    * Query params: role, is_active, search
    */
-  http.get(`${API_BASE}/users`, ({ request }) => {
+  http.get(`${appConfig.apiBaseUrl}/users`, ({ request }) => {
     const url = new URL(request.url)
     const roleFilter = url.searchParams.get("role")
     const isActiveFilter = url.searchParams.get("is_active")
@@ -67,7 +69,7 @@ export const usersHandlers = [
    * GET /api/users/:id
    * Get a single user by ID
    */
-  http.get(`${API_BASE}/users/:id`, ({ params }) => {
+  http.get(`${appConfig.apiBaseUrl}/users/:id`, ({ params }) => {
     const { id } = params
     const user = getUserById(id)
 
@@ -94,7 +96,7 @@ export const usersHandlers = [
    * POST /api/users
    * Create a new user
    */
-  http.post(`${API_BASE}/users`, async ({ request }) => {
+  http.post(`${appConfig.apiBaseUrl}/users`, async ({ request }) => {
     const body = await request.json()
 
     // Validation
@@ -169,7 +171,7 @@ export const usersHandlers = [
    * PUT /api/users/:id
    * Update an existing user
    */
-  http.put(`${API_BASE}/users/:id`, async ({ params, request }) => {
+  http.put(`${appConfig.apiBaseUrl}/users/:id`, async ({ params, request }) => {
     const { id } = params
     const body = await request.json()
 
@@ -239,7 +241,7 @@ export const usersHandlers = [
    * Delete (deactivate) a user
    * Note: We don't actually delete users, we just deactivate them
    */
-  http.delete(`${API_BASE}/users/:id`, ({ params }) => {
+  http.delete(`${appConfig.apiBaseUrl}/users/:id`, ({ params }) => {
     const { id } = params
 
     const userIndex = mockUsers.findIndex((u) => u.id === parseInt(id))
