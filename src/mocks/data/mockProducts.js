@@ -1,16 +1,10 @@
 /**
- * Mock Products and BOMs - WITH SIZE SUPPORT
+ * Mock Products and BOMs - COMPLETE VERSION
  *
  * Data Structure:
- * - mockProducts: Product catalog with Shopify integration fields
- * - mockBOMs: Bill of Materials (versioned, SIZE-SPECIFIC)
- * - mockBOMItems: Individual material requirements per BOM
- *
- * NEW RULES (Phase 7B):
- * - Each BOM has a SIZE field: XS, S, M, L, XL, XXL, CUSTOM
- * - Products can have multiple ACTIVE BOMs (one per size)
- * - BOM names auto-include size: "Size M - Version 1"
- * - Each size has independent version history
+ * - 5 Products with full details
+ * - BOMs for ALL sizes (XS, S, M, L, XL, XXL, CUSTOM) for each product
+ * - BOM items for every BOM
  */
 
 // ==================== SIZE CONSTANTS ====================
@@ -62,323 +56,306 @@ export const mockProducts = [
     shopify_product_id: "gid://shopify/Product/8234567892",
     shopify_variant_id: "gid://shopify/ProductVariant/44123456791",
     images: ["https://musferahsaad.net/cdn/shop/files/MysticEmerald4_1800x1800.webp?v=1759854950"],
-    primary_image: "https://musferahsaad.net/cdn/shop/files/MysticEmerald1.webp?v=1759854949&width=1080",
+    primary_image: "https://musferahsaad.net/cdn/shop/files/White1.webp?v=1746992812&width=1080",
     base_price: 32000,
     created_at: "2024-03-05T08:30:00Z",
     updated_at: "2024-12-19T16:45:00Z",
   },
+  {
+    id: "prod_4",
+    name: "RUBY ELEGANCE",
+    sku: "RUBY-001",
+    description: "Deep ruby red formal wear with crystal embellishments",
+    category: "FORMAL",
+    active: true,
+    shopify_product_id: "gid://shopify/Product/8234567893",
+    shopify_variant_id: "gid://shopify/ProductVariant/44123456792",
+    images: ["https://musferahsaad.net/cdn/shop/files/CrimsonQueen3_1800x1800.webp?v=1759854932"],
+    primary_image: "https://musferahsaad.net/cdn/shop/files/Romance1.webp?v=1746992837&width=1080",
+    base_price: 52000,
+    created_at: "2024-04-12T11:00:00Z",
+    updated_at: "2024-12-21T10:15:00Z",
+  },
+  {
+    id: "prod_5",
+    name: "AZURE DREAM",
+    sku: "AZUR-001",
+    description: "Light blue summer collection with floral embroidery",
+    category: "CASUAL",
+    active: true,
+    shopify_product_id: "gid://shopify/Product/8234567894",
+    shopify_variant_id: "gid://shopify/ProductVariant/44123456793",
+    images: ["https://musferahsaad.net/cdn/shop/files/SkylineMuse2_1800x1800.webp?v=1759854970"],
+    primary_image: "https://musferahsaad.net/cdn/shop/files/Symphony1.webp?v=1746992802&width=1080",
+    base_price: 28000,
+    created_at: "2024-05-20T09:30:00Z",
+    updated_at: "2024-12-22T14:20:00Z",
+  },
 ]
 
-// ==================== BOMs (SIZE-BASED) ====================
+// ==================== BOMs (ALL SIZES FOR ALL PRODUCTS) ====================
 export const mockBOMs = [
-  // === GOLDESS - Size M BOMs ===
-  {
-    id: "bom_1",
-    product_id: "prod_1",
-    size: "M", // ← NEW: Size-specific BOM
-    version: 2,
-    name: "Size M - Version 2", // ← NEW: Auto-generated name format
-    is_active: true,
-    notes: "Updated fabric quantities for medium size",
-    created_at: "2024-12-20T10:00:00Z",
-    updated_at: "2024-12-20T10:00:00Z",
-  },
-  {
-    id: "bom_2",
-    product_id: "prod_1",
-    size: "M",
-    version: 1,
-    name: "Size M - Version 1",
-    is_active: false,
-    notes: "Initial BOM for medium size",
-    created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-12-20T09:30:00Z",
-  },
+  // === GOLDESS (prod_1) - ALL SIZES ===
+  { id: "bom_1", product_id: "prod_1", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-01-15T10:00:00Z", updated_at: "2024-01-15T10:00:00Z" },
+  { id: "bom_2", product_id: "prod_1", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-01-15T10:05:00Z", updated_at: "2024-01-15T10:05:00Z" },
+  { id: "bom_3", product_id: "prod_1", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-01-15T10:10:00Z", updated_at: "2024-01-15T10:10:00Z" },
+  { id: "bom_4", product_id: "prod_1", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-01-15T10:15:00Z", updated_at: "2024-01-15T10:15:00Z" },
+  { id: "bom_5", product_id: "prod_1", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-01-15T10:20:00Z", updated_at: "2024-01-15T10:20:00Z" },
+  { id: "bom_6", product_id: "prod_1", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-01-15T10:25:00Z", updated_at: "2024-01-15T10:25:00Z" },
+  { id: "bom_7", product_id: "prod_1", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-01-15T10:30:00Z", updated_at: "2024-01-15T10:30:00Z" },
 
-  // === GOLDESS - Size L BOMs ===
-  {
-    id: "bom_3",
-    product_id: "prod_1",
-    size: "L",
-    version: 1,
-    name: "Size L - Version 1",
-    is_active: true,
-    notes: "Larger fabric quantities for L size",
-    created_at: "2024-12-18T14:00:00Z",
-    updated_at: "2024-12-18T14:00:00Z",
-  },
+  // === MAUVE MAGIC (prod_2) - ALL SIZES ===
+  { id: "bom_8", product_id: "prod_2", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-02-10T09:00:00Z", updated_at: "2024-02-10T09:00:00Z" },
+  { id: "bom_9", product_id: "prod_2", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-02-10T09:05:00Z", updated_at: "2024-02-10T09:05:00Z" },
+  { id: "bom_10", product_id: "prod_2", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-02-10T09:10:00Z", updated_at: "2024-02-10T09:10:00Z" },
+  { id: "bom_11", product_id: "prod_2", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-02-10T09:15:00Z", updated_at: "2024-02-10T09:15:00Z" },
+  { id: "bom_12", product_id: "prod_2", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-02-10T09:20:00Z", updated_at: "2024-02-10T09:20:00Z" },
+  { id: "bom_13", product_id: "prod_2", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-02-10T09:25:00Z", updated_at: "2024-02-10T09:25:00Z" },
+  { id: "bom_14", product_id: "prod_2", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-02-10T09:30:00Z", updated_at: "2024-02-10T09:30:00Z" },
 
-  // === GOLDESS - Size XL BOMs ===
-  {
-    id: "bom_4",
-    product_id: "prod_1",
-    size: "XL",
-    version: 1,
-    name: "Size XL - Version 1",
-    is_active: true,
-    notes: "Extra large size - increased material requirements",
-    created_at: "2024-12-19T11:00:00Z",
-    updated_at: "2024-12-19T11:00:00Z",
-  },
+  // === EMERALD GRACE (prod_3) - ALL SIZES ===
+  { id: "bom_15", product_id: "prod_3", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-03-05T08:30:00Z", updated_at: "2024-03-05T08:30:00Z" },
+  { id: "bom_16", product_id: "prod_3", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-03-05T08:35:00Z", updated_at: "2024-03-05T08:35:00Z" },
+  { id: "bom_17", product_id: "prod_3", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-03-05T08:40:00Z", updated_at: "2024-03-05T08:40:00Z" },
+  { id: "bom_18", product_id: "prod_3", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-03-05T08:45:00Z", updated_at: "2024-03-05T08:45:00Z" },
+  { id: "bom_19", product_id: "prod_3", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-03-05T08:50:00Z", updated_at: "2024-03-05T08:50:00Z" },
+  { id: "bom_20", product_id: "prod_3", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-03-05T08:55:00Z", updated_at: "2024-03-05T08:55:00Z" },
+  { id: "bom_21", product_id: "prod_3", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-03-05T09:00:00Z", updated_at: "2024-03-05T09:00:00Z" },
 
-  // === MAUVE MAGIC - Size S BOMs ===
-  {
-    id: "bom_5",
-    product_id: "prod_2",
-    size: "S",
-    version: 1,
-    name: "Size S - Version 1",
-    is_active: true,
-    notes: "Small size BOM",
-    created_at: "2024-02-10T09:00:00Z",
-    updated_at: "2024-02-10T09:00:00Z",
-  },
+  // === RUBY ELEGANCE (prod_4) - ALL SIZES ===
+  { id: "bom_22", product_id: "prod_4", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-04-12T11:00:00Z", updated_at: "2024-04-12T11:00:00Z" },
+  { id: "bom_23", product_id: "prod_4", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-04-12T11:05:00Z", updated_at: "2024-04-12T11:05:00Z" },
+  { id: "bom_24", product_id: "prod_4", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-04-12T11:10:00Z", updated_at: "2024-04-12T11:10:00Z" },
+  { id: "bom_25", product_id: "prod_4", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-04-12T11:15:00Z", updated_at: "2024-04-12T11:15:00Z" },
+  { id: "bom_26", product_id: "prod_4", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-04-12T11:20:00Z", updated_at: "2024-04-12T11:20:00Z" },
+  { id: "bom_27", product_id: "prod_4", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-04-12T11:25:00Z", updated_at: "2024-04-12T11:25:00Z" },
+  { id: "bom_28", product_id: "prod_4", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-04-12T11:30:00Z", updated_at: "2024-04-12T11:30:00Z" },
 
-  // === MAUVE MAGIC - Size M BOMs ===
-  {
-    id: "bom_6",
-    product_id: "prod_2",
-    size: "M",
-    version: 2,
-    name: "Size M - Version 2",
-    is_active: true,
-    notes: "Updated embroidery pattern",
-    created_at: "2024-12-18T11:20:00Z",
-    updated_at: "2024-12-18T11:20:00Z",
-  },
-  {
-    id: "bom_7",
-    product_id: "prod_2",
-    size: "M",
-    version: 1,
-    name: "Size M - Version 1",
-    is_active: false,
-    notes: "Original design",
-    created_at: "2024-02-10T09:30:00Z",
-    updated_at: "2024-12-18T11:00:00Z",
-  },
-
-  // === EMERALD GRACE - Size M BOMs ===
-  {
-    id: "bom_8",
-    product_id: "prod_3",
-    size: "M",
-    version: 1,
-    name: "Size M - Version 1",
-    is_active: true,
-    notes: "Casual design - lightweight fabric",
-    created_at: "2024-03-05T08:30:00Z",
-    updated_at: "2024-03-05T08:30:00Z",
-  },
-
-  // === EMERALD GRACE - Size L BOMs ===
-  {
-    id: "bom_9",
-    product_id: "prod_3",
-    size: "L",
-    version: 1,
-    name: "Size L - Version 1",
-    is_active: true,
-    notes: "Large size - adjusted fabric cuts",
-    created_at: "2024-03-05T09:00:00Z",
-    updated_at: "2024-03-05T09:00:00Z",
-  },
+  // === AZURE DREAM (prod_5) - ALL SIZES ===
+  { id: "bom_29", product_id: "prod_5", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-05-20T09:30:00Z", updated_at: "2024-05-20T09:30:00Z" },
+  { id: "bom_30", product_id: "prod_5", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-05-20T09:35:00Z", updated_at: "2024-05-20T09:35:00Z" },
+  { id: "bom_31", product_id: "prod_5", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-05-20T09:40:00Z", updated_at: "2024-05-20T09:40:00Z" },
+  { id: "bom_32", product_id: "prod_5", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-05-20T09:45:00Z", updated_at: "2024-05-20T09:45:00Z" },
+  { id: "bom_33", product_id: "prod_5", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-05-20T09:50:00Z", updated_at: "2024-05-20T09:50:00Z" },
+  { id: "bom_34", product_id: "prod_5", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-05-20T09:55:00Z", updated_at: "2024-05-20T09:55:00Z" },
+  { id: "bom_35", product_id: "prod_5", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-05-20T10:00:00Z", updated_at: "2024-05-20T10:00:00Z" },
 ]
 
 // ==================== BOM ITEMS ====================
-export const mockBOMItems = [
-  // === GOLDESS - Size M v2 (bom_1) ===
-  {
-    id: "bom_item_1",
-    bom_id: "bom_1",
-    inventory_item_id: "inv_1", // Velvet - Royal Gold
-    quantity_per_unit: 2.8,
-    unit: "METER",
-    garment_piece: "SHIRT",
-    sequence_order: 1,
-    notes: "Main fabric for shirt",
-  },
-  {
-    id: "bom_item_2",
-    bom_id: "bom_1",
-    inventory_item_id: "inv_2", // Raw Silk - Black
-    quantity_per_unit: 2.0,
-    unit: "METER",
-    garment_piece: "TROUSER",
-    sequence_order: 2,
-    notes: "Trouser fabric",
-  },
-  {
-    id: "bom_item_3",
-    bom_id: "bom_1",
-    inventory_item_id: "inv_11", // Zari Thread - Gold
-    quantity_per_unit: 350,
-    unit: "GRAM",
-    garment_piece: "SHIRT",
-    sequence_order: 3,
-    notes: "Heavy embroidery",
-  },
+// Pattern: Each size needs scaled material quantities
+// Formula: Base quantity + (size_factor * increment)
+// Size factors: XS=-2, S=-1, M=0, L=+1, XL=+2, XXL=+3, CUSTOM=0
 
-  // === GOLDESS - Size L v1 (bom_3) ===
-  {
-    id: "bom_item_4",
-    bom_id: "bom_3",
-    inventory_item_id: "inv_1", // Velvet - Royal Gold
-    quantity_per_unit: 3.2, // More fabric for L size
-    unit: "METER",
-    garment_piece: "SHIRT",
-    sequence_order: 1,
-    notes: "Main fabric for shirt - Large size",
-  },
-  {
-    id: "bom_item_5",
-    bom_id: "bom_3",
-    inventory_item_id: "inv_2", // Raw Silk - Black
-    quantity_per_unit: 2.3, // More fabric for L size
-    unit: "METER",
-    garment_piece: "TROUSER",
-    sequence_order: 2,
-    notes: "Trouser fabric - Large size",
-  },
-  {
-    id: "bom_item_6",
-    bom_id: "bom_3",
-    inventory_item_id: "inv_11", // Zari Thread - Gold
-    quantity_per_unit: 400, // More embroidery for L size
-    unit: "GRAM",
-    garment_piece: "SHIRT",
-    sequence_order: 3,
-    notes: "Heavy embroidery - Large size",
-  },
+const generateBOMItems = () => {
+  const items = []
+  let itemId = 1
 
-  // === GOLDESS - Size XL v1 (bom_4) ===
-  {
-    id: "bom_item_7",
-    bom_id: "bom_4",
-    inventory_item_id: "inv_1", // Velvet - Royal Gold
-    quantity_per_unit: 3.6, // Even more for XL
-    unit: "METER",
-    garment_piece: "SHIRT",
-    sequence_order: 1,
-    notes: "Main fabric for shirt - Extra Large size",
-  },
-  {
-    id: "bom_item_8",
-    bom_id: "bom_4",
-    inventory_item_id: "inv_2", // Raw Silk - Black
-    quantity_per_unit: 2.6, // More fabric for XL
-    unit: "METER",
-    garment_piece: "TROUSER",
-    sequence_order: 2,
-    notes: "Trouser fabric - Extra Large size",
-  },
-  {
-    id: "bom_item_9",
-    bom_id: "bom_4",
-    inventory_item_id: "inv_11", // Zari Thread - Gold
-    quantity_per_unit: 450, // More embroidery for XL
-    unit: "GRAM",
-    garment_piece: "SHIRT",
-    sequence_order: 3,
-    notes: "Heavy embroidery - Extra Large size",
-  },
+  // Size scaling factors
+  const sizeScales = {
+    XS: -0.3,
+    S: -0.15,
+    M: 0,
+    L: 0.15,
+    XL: 0.3,
+    XXL: 0.45,
+    CUSTOM: 0,
+  }
 
-  // === MAUVE MAGIC - Size S v1 (bom_5) ===
-  {
-    id: "bom_item_10",
-    bom_id: "bom_5",
-    inventory_item_id: "inv_5", // Chiffon - Mauve
-    quantity_per_unit: 2.3, // Less fabric for S size
-    unit: "METER",
-    garment_piece: "SHIRT",
-    sequence_order: 1,
-    notes: "Delicate chiffon for small size",
-  },
-  {
-    id: "bom_item_11",
-    bom_id: "bom_5",
-    inventory_item_id: "inv_12", // Sequins - Gold
-    quantity_per_unit: 200,
-    unit: "PIECE",
-    garment_piece: "SHIRT",
-    sequence_order: 2,
-    notes: "Light embellishment",
-  },
+  // === GOLDESS (prod_1) BOMs - Formal wear with heavy embroidery ===
+  ALL_SIZES.forEach((size, idx) => {
+    const bomId = `bom_${idx + 1}`
+    const scale = sizeScales[size]
+    
+    // Velvet fabric for shirt
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_1", // Velvet - Royal Gold
+      quantity_per_unit: parseFloat((2.8 + scale * 0.5).toFixed(2)),
+      unit: "METER",
+      garment_piece: "SHIRT",
+      sequence_order: 1,
+      notes: `Main shirt fabric - Size ${size}`,
+    })
 
-  // === MAUVE MAGIC - Size M v2 (bom_6) ===
-  {
-    id: "bom_item_12",
-    bom_id: "bom_6",
-    inventory_item_id: "inv_5", // Chiffon - Mauve
-    quantity_per_unit: 2.6,
-    unit: "METER",
-    garment_piece: "SHIRT",
-    sequence_order: 1,
-    notes: "Delicate chiffon for medium size",
-  },
-  {
-    id: "bom_item_13",
-    bom_id: "bom_6",
-    inventory_item_id: "inv_12", // Sequins - Gold
-    quantity_per_unit: 250,
-    unit: "PIECE",
-    garment_piece: "SHIRT",
-    sequence_order: 2,
-    notes: "Enhanced embellishment - v2",
-  },
+    // Raw silk for trouser
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_2", // Raw Silk - Black
+      quantity_per_unit: parseFloat((2.0 + scale * 0.4).toFixed(2)),
+      unit: "METER",
+      garment_piece: "TROUSER",
+      sequence_order: 2,
+      notes: `Trouser fabric - Size ${size}`,
+    })
 
-  // === EMERALD GRACE - Size M v1 (bom_8) ===
-  {
-    id: "bom_item_14",
-    bom_id: "bom_8",
-    inventory_item_id: "inv_6", // Lawn - Emerald Green
-    quantity_per_unit: 2.4,
-    unit: "METER",
-    garment_piece: "SHIRT",
-    sequence_order: 1,
-    notes: "Lightweight casual fabric",
-  },
-  {
-    id: "bom_item_15",
-    bom_id: "bom_8",
-    inventory_item_id: "inv_10", // Buttons - White Pearl
-    quantity_per_unit: 8,
-    unit: "PIECE",
-    garment_piece: "SHIRT",
-    sequence_order: 2,
-    notes: "Simple button closure",
-  },
+    // Zari thread for embroidery
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_11", // Zari Thread - Gold
+      quantity_per_unit: Math.round(350 + scale * 80),
+      unit: "GRAM",
+      garment_piece: "SHIRT",
+      sequence_order: 3,
+      notes: `Heavy embroidery - Size ${size}`,
+    })
+  })
 
-  // === EMERALD GRACE - Size L v1 (bom_9) ===
-  {
-    id: "bom_item_16",
-    bom_id: "bom_9",
-    inventory_item_id: "inv_6", // Lawn - Emerald Green
-    quantity_per_unit: 2.8, // More for L size
-    unit: "METER",
-    garment_piece: "SHIRT",
-    sequence_order: 1,
-    notes: "Lightweight casual fabric - Large size",
-  },
-  {
-    id: "bom_item_17",
-    bom_id: "bom_9",
-    inventory_item_id: "inv_10", // Buttons - White Pearl
-    quantity_per_unit: 8, // Same button count
-    unit: "PIECE",
-    garment_piece: "SHIRT",
-    sequence_order: 2,
-    notes: "Simple button closure",
-  },
-]
+  // === MAUVE MAGIC (prod_2) BOMs - Semi-formal with sequins ===
+  ALL_SIZES.forEach((size, idx) => {
+    const bomId = `bom_${idx + 8}`
+    const scale = sizeScales[size]
+    
+    // Chiffon fabric
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_5", // Chiffon - Mauve
+      quantity_per_unit: parseFloat((2.6 + scale * 0.4).toFixed(2)),
+      unit: "METER",
+      garment_piece: "SHIRT",
+      sequence_order: 1,
+      notes: `Delicate chiffon - Size ${size}`,
+    })
 
-// ==================== HELPER FUNCTIONS (UPDATED) ====================
+    // Sequins
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_12", // Sequins - Gold
+      quantity_per_unit: Math.round(250 + scale * 50),
+      unit: "PIECE",
+      garment_piece: "SHIRT",
+      sequence_order: 2,
+      notes: `Sequin embellishment - Size ${size}`,
+    })
+  })
+
+  // === EMERALD GRACE (prod_3) BOMs - Casual with buttons ===
+  ALL_SIZES.forEach((size, idx) => {
+    const bomId = `bom_${idx + 15}`
+    const scale = sizeScales[size]
+    
+    // Lawn fabric
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_6", // Lawn - Emerald Green
+      quantity_per_unit: parseFloat((2.4 + scale * 0.4).toFixed(2)),
+      unit: "METER",
+      garment_piece: "SHIRT",
+      sequence_order: 1,
+      notes: `Lightweight lawn - Size ${size}`,
+    })
+
+    // Buttons
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_10", // Buttons - White Pearl
+      quantity_per_unit: 8,
+      unit: "PIECE",
+      garment_piece: "SHIRT",
+      sequence_order: 2,
+      notes: `Button closure - Size ${size}`,
+    })
+  })
+
+  // === RUBY ELEGANCE (prod_4) BOMs - Premium formal with crystals ===
+  ALL_SIZES.forEach((size, idx) => {
+    const bomId = `bom_${idx + 22}`
+    const scale = sizeScales[size]
+    
+    // Silk velvet
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_3", // Silk - Ruby Red
+      quantity_per_unit: parseFloat((3.0 + scale * 0.5).toFixed(2)),
+      unit: "METER",
+      garment_piece: "SHIRT",
+      sequence_order: 1,
+      notes: `Luxurious silk - Size ${size}`,
+    })
+
+    // Crystal embellishments
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_12", // Sequins - Gold (using as crystal placeholder)
+      quantity_per_unit: Math.round(400 + scale * 80),
+      unit: "PIECE",
+      garment_piece: "SHIRT",
+      sequence_order: 2,
+      notes: `Crystal work - Size ${size}`,
+    })
+
+    // Zari thread
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_11", // Zari Thread - Gold
+      quantity_per_unit: Math.round(300 + scale * 70),
+      unit: "GRAM",
+      garment_piece: "SHIRT",
+      sequence_order: 3,
+      notes: `Premium embroidery - Size ${size}`,
+    })
+  })
+
+  // === AZURE DREAM (prod_5) BOMs - Casual summer with floral ===
+  ALL_SIZES.forEach((size, idx) => {
+    const bomId = `bom_${idx + 29}`
+    const scale = sizeScales[size]
+    
+    // Cotton lawn
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_6", // Lawn - Emerald Green (reusing as blue placeholder)
+      quantity_per_unit: parseFloat((2.2 + scale * 0.3).toFixed(2)),
+      unit: "METER",
+      garment_piece: "SHIRT",
+      sequence_order: 1,
+      notes: `Summer cotton - Size ${size}`,
+    })
+
+    // Embroidery thread
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_11", // Zari Thread - Gold
+      quantity_per_unit: Math.round(150 + scale * 30),
+      unit: "GRAM",
+      garment_piece: "SHIRT",
+      sequence_order: 2,
+      notes: `Floral embroidery - Size ${size}`,
+    })
+
+    // Buttons
+    items.push({
+      id: `bom_item_${itemId++}`,
+      bom_id: bomId,
+      inventory_item_id: "inv_10", // Buttons - White Pearl
+      quantity_per_unit: 6,
+      unit: "PIECE",
+      garment_piece: "SHIRT",
+      sequence_order: 3,
+      notes: `Button closure - Size ${size}`,
+    })
+  })
+
+  return items
+}
+
+export const mockBOMItems = generateBOMItems()
+
+// ==================== HELPER FUNCTIONS ====================
 
 /**
  * Get active BOM for a product and specific size
- * @param {string} productId - Product ID
- * @param {string} size - Size code (XS, S, M, L, XL, XXL, CUSTOM)
- * @returns {Object|undefined} Active BOM for that product+size combination
  */
 export function getActiveBOM(productId, size) {
   return mockBOMs.find((bom) => bom.product_id === productId && bom.size === size && bom.is_active)
@@ -386,8 +363,6 @@ export function getActiveBOM(productId, size) {
 
 /**
  * Get all active BOMs for a product (across all sizes)
- * @param {string} productId - Product ID
- * @returns {Array} All active BOMs for the product
  */
 export function getAllActiveBOMs(productId) {
   return mockBOMs.filter((bom) => bom.product_id === productId && bom.is_active)
@@ -395,8 +370,6 @@ export function getAllActiveBOMs(productId) {
 
 /**
  * Get BOM items for a specific BOM
- * @param {string} bomId - BOM ID
- * @returns {Array} BOM items
  */
 export function getBOMItems(bomId) {
   return mockBOMItems.filter((item) => item.bom_id === bomId)
@@ -404,45 +377,33 @@ export function getBOMItems(bomId) {
 
 /**
  * Get all BOMs for a product, optionally filtered by size
- * @param {string} productId - Product ID
- * @param {string} [size] - Optional size filter
- * @returns {Array} BOMs sorted by version (latest first)
  */
 export function getProductBOMs(productId, size = null) {
   let boms = mockBOMs.filter((bom) => bom.product_id === productId)
 
-  // Filter by size if provided
   if (size) {
     boms = boms.filter((bom) => bom.size === size)
   }
 
-  // Sort by version within each size group
   return boms.sort((a, b) => {
-    // First sort by size
     if (a.size !== b.size) {
       return a.size.localeCompare(b.size)
     }
-    // Then by version (latest first)
     return b.version - a.version
   })
 }
 
 /**
- * Get available sizes for a product (sizes that have at least one BOM)
- * @param {string} productId - Product ID
- * @returns {Array} Array of size codes that have BOMs
+ * Get available sizes for a product
  */
 export function getAvailableSizes(productId) {
   const productBOMs = mockBOMs.filter((bom) => bom.product_id === productId)
   const sizes = [...new Set(productBOMs.map((bom) => bom.size))]
-  return sizes.sort() // Sort alphabetically
+  return sizes.sort()
 }
 
 /**
  * Generate next version number for a product+size combination
- * @param {string} productId - Product ID
- * @param {string} size - Size code
- * @returns {number} Next version number
  */
 export function getNextVersionNumber(productId, size) {
   const existingBOMs = mockBOMs.filter((bom) => bom.product_id === productId && bom.size === size)
