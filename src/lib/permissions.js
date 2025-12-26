@@ -5,8 +5,8 @@
  * Permissions are grouped by feature/module for better organization.
  */
 
-import { USER_ROLES } from "../mocks/data/mockUsers"
-
+// import { USER_ROLES } from "../mocks/data/mockUsers"
+import { USER_ROLES } from "@/mocks/data/mockUser"
 /**
  * All available permissions grouped by category
  */

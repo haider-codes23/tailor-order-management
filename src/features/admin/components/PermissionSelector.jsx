@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { PERMISSION_GROUPS, ROLE_TEMPLATES, getTemplatePermissions } from "@/lib/permissions"
-import { USER_ROLES, ROLE_LABELS } from "@/mocks/data/mockUsers"
+// import { USER_ROLES, ROLE_LABELS } from "@/mocks/data/mockUsers"
+import { USER_ROLES, ROLE_LABELS } from "@/mocks/data/mockUser"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"

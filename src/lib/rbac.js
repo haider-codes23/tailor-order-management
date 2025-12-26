@@ -5,8 +5,8 @@
  * based on their PERMISSIONS (not roles). Roles are just labels now.
  */
 
-import { USER_ROLES } from "../mocks/data/mockUsers"
-
+// import { USER_ROLES } from "../mocks/data/mockUsers"
+import { USER_ROLES } from "@/mocks/data/mockUser"
 /**
  * Check if a user has a specific permission
  * @param {Object} user - User object with 'permissions' array
