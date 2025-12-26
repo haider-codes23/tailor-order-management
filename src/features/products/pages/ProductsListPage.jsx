@@ -27,10 +27,15 @@ export default function ProductsListPage() {
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("ALL")
 
-  // Fetch products with filters
-  const { data: productsResponse, isLoading, error } = useProducts({ search, category })
+  const {
+    data: productsResponse,
+    isLoading,
+    error,
+  } = useProducts({
+    search,
+    category,
+  })
 
-  // ✅ FIX: Extract the products array from the response
   const products = productsResponse?.data || []
 
   const handleProductClick = (productId) => {
@@ -43,9 +48,7 @@ export default function ProductsListPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your product catalog and BOMs
-          </p>
+          <p className="text-muted-foreground mt-1">Manage your product catalog and BOMs</p>
         </div>
         <Button onClick={() => navigate("/products/new")}>
           <Plus className="h-4 w-4 mr-2" />
@@ -54,9 +57,9 @@ export default function ProductsListPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search products..."
             value={search}
@@ -64,8 +67,9 @@ export default function ProductsListPage() {
             className="pl-10"
           />
         </div>
+
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -87,7 +91,7 @@ export default function ProductsListPage() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
               <CardHeader>
@@ -95,7 +99,7 @@ export default function ProductsListPage() {
                 <Skeleton className="h-4 w-1/2" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-48 w-full mb-4" />
+                <Skeleton className="aspect-[4/5] w-full mb-4" />
                 <Skeleton className="h-4 w-full" />
               </CardContent>
             </Card>
@@ -104,39 +108,42 @@ export default function ProductsListPage() {
       )}
 
       {/* Products Grid */}
+      {/* Products Grid */}
       {!isLoading && products.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
           {products.map((product) => (
             <Card
               key={product.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => handleProductClick(product.id)}
+              className="cursor-pointer hover:shadow-lg transition-shadow flex flex-col"
             >
               <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-xl">{product.name}</CardTitle>
-                    <CardDescription className="mt-1">{product.sku}</CardDescription>
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0">
+                    <CardTitle className="text-lg line-clamp-1">{product.name}</CardTitle>
+                    <CardDescription className="mt-1 line-clamp-1">{product.sku}</CardDescription>
                   </div>
-                  <Badge variant={product.active ? "default" : "secondary"}>
+                  <Badge variant={product.active ? "default" : "secondary"} className="shrink-0">
                     {product.active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
+
+              <CardContent className="flex-1 flex flex-col">
                 {/* Product Image */}
                 {product.primary_image && (
-                  <div className="mb-4 rounded-lg overflow-hidden bg-muted">
+                  <div className="mb-4 bg-muted rounded-lg overflow-hidden aspect-[3/4] max-w-[260px] mx-auto">
                     <img
                       src={product.primary_image}
                       alt={product.name}
-                      className="w-full h-48 object-cover"
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                     />
                   </div>
                 )}
 
                 {/* Product Info */}
-                <div className="space-y-2">
+                <div className="space-y-2 mt-auto">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Category:</span>
                     <span className="font-medium">{product.category}</span>
@@ -145,6 +152,7 @@ export default function ProductsListPage() {
                     <span className="text-muted-foreground">Price:</span>
                     <span className="font-medium">PKR {product.base_price?.toLocaleString()}</span>
                   </div>
+
                   {product.description && (
                     <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
                       {product.description}
@@ -160,7 +168,7 @@ export default function ProductsListPage() {
       {/* Empty State */}
       {!isLoading && products.length === 0 && (
         <Card className="py-12">
-          <CardContent className="flex flex-col items-center justify-center text-center">
+          <CardContent className="flex flex-col items-center text-center">
             <div className="rounded-full bg-muted p-3 mb-4">
               <Search className="h-6 w-6 text-muted-foreground" />
             </div>
