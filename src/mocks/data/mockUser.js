@@ -1,173 +1,239 @@
 /**
- * Mock Users Database
+ * Mock Users Database - MERGED VERSION
  *
- * This simulates what your backend database would contain.
- * In a real system, passwords would be hashed, but since this is
- * mock data for frontend development, we're keeping them simple.
+ * This file serves TWO purposes:
+ * 1. Authentication: Users who can log in (includes passwords)
+ * 2. User Management: Users that admins can manage in the system
  *
- * Each user represents a different role in your tailoring business,
- * letting you test how the application behaves for different user types.
+ * Each user now has a custom permissions array instead of role-based permissions.
  */
 
 /**
- * Permission Mapping
- *
- * Different roles get different sets of permissions.
- * This controls what pages and actions each role can access.
+ * User Role Labels (now just templates/categories)
  */
-const ROLE_PERMISSIONS = {
-  ADMIN: [
-    // Admin can do everything
-    "ORDERS_VIEW",
-    "ORDERS_EDIT",
-    "ORDERS_CREATE",
-    "ORDERS_CHANGE_STATUS",
-    "INVENTORY_VIEW",
-    "INVENTORY_UPDATE_STOCK",
-    "PRODUCTS_VIEW",
-    "PRODUCTS_EDIT",
-    "PRODUCTS_CREATE",
-    "BOM_EDIT",
-    "TASKS_VIEW_ALL",
-    "TASKS_CREATE",
-    "TASKS_UPDATE_STATUS",
-    "QA_UPLOAD_VIDEO",
-    "REPORTS_VIEW",
-    "ADMIN_USERS",
-    "ADMIN_SETTINGS",
-    "SHOPIFY_MANAGE",
-  ],
+export const USER_ROLES = {
+  ADMIN: "ADMIN",
+  SALES: "SALES",
+  PRODUCTION_HEAD: "PRODUCTION_HEAD",
+  PACKET_CREATOR: "PACKET_CREATOR",
+  WORKER: "WORKER",
+  QA: "QA",
+  PURCHASER: "PURCHASER",
+  DISPATCH: "DISPATCH",
+  CUSTOM: "CUSTOM",
+}
 
-  SALES: [
-    // Sales focuses on orders and customer interaction
-    "ORDERS_VIEW",
-    "ORDERS_CREATE",
-    "ORDERS_EDIT",
-    "ORDERS_CHANGE_STATUS", // For approval actions
-    "PRODUCTS_VIEW", // Need to see products to create orders
-    "INVENTORY_VIEW", // Can check ready stock availability
-  ],
-
-  PRODUCTION_SUPERVISOR: [
-    // Supervisor plans and oversees production
-    "ORDERS_VIEW",
-    "PRODUCTS_VIEW",
-    "BOM_VIEW",
-    "INVENTORY_VIEW",
-    "TASKS_VIEW_ALL",
-    "TASKS_CREATE",
-    "TASKS_UPDATE_STATUS",
-    "ORDERS_CHANGE_STATUS", // To move orders to production
-  ],
-
-  WORKER: [
-    // Workers only see and complete their assigned tasks
-    "TASKS_VIEW_ASSIGNED",
-    "TASKS_UPDATE_STATUS",
-    "ORDERS_VIEW", // Limited view to see order context
-  ],
-
-  PURCHASER: [
-    // Purchaser manages inventory and materials
-    "INVENTORY_VIEW",
-    "INVENTORY_UPDATE_STOCK",
-    "PRODUCTS_VIEW", // Need to see product BOMs
-    "BOM_VIEW",
-    "ORDERS_VIEW", // To see material requirements
-  ],
-
-  QA: [
-    // QA uploads videos and checks quality
-    "ORDERS_VIEW",
-    "QA_UPLOAD_VIDEO",
-    "TASKS_VIEW_ALL", // To see production completion
-  ],
+export const ROLE_LABELS = {
+  ADMIN: "Administrator",
+  SALES: "Sales Representative",
+  PRODUCTION_HEAD: "Production Head",
+  PACKET_CREATOR: "Packet Creator",
+  WORKER: "Production Worker",
+  QA: "Quality Assurance",
+  PURCHASER: "Purchaser",
+  DISPATCH: "Dispatch Manager",
+  CUSTOM: "Custom Role",
 }
 
 /**
- * Mock Users
- *
- * These are test accounts you can use during development.
- * Each represents a different role in your system.
+ * Mock Users with Custom Permissions
+ * 
+ * NOTE: Passwords are included for authentication.
+ * In production, these would be hashed.
  */
 export const mockUsers = [
   {
     id: 1,
     name: "Admin User",
-    email: "admin@tailor.com",
-    password: "admin123", // In real life, this would be hashed
-    role: "ADMIN",
-    permissions: ROLE_PERMISSIONS.ADMIN,
-    status: "ACTIVE",
-    avatar: null, // Could add avatar URLs later
-    createdAt: "2024-01-01T00:00:00Z",
+    email: "admin@tailor.com", // Kept your existing email
+    password: "admin123", // For authentication
+    role: USER_ROLES.ADMIN,
+    phone: "+92 300 1234567",
+    is_active: true,
+    // Admin has ALL permissions
+    permissions: [
+      // User Management
+      "users.view",
+      "users.create",
+      "users.edit",
+      "users.delete",
+      // Inventory Management
+      "inventory.view",
+      "inventory.create",
+      "inventory.edit",
+      "inventory.delete",
+      "inventory.stock_in",
+      "inventory.stock_out",
+      // Products & BOM
+      "products.view",
+      "products.create",
+      "products.edit",
+      "products.delete",
+      "products.manage_bom",
+      // Measurements
+      "measurements.view",
+      "measurements.edit",
+      // Orders
+      "orders.view",
+      "orders.create",
+      "orders.edit",
+      "orders.delete",
+      "orders.manage_customer_forms",
+      "orders.approve_customer_forms",
+      // Production
+      "production.view",
+      "production.manage",
+      "production.assign_tasks",
+      "production.approve_packets",
+      // Procurement
+      "procurement.view",
+      "procurement.manage",
+      // QA
+      "qa.view",
+      "qa.approve",
+      "qa.request_rework",
+      // Dispatch
+      "dispatch.view",
+      "dispatch.manage",
+      // Reports
+      "reports.view",
+    ],
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
   },
   {
     id: 2,
     name: "Sarah Sales",
-    email: "sales@tailor.com",
-    password: "sales123",
-    role: "SALES",
-    permissions: ROLE_PERMISSIONS.SALES,
-    status: "ACTIVE",
-    avatar: null,
-    createdAt: "2024-01-15T00:00:00Z",
+    email: "sales@tailor.com", // Kept your existing email
+    password: "sales123", // For authentication
+    role: USER_ROLES.SALES,
+    phone: "+92 300 2234567",
+    is_active: true,
+    permissions: [
+      "orders.view",
+      "orders.create",
+      "orders.manage_customer_forms",
+      "orders.approve_customer_forms",
+      "inventory.view",
+      "products.view",
+    ],
+    created_at: "2024-01-15T00:00:00Z",
+    updated_at: "2024-01-15T00:00:00Z",
   },
   {
     id: 3,
     name: "Mike Supervisor",
-    email: "supervisor@tailor.com",
-    password: "super123",
-    role: "PRODUCTION_SUPERVISOR",
-    permissions: ROLE_PERMISSIONS.PRODUCTION_SUPERVISOR,
-    status: "ACTIVE",
-    avatar: null,
-    createdAt: "2024-02-01T00:00:00Z",
+    email: "supervisor@tailor.com", // Kept your existing email
+    password: "super123", // For authentication
+    role: USER_ROLES.PRODUCTION_HEAD,
+    phone: "+92 300 3234567",
+    is_active: true,
+    permissions: [
+      "orders.view",
+      "production.view",
+      "production.manage",
+      "production.assign_tasks",
+      "production.approve_packets",
+      "inventory.view",
+      "products.view",
+    ],
+    created_at: "2024-01-15T00:00:00Z",
+    updated_at: "2024-01-15T00:00:00Z",
   },
   {
     id: 4,
     name: "John Worker",
-    email: "worker@tailor.com",
-    password: "worker123",
-    role: "WORKER",
-    permissions: ROLE_PERMISSIONS.WORKER,
-    status: "ACTIVE",
-    avatar: null,
-    createdAt: "2024-02-10T00:00:00Z",
+    email: "worker@tailor.com", // Kept your existing email
+    password: "worker123", // For authentication
+    role: USER_ROLES.WORKER,
+    phone: "+92 300 4234567",
+    is_active: true,
+    permissions: ["production.view", "orders.view"],
+    created_at: "2024-02-01T00:00:00Z",
+    updated_at: "2024-02-01T00:00:00Z",
   },
   {
     id: 5,
     name: "Lisa Purchaser",
-    email: "purchaser@tailor.com",
-    password: "purchase123",
-    role: "PURCHASER",
-    permissions: ROLE_PERMISSIONS.PURCHASER,
-    status: "ACTIVE",
-    avatar: null,
-    createdAt: "2024-02-15T00:00:00Z",
+    email: "purchaser@tailor.com", // Kept your existing email
+    password: "purchase123", // For authentication
+    role: USER_ROLES.PURCHASER,
+    phone: "+92 300 5234567",
+    is_active: true,
+    permissions: [
+      "procurement.view",
+      "procurement.manage",
+      "inventory.view",
+      "inventory.stock_in",
+      "orders.view",
+    ],
+    created_at: "2024-02-15T00:00:00Z",
+    updated_at: "2024-02-15T00:00:00Z",
   },
   {
     id: 6,
     name: "David QA",
-    email: "qa@tailor.com",
-    password: "qa1234",
-    role: "QA",
-    permissions: ROLE_PERMISSIONS.QA,
-    status: "ACTIVE",
-    avatar: null,
-    createdAt: "2024-03-01T00:00:00Z",
+    email: "qa@tailor.com", // Kept your existing email
+    password: "qa123", // For authentication
+    role: USER_ROLES.QA,
+    phone: "+92 300 6234567",
+    is_active: true,
+    permissions: [
+      "orders.view",
+      "qa.view",
+      "qa.approve",
+      "qa.request_rework",
+      "products.view",
+    ],
+    created_at: "2024-03-01T00:00:00Z",
+    updated_at: "2024-03-01T00:00:00Z",
+  },
+  {
+    id: 7,
+    name: "Inactive User",
+    email: "inactive@tailor.com",
+    password: "inactive123",
+    role: USER_ROLES.WORKER,
+    phone: "+92 300 0000000",
+    is_active: false,
+    permissions: ["production.view"],
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-03-15T00:00:00Z",
   },
 ]
 
+// ==================== HELPER FUNCTIONS ====================
+
 /**
- * Helper function to find a user by email
+ * Get user by ID
+ */
+export function getUserById(id) {
+  return mockUsers.find((user) => user.id === parseInt(id))
+}
+
+/**
+ * Get users by role
+ */
+export function getUsersByRole(role) {
+  return mockUsers.filter((user) => user.role === role && user.is_active)
+}
+
+/**
+ * Get active users only
+ */
+export function getActiveUsers() {
+  return mockUsers.filter((user) => user.is_active)
+}
+
+/**
+ * Find user by email (for authentication)
  */
 export function findUserByEmail(email) {
   return mockUsers.find((user) => user.email.toLowerCase() === email.toLowerCase())
 }
 
 /**
- * Helper function to validate credentials
+ * Validate credentials (for login)
  * Returns the user object if valid, null if invalid
  */
 export function validateCredentials(email, password) {
@@ -181,7 +247,7 @@ export function validateCredentials(email, password) {
     return null // Wrong password
   }
 
-  if (user.status !== "ACTIVE") {
+  if (!user.is_active) {
     return null // Account is disabled
   }
 
@@ -189,17 +255,12 @@ export function validateCredentials(email, password) {
 }
 
 /**
- * Generate a mock JWT token
- *
- * In a real system, this would be a cryptographically signed token
- * generated by the backend. For our mock, we just create a string
- * that looks like a JWT (three parts separated by dots).
- *
- * Real JWTs contain encoded user information and an expiration time.
+ * Generate a mock JWT token (for authentication)
+ * 
+ * In a real system, this would be a cryptographically signed token.
+ * For our mock, we just create a string that looks like a JWT.
  */
 export function generateMockToken(userId) {
-  // JWT format: header.payload.signature
-  // We're just making it look realistic for development
   const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))
   const payload = btoa(
     JSON.stringify({
@@ -215,9 +276,9 @@ export function generateMockToken(userId) {
 
 /**
  * Sanitize user data for sending to frontend
- *
- * We never send passwords to the frontend, even in mock data.
- * This function removes sensitive fields before returning user data.
+ * 
+ * We never send passwords to the frontend.
+ * This removes sensitive fields before returning user data.
  */
 export function sanitizeUser(user) {
   const { password, ...sanitizedUser } = user
