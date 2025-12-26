@@ -12,7 +12,7 @@ import {
   AlertTriangle,
   Ruler,
   Box,
-  LogOut,
+ 
 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
@@ -180,16 +180,7 @@ export default function Sidebar() {
             </div>
 
             {/* Logout Button */}
-            <div className="px-4 pb-4">
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                onClick={logout}
-              >
-                <LogOut className="h-4 w-4 mr-3" />
-                <span>Logout</span>
-              </Button>
-            </div>
+          
 
             {/* Footer info */}
             <div className="px-4 pb-4">
