@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
-import { useProduct, useDeleteProduct } from "../../../hooks/useProducts"
+import { useProduct, useDeleteProduct, useProductBOMs } from "../../../hooks/useProducts"
 import { Button } from "../../../components/ui/button"
 import { Card, CardContent, CardHeader } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog"
+import { toast } from "sonner"
 import BOMVersionsList from "../components/BOMVersionsList"
 
 export default function ProductDetailPage() {
@@ -27,6 +28,11 @@ export default function ProductDetailPage() {
 
   const { data: productResponse, isLoading, error } = useProduct(id)
   const deleteProductMutation = useDeleteProduct()
+  
+  // Fetch all BOMs for this product to check if deletion is allowed
+  const { data: bomsResponse } = useProductBOMs(id, null)
+  const productBOMs = bomsResponse?.data || []
+  const hasBOMs = productBOMs.length > 0
 
   const product = productResponse?.data
 
@@ -36,6 +42,19 @@ export default function ProductDetailPage() {
 
   const handleEdit = () => {
     navigate(`/products/${id}/edit`)
+  }
+
+  const handleDeleteClick = () => {
+    // Check if product has BOMs
+    if (hasBOMs) {
+      toast.error("Cannot delete product", {
+        description: `This product has ${productBOMs.length} BOM${productBOMs.length !== 1 ? 's' : ''}. Delete all BOMs first.`,
+        duration: 5000,
+      })
+      return
+    }
+    // No BOMs, proceed to confirmation dialog
+    setShowDeleteDialog(true)
   }
 
   const handleDelete = async () => {
@@ -135,7 +154,7 @@ export default function ProductDetailPage() {
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Product
                 </Button>
-                <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
+                <Button variant="destructive" onClick={handleDeleteClick}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
@@ -157,39 +176,40 @@ export default function ProductDetailPage() {
 
           <CardContent className="p-6">
             {/* Overview Tab */}
-            <TabsContent value="overview" className="mt-0 space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Product Information</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600">Product ID</p>
-                    <p className="font-mono text-xs text-gray-900">{product.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Created</p>
-                    <p className="text-gray-900">
-                      {new Date(product.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Last Updated</p>
-                    <p className="text-gray-900">
-                      {new Date(product.updated_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Available Sizes</p>
-                    <div className="flex gap-1 flex-wrap">
-                      {product.available_sizes && product.available_sizes.length > 0 ? (
-                        product.available_sizes.map((size) => (
-                          <Badge key={size} variant="outline" className="text-xs">
-                            {size}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-gray-500 text-xs">No sizes defined</span>
-                      )}
+            <TabsContent value="overview" className="mt-0 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Additional Details */}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">Additional Details</h3>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <p className="text-gray-600">Created At</p>
+                      <p className="text-gray-900">
+                        {new Date(product.created_at).toLocaleDateString()}
+                      </p>
                     </div>
+                    <div>
+                      <p className="text-gray-600">Last Updated</p>
+                      <p className="text-gray-900">
+                        {new Date(product.updated_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Available Sizes */}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-3">Available Sizes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.available_sizes && product.available_sizes.length > 0 ? (
+                      product.available_sizes.map((size) => (
+                        <Badge key={size} variant="outline" className="text-xs">
+                          {size}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-gray-500 text-xs">No sizes defined</span>
+                    )}
                   </div>
                 </div>
               </div>
