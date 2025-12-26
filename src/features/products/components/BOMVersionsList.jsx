@@ -37,7 +37,7 @@ export default function BOMVersionsList({ productId }) {
   const [bomToDelete, setBomToDelete] = useState(null)
 
   // Fetch BOMs for selected size
-  const { data: bomsResponse, isLoading } = useProductBOMs(productId, selectedSize)
+  const { data: bomsResponse, isLoading } = useProductBOMs(productId, selectedSize === "ALL" ? null : selectedSize)
   const updateBOMMutation = useUpdateBOM()
   const deleteBOMMutation = useDeleteBOM()
 

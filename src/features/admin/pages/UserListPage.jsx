@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useUsers, useDeleteUser, useActivateUser } from "@/hooks"
 import { USER_ROLES, ROLE_LABELS } from "@/mocks/data/mockUser"
@@ -42,10 +42,20 @@ export default function UserListPage() {
   const [roleFilter, setRoleFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("") // Debounced version
 
   // Deletion/Activation state
   const [userToDelete, setUserToDelete] = useState(null)
   const [userToActivate, setUserToActivate] = useState(null)
+
+  // Debounce search input - only update after 500ms of no typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Build filters object - only add filters if not "all"
   const filters = {}
@@ -53,7 +63,7 @@ export default function UserListPage() {
   if (statusFilter && statusFilter !== "all") {
     filters.is_active = statusFilter === "active"
   }
-  if (searchQuery) filters.search = searchQuery
+  if (debouncedSearch) filters.search = debouncedSearch // Use debounced version
 
   // Fetch users with filters
   const { data, isLoading, error } = useUsers(filters)
@@ -97,6 +107,7 @@ export default function UserListPage() {
     setRoleFilter("all")
     setStatusFilter("all")
     setSearchQuery("")
+    setDebouncedSearch("") // Also clear debounced
   }
 
   // Loading state
@@ -162,6 +173,9 @@ export default function UserListPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {searchQuery !== debouncedSearch && (
+                <p className="text-xs text-muted-foreground mt-1">Searching...</p>
+              )}
             </div>
 
             {/* Role Filter */}
@@ -233,92 +247,88 @@ export default function UserListPage() {
               {!hasActiveFilters && (
                 <Button onClick={handleCreateNew}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Your First User
+                  Create First User
                 </Button>
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Permissions</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{ROLE_LABELS[user.role] || user.role}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            {getUserPermissionCount(user)} permissions
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.is_active ? "default" : "secondary"}>
-                          {user.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{ROLE_LABELS[user.role] || user.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Shield className="h-3.5 w-3.5" />
+                        {getUserPermissionCount(user)} permissions
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.is_active ? "default" : "secondary"}>
+                        {user.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(user.id)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                        {user.is_active ? (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEdit(user.id)}
+                            onClick={() => handleDeleteClick(user)}
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <UserX className="h-4 w-4 mr-1" />
+                            Deactivate
                           </Button>
-                          {user.is_active ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteClick(user)}
-                            >
-                              <UserX className="h-4 w-4 mr-1" />
-                              Deactivate
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleActivateClick(user)}
-                            >
-                              <UserCheck className="h-4 w-4 mr-1" />
-                              Activate
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleActivateClick(user)}
+                          >
+                            <UserCheck className="h-4 w-4 mr-1" />
+                            Activate
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Deactivate Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate User</AlertDialogTitle>
+            <AlertDialogTitle>Deactivate User?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to deactivate <strong>{userToDelete?.name}</strong>? They will
-              no longer be able to log in to the system.
+              Are you sure you want to deactivate {userToDelete?.name}? They will no longer be
+              able to access the system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -332,10 +342,10 @@ export default function UserListPage() {
       <AlertDialog open={!!userToActivate} onOpenChange={() => setUserToActivate(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Activate User</AlertDialogTitle>
+            <AlertDialogTitle>Activate User?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to activate <strong>{userToActivate?.name}</strong>? They will
-              be able to log in to the system again.
+              Are you sure you want to activate {userToActivate?.name}? They will be able to
+              access the system again.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
