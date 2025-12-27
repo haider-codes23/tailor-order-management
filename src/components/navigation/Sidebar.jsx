@@ -35,66 +35,88 @@ const navItems = [
     href: "/",
     icon: LayoutDashboard,
     requiredPermissions: [], // Everyone can see dashboard
+    iconColor: "text-blue-600",
+    iconBgColor: "bg-blue-100",
   },
   {
     name: "Orders",
     href: "/orders",
     icon: ShoppingCart,
     requiredPermissions: ["orders.view"],
+    iconColor: "text-violet-600",
+    iconBgColor: "bg-violet-100",
   },
   {
     name: "Inventory",
     href: "/inventory",
     icon: Package,
     requiredPermissions: ["inventory.view"],
+    iconColor: "text-emerald-600",
+    iconBgColor: "bg-emerald-100",
   },
   {
     name: "Products",
     href: "/products",
     icon: Box,
     requiredPermissions: ["products.view"],
+    iconColor: "text-orange-600",
+    iconBgColor: "bg-orange-100",
   },
   {
     name: "Low Stock Alerts",
     href: "/inventory/alerts/low-stock",
     icon: AlertTriangle,
     requiredPermissions: ["inventory.view"], // Same as inventory
+     iconColor: "text-red-600",
+    iconBgColor: "bg-red-100",
   },
   {
     name: "Production",
     href: "/production",
     icon: Factory,
     requiredPermissions: ["production.view"],
+    iconColor: "text-indigo-600",
+    iconBgColor: "bg-indigo-100",
   },
   {
     name: "QA",
     href: "/qa",
     icon: CheckCircle,
     requiredPermissions: ["qa.view"],
+    iconColor: "text-teal-600",
+    iconBgColor: "bg-teal-100",
   },
   {
     name: "Dispatch",
     href: "/dispatch",
     icon: Truck,
     requiredPermissions: ["dispatch.view"],
+    iconColor: "text-sky-600",
+    iconBgColor: "bg-sky-100",
   },
   {
     name: "Shopify",
     href: "/shopify",
     icon: ShoppingBag,
     requiredPermissions: ["orders.view"], // Shopify is related to orders
+    iconColor: "text-pink-600",
+    iconBgColor: "bg-pink-100",
   },
   {
     name: "Users",
     href: "/admin/users",
     icon: Users,
     requiredPermissions: ["users.view"],
+    iconColor: "text-slate-600",
+    iconBgColor: "bg-slate-100",
   },
   {
     name: "Measurement Charts",
     href: "/admin/measurements",
     icon: Ruler,
     requiredPermissions: ["measurements.view"],
+    iconColor: "text-amber-600",
+    iconBgColor: "bg-amber-100",
   },
 ]
 
@@ -149,12 +171,17 @@ export default function Sidebar() {
                       }
                     `}
                   >
+                  <div className={`
+                      flex items-center justify-center rounded-xl p-1.5 mr-3 transition-all
+                      ${active ? item.iconBgColor : 'bg-slate-50'}
+                    `}>  
                     <Icon
-                      className={`
-                        mr-3 flex-shrink-0 h-5 w-5 transition-colors
-                        ${active ? "text-slate-900" : "text-slate-400 group-hover:text-slate-600"}
-                      `}
-                    />
+                        className={`
+                          h-4 w-4 transition-colors
+                          ${item.iconColor}
+                        `}
+                      />
+                    </div>
                     {item.name}
                   </Link>
                 )
