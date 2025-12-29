@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button"
 const navItems = [
   {
     name: "Dashboard",
-    href: "/",
+    href: "/dashboard", // FIXED: Changed from "/" to "/dashboard"
     icon: LayoutDashboard,
     requiredPermissions: [], // Everyone can see dashboard
     iconColor: "text-blue-600",
@@ -66,8 +66,8 @@ const navItems = [
     name: "Low Stock Alerts",
     href: "/inventory/alerts/low-stock",
     icon: AlertTriangle,
-    requiredPermissions: ["inventory.view"], // Same as inventory
-     iconColor: "text-red-600",
+    requiredPermissions: ["inventory.view"],
+    iconColor: "text-red-600",
     iconBgColor: "bg-red-100",
   },
   {
@@ -98,7 +98,7 @@ const navItems = [
     name: "Shopify",
     href: "/shopify",
     icon: ShoppingBag,
-    requiredPermissions: ["orders.view"], // Shopify is related to orders
+    requiredPermissions: ["orders.view"],
     iconColor: "text-pink-600",
     iconBgColor: "bg-pink-100",
   },
@@ -126,12 +126,13 @@ export default function Sidebar() {
 
   /**
    * Check if the current route matches this nav item
-   * For the dashboard ("/"), we need exact match
+   * For the dashboard ("/dashboard"), we need exact match
    * For other routes, we check if the path starts with the href
    */
   const isActive = (href) => {
-    if (href === "/") {
-      return location.pathname === "/"
+    if (href === "/dashboard") {
+      // FIXED: Changed from "/" to "/dashboard"
+      return location.pathname === "/dashboard"
     }
     return location.pathname.startsWith(href)
   }
@@ -171,11 +172,13 @@ export default function Sidebar() {
                       }
                     `}
                   >
-                  <div className={`
+                    <div
+                      className={`
                       flex items-center justify-center rounded-xl p-1.5 mr-3 transition-all
-                      ${active ? item.iconBgColor : 'bg-slate-50'}
-                    `}>  
-                    <Icon
+                      ${active ? item.iconBgColor : "bg-slate-50"}
+                    `}
+                    >
+                      <Icon
                         className={`
                           h-4 w-4 transition-colors
                           ${item.iconColor}
@@ -190,7 +193,8 @@ export default function Sidebar() {
               // If user has no accessible pages
               <div className="px-3 py-6 text-center">
                 <p className="text-sm text-slate-500">
-                  No accessible pages. Contact your administrator for permissions.
+                  No accessible pages. Contact your administrator for
+                  permissions.
                 </p>
               </div>
             )}
