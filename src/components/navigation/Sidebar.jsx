@@ -8,33 +8,23 @@ import {
   Truck,
   Users,
   ShoppingBag,
-  Settings,
   AlertTriangle,
   Ruler,
   Box,
 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
-import { Button } from "@/components/ui/button"
 
 /**
  * Sidebar Navigation Component - Permission-Based
- *
- * This sidebar shows navigation items based on the user's permissions.
- * Items without required permissions are automatically hidden.
- *
- * Each navigation item can specify:
- * - requiredPermissions: Array of permissions (user needs ANY of them to see the item)
- * - If no requiredPermissions specified, item is visible to all users
  */
 
-// Navigation items configuration with required permissions
 const navItems = [
   {
     name: "Dashboard",
-    href: "/dashboard", // FIXED: Changed from "/" to "/dashboard"
+    href: "/dashboard",
     icon: LayoutDashboard,
-    requiredPermissions: [], // Everyone can see dashboard
+    requiredPermissions: [],
     iconColor: "text-blue-600",
     iconBgColor: "bg-blue-100",
   },
@@ -122,27 +112,20 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
 
-  /**
-   * Check if the current route matches this nav item
-   * For the dashboard ("/dashboard"), we need exact match
-   * For other routes, we check if the path starts with the href
-   */
   const isActive = (href) => {
     if (href === "/dashboard") {
-      // FIXED: Changed from "/" to "/dashboard"
       return location.pathname === "/dashboard"
     }
     return location.pathname.startsWith(href)
   }
 
-  // Filter navigation items based on user permissions
   const visibleNavItems = filterNavigationByPermissions(navItems, user)
 
   return (
     <>
-      {/* Desktop Sidebar - hidden on mobile, fixed on larger screens */}
+      {/* Desktop Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-white border-r border-slate-200 pt-5 pb-4 overflow-y-auto">
           {/* Logo/Brand */}
@@ -174,35 +157,27 @@ export default function Sidebar() {
                   >
                     <div
                       className={`
-                      flex items-center justify-center rounded-xl p-1.5 mr-3 transition-all
-                      ${active ? item.iconBgColor : "bg-slate-50"}
-                    `}
+                        flex items-center justify-center rounded-xl p-1.5 mr-3 transition-all
+                        ${active ? item.iconBgColor : "bg-slate-50"}
+                      `}
                     >
-                      <Icon
-                        className={`
-                          h-4 w-4 transition-colors
-                          ${item.iconColor}
-                        `}
-                      />
+                      <Icon className={`h-4 w-4 transition-colors ${item.iconColor}`} />
                     </div>
                     {item.name}
                   </Link>
                 )
               })
             ) : (
-              // If user has no accessible pages
               <div className="px-3 py-6 text-center">
                 <p className="text-sm text-slate-500">
-                  No accessible pages. Contact your administrator for
-                  permissions.
+                  No accessible pages. Contact your administrator for permissions.
                 </p>
               </div>
             )}
           </nav>
 
-          {/* User Info & Logout */}
+          {/* User Info */}
           <div className="flex-shrink-0 border-t border-slate-200">
-            {/* User Details */}
             <div className="p-4">
               <p className="text-sm font-medium text-slate-900">{user?.name}</p>
               <p className="text-xs text-slate-500">{user?.email}</p>
@@ -210,19 +185,12 @@ export default function Sidebar() {
                 {user?.permissions?.length || 0} permissions
               </p>
             </div>
-
-            {/* Logout Button */}
-
-            {/* Footer info */}
             <div className="px-4 pb-4">
-              <div className="text-xs text-slate-400">v1.0.0 - Phase 8</div>
+              <div className="text-xs text-slate-400">v1.0.0 - Phase 9</div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Mobile sidebar - we'll enhance this later with a slide-out drawer */}
-      {/* For now, we'll just hide it on mobile and show the menu in Topbar */}
     </>
   )
 }
