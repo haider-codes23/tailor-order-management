@@ -1,14 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 import AuthLayout from "@/layouts/AuthLayout"
 import MainLayout from "@/layouts/MainLayout"
-import ProtectedRoute from "@/components/ProtectedRoute"
+import ProtectedRoute from "@/routes/ProtectedRoute"
 
 // Auth pages
 import LoginPage from "@/features/auth/pages/LoginPage"
 
 // General pages
 import DashboardPage from "@/pages/DashboardPage"
-import OrdersPage from "@/pages/OrdersPage"
 import NotFoundPage from "@/pages/NotFoundPage"
 
 // Admin pages
@@ -28,41 +27,30 @@ import ProductsListPage from "@/features/products/pages/ProductsListPage"
 import ProductDetailPage from "@/features/products/pages/ProductDetailPage"
 import ProductFormPage from "@/features/products/pages/ProductFormPage"
 
+// Orders pages
+import OrdersListPage from "@/features/orders/pages/OrdersListPage"
+
+import OrderDetailPage from "@/features/orders/pages/OrderDetailsPage"
+import OrderItemDetailPage from "@/features/orders/pages/OrderItemDetailPage"
+import OrderFormGeneratorPage from "@/features/orders/pages/OrderFormGeneratorPage"
+import CreateOrderPage from "@/features/orders/pages/CreateOrderPage"
+import EditOrderPage from "@/features/orders/pages/EditOrderPage"
+
 /**
  * AppRoutes - Central routing configuration
- *
- * This component defines all routes in your application.
- *
- * Structure:
- * - Public routes (no authentication required)
- *   - Login page wrapped in AuthLayout
- *
- * - Protected routes (require authentication)
- *   - All main app pages wrapped in MainLayout
- *   - Some routes also wrapped in ProtectedRoute for permission checks
- *
- * - 404 route for unmatched paths
- *
- * The nested structure with layouts means:
- * - /login renders: AuthLayout > LoginPage
- * - /dashboard renders: ProtectedRoute > MainLayout > DashboardPage
- * - /admin/users renders: ProtectedRoute (permissions) > MainLayout > UsersListPage
  */
 export default function AppRoutes() {
   return (
     <Routes>
       {/* ==================== ROOT REDIRECT ==================== */}
-      {/* Redirect root to login - users must authenticate first */}
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* ==================== PUBLIC ROUTES ==================== */}
-      {/* Auth Layout - Login page */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
       </Route>
 
       {/* ==================== PROTECTED ROUTES ==================== */}
-      {/* Main Layout - All authenticated pages */}
       <Route
         element={
           <ProtectedRoute>
@@ -73,8 +61,57 @@ export default function AppRoutes() {
         {/* Dashboard - Everyone can access */}
         <Route path="/dashboard" element={<DashboardPage />} />
 
-        {/* Orders - Placeholder for future */}
-        <Route path="/orders" element={<OrdersPage />} />
+        {/* ==================== ORDERS ROUTES ==================== */}
+        <Route path="/orders">
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={["orders.view"]}>
+                <OrdersListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="new"
+            element={
+              <ProtectedRoute requiredPermissions={["orders.create"]}>
+                <CreateOrderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path=":id"
+            element={
+              <ProtectedRoute requiredPermissions={["orders.view"]}>
+                <OrderDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path=":id/edit"
+            element={
+              <ProtectedRoute requiredPermissions={["orders.edit"]}>
+                <EditOrderPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path=":id/items/:itemId"
+            element={
+              <ProtectedRoute requiredPermissions={["orders.view"]}>
+                <OrderItemDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path=":id/items/:itemId/generate-form"
+            element={
+              <ProtectedRoute requiredPermissions={["orders.edit"]}>
+                <OrderFormGeneratorPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
 
         {/* ==================== INVENTORY ROUTES ==================== */}
         <Route path="/inventory">
@@ -158,7 +195,6 @@ export default function AppRoutes() {
 
         {/* ==================== ADMIN ROUTES ==================== */}
         <Route path="/admin">
-          {/* Measurement Charts */}
           <Route
             path="measurements"
             element={
@@ -167,8 +203,6 @@ export default function AppRoutes() {
               </ProtectedRoute>
             }
           />
-
-          {/* User Management */}
           <Route
             path="users"
             element={
