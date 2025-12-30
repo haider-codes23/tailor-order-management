@@ -34,16 +34,17 @@ export default function OrderItemDetailPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("details")
 
-  const { data: order, isLoading: orderLoading } = useOrder(orderId)
+  const { data: orderData, isLoading: orderLoading } = useOrder(orderId)
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
   const approveForm = useApproveOrderForm()
 
+  const order = orderData?.data
   const item = itemData?.data
-  
-  // Fetch product details to get the image
+
+  // Fetch product details to get the image - only when item is loaded
   const { data: productData } = useProduct(item?.productId, {
-  enabled: !!item?.productId,
-})
+    enabled: !!item?.productId,
+  })
   const product = productData?.data
 
   const canManageForms = hasPermission(user, "orders.manage_customer_forms")
@@ -83,7 +84,8 @@ export default function OrderItemDetailPage() {
   }
 
   // Get product image - check multiple sources
-  const productImage = product?.image || item.productImage || item.product?.image
+  const productImage = product?.image || product?.primary_image || product?.image_url || 
+                       item.productImage || item.product?.image
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -100,7 +102,7 @@ export default function OrderItemDetailPage() {
           <div>
             <h1 className="text-2xl font-bold">{item.productName || product?.name}</h1>
             <p className="text-muted-foreground">
-              {order?.data?.orderNumber} • SKU: {product?.sku || "N/A"}
+              {order?.orderNumber} • SKU: {product?.sku || item.productSku || "N/A"}
             </p>
           </div>
         </div>
@@ -129,179 +131,117 @@ export default function OrderItemDetailPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="text-center text-muted-foreground">
-                      <ImageIcon className="h-16 w-16 mx-auto mb-2 opacity-50" />
-                      <p>No image available</p>
+                    <div className="flex flex-col items-center text-muted-foreground">
+                      <ImageIcon className="h-16 w-16 mb-2" />
+                      <span>No image available</span>
                     </div>
                   )}
-                </div>
-                <div className="mt-4">
-                  <h3 className="font-semibold text-lg">{item.productName || product?.name}</h3>
-                  <p className="text-sm text-muted-foreground">SKU: {product?.sku || "N/A"}</p>
-                  <div className="flex justify-between mt-2 text-sm">
-                    <span>Size</span>
-                    <span className="font-medium">{item.size}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Quantity</span>
-                    <span className="font-medium">{item.quantity}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Size Type</span>
-                    <span className="font-medium">
-                      {item.sizeType === SIZE_TYPE.STANDARD ? "Standard" : "Custom"}
-                    </span>
-                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Customization Details */}
-            <div className="space-y-4">
-              {/* Style */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Scissors className="h-4 w-4" />
-                    Style
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {item.style?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
-                    <div className="space-y-2">
-                      <Badge variant="outline">Customized</Badge>
-                      {item.style.details && (
-                        <div className="text-sm">
-                          <p className="font-medium">Details:</p>
-                          <p className="text-muted-foreground">{item.style.details}</p>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">Original (no customization)</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Color */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Palette className="h-4 w-4" />
-                    Color
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {item.color?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
-                    <div className="space-y-2">
-                      <Badge variant="outline">Customized</Badge>
-                      {item.color.details && (
-                        <p className="text-sm text-muted-foreground">{item.color.details}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">Original</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Fabric */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Fabric
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {item.fabric?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
-                    <div className="space-y-2">
-                      <Badge variant="outline">Customized</Badge>
-                      {item.fabric.details && (
-                        <p className="text-sm text-muted-foreground">{item.fabric.details}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">Original</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {/* Product Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Product Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Size Type</p>
+                    <p className="font-medium">
+                      {item.sizeType === SIZE_TYPE.STANDARD ? "Standard" : "Custom"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Size</p>
+                    <p className="font-medium">{item.size || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Quantity</p>
+                    <p className="font-medium">{item.quantity}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </TabsContent>
 
-        {/* Order Form Tab */}
-        <TabsContent value="form" className="space-y-6">
+          {/* Customizations */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Order Form Status
+                <Palette className="h-5 w-5" />
+                Customizations
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {item.orderForm ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-green-600">
-                    <CheckCircle className="h-5 w-5" />
-                    <span>Form generated on {new Date(item.orderForm.generatedAt).toLocaleDateString()}</span>
-                  </div>
-
-                  {item.status === ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL && canApprove && (
-                    <Button onClick={handleApprove} disabled={approveForm.isPending}>
-                      {approveForm.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Approving...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Mark as Customer Approved
-                        </>
-                      )}
-                    </Button>
-                  )}
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Style */}
+                <div>
+                  <h4 className="font-medium flex items-center gap-2 mb-2">
+                    <Scissors className="h-4 w-4" />
+                    Style
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {item.style?.type === CUSTOMIZATION_TYPE.ORIGINAL
+                      ? "Original style"
+                      : item.style?.details || "Custom style"}
+                  </p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-yellow-600">
-                    <Clock className="h-5 w-5" />
-                    <span>Form not yet generated</span>
-                  </div>
 
-                  {canManageForms && (
-                    <Button
-                      onClick={() =>
-                        navigate(`/orders/${orderId}/items/${itemId}/form`)
-                      }
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Generate Order Form
-                    </Button>
-                  )}
+                {/* Color */}
+                <div>
+                  <h4 className="font-medium flex items-center gap-2 mb-2">
+                    <Palette className="h-4 w-4" />
+                    Color
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {item.color?.type === CUSTOMIZATION_TYPE.ORIGINAL
+                      ? "Original color"
+                      : item.color?.details || "Custom color"}
+                  </p>
                 </div>
-              )}
+
+                {/* Fabric */}
+                <div>
+                  <h4 className="font-medium flex items-center gap-2 mb-2">
+                    <Ruler className="h-4 w-4" />
+                    Fabric
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {item.fabric?.type === CUSTOMIZATION_TYPE.ORIGINAL
+                      ? "Original fabric"
+                      : item.fabric?.details || "Custom fabric"}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Show measurements if form exists */}
-          {item.orderForm?.measurements && (
+          {/* Measurements (for custom items) */}
+          {item.sizeType === SIZE_TYPE.CUSTOM && item.measurements && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Ruler className="h-5 w-5" />
-                  Measurements
+                  Custom Measurements
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {Object.entries(item.orderForm.measurements).map(([key, value]) => (
-                    <div key={key} className="flex justify-between border-b pb-2">
-                      <span className="text-muted-foreground capitalize">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {Object.entries(item.measurements).map(([key, value]) => (
+                    <div key={key}>
+                      <p className="text-sm text-muted-foreground capitalize">
                         {key.replace(/_/g, " ")}
-                      </span>
-                      <span className="font-medium">{value}"</span>
+                      </p>
+                      <p className="font-medium">{value}"</p>
                     </div>
                   ))}
                 </div>
@@ -310,34 +250,103 @@ export default function OrderItemDetailPage() {
           )}
         </TabsContent>
 
-        {/* Timeline Tab */}
-        <TabsContent value="timeline">
+        {/* Order Form Tab */}
+        <TabsContent value="form" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Timeline</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Order Form
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {item.orderFormGenerated ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                    <span>
+                      Form generated on{" "}
+                      {new Date(item.orderForm?.generatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {item.status === ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL &&
+                    canApprove && (
+                      <Button onClick={handleApprove} disabled={approveForm.isPending}>
+                        {approveForm.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Approving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Approve Form
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                  {item.orderFormApproved && (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle className="h-5 w-5" />
+                      <span>Customer approved</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-amber-600">
+                    <Clock className="h-5 w-5" />
+                    <span>Order form not yet generated</span>
+                  </div>
+
+                  {canManageForms && (
+                    <Button
+                      onClick={() =>
+                        navigate(`/orders/${orderId}/items/${itemId}/form`)
+                      }
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Generate Order Form
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Timeline Tab */}
+        <TabsContent value="timeline" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                Activity Timeline
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {item.timeline && item.timeline.length > 0 ? (
                 <div className="space-y-4">
                   {item.timeline.map((entry, index) => (
-                    <div key={index} className="flex gap-4 pb-4 border-b last:border-0">
+                    <div
+                      key={entry.id || index}
+                      className="flex items-start gap-4 pb-4 border-b last:border-0"
+                    >
                       <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
                       <div className="flex-1">
                         <p className="font-medium">{entry.action}</p>
-                        {entry.details && (
-                          <p className="text-sm text-muted-foreground">{entry.details}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(entry.timestamp).toLocaleString()} by {entry.userName}
+                        <p className="text-sm text-muted-foreground">
+                          {entry.user} •{" "}
+                          {new Date(entry.timestamp).toLocaleString()}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-8">
-                  No activity recorded yet
-                </p>
+                <p className="text-muted-foreground">No activity recorded yet</p>
               )}
             </CardContent>
           </Card>

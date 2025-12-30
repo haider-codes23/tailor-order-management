@@ -46,7 +46,7 @@ export const useOrders = (filters = {}) => {
   return useQuery({
     queryKey: orderKeys.list(filters),
     queryFn: () => getOrders(filters),
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
   })
 }
 
@@ -232,7 +232,7 @@ export const useApproveOrderForm = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ itemId, data }) => approveOrderForm(itemId, data),
+    mutationFn: (itemId) => approveOrderForm(itemId),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(data.id) })
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.orderId) })
