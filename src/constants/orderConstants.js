@@ -15,73 +15,33 @@ export const ORDER_ITEM_STATUS = {
   IN_PRODUCTION: "IN_PRODUCTION",
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
   AWAITING_CLIENT_APPROVAL: "AWAITING_CLIENT_APPROVAL",
-  REWORK_REQUIRED: "REWORK_REQUIRED",
   CLIENT_APPROVED: "CLIENT_APPROVED",
   DISPATCHED: "DISPATCHED",
   COMPLETED: "COMPLETED",
+  REWORK_REQUIRED: "REWORK_REQUIRED",
+  CANCELLED: "CANCELLED",
 }
 
-// Status display configuration
+// Human-readable status labels with colors
 export const ORDER_ITEM_STATUS_CONFIG = {
-  [ORDER_ITEM_STATUS.RECEIVED]: {
-    label: "Received",
-    color: "bg-slate-100 text-slate-700",
-  },
-  [ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL]: {
-    label: "Awaiting Form Approval",
-    color: "bg-amber-100 text-amber-700",
-  },
-  [ORDER_ITEM_STATUS.INVENTORY_CHECK]: {
-    label: "Inventory Check",
-    color: "bg-blue-100 text-blue-700",
-  },
-  [ORDER_ITEM_STATUS.AWAITING_MATERIAL]: {
-    label: "Awaiting Material",
-    color: "bg-orange-100 text-orange-700",
-  },
-  [ORDER_ITEM_STATUS.CREATE_PACKET]: {
-    label: "Create Packet",
-    color: "bg-purple-100 text-purple-700",
-  },
-  [ORDER_ITEM_STATUS.PACKET_CHECK]: {
-    label: "Packet Check",
-    color: "bg-indigo-100 text-indigo-700",
-  },
-  [ORDER_ITEM_STATUS.READY_FOR_PRODUCTION]: {
-    label: "Ready for Production",
-    color: "bg-cyan-100 text-cyan-700",
-  },
-  [ORDER_ITEM_STATUS.IN_PRODUCTION]: {
-    label: "In Production",
-    color: "bg-yellow-100 text-yellow-700",
-  },
-  [ORDER_ITEM_STATUS.PRODUCTION_COMPLETED]: {
-    label: "Production Completed",
-    color: "bg-teal-100 text-teal-700",
-  },
-  [ORDER_ITEM_STATUS.AWAITING_CLIENT_APPROVAL]: {
-    label: "Awaiting Client Approval",
-    color: "bg-pink-100 text-pink-700",
-  },
-  [ORDER_ITEM_STATUS.REWORK_REQUIRED]: {
-    label: "Rework Required",
-    color: "bg-red-100 text-red-700",
-  },
-  [ORDER_ITEM_STATUS.CLIENT_APPROVED]: {
-    label: "Client Approved",
-    color: "bg-emerald-100 text-emerald-700",
-  },
-  [ORDER_ITEM_STATUS.DISPATCHED]: {
-    label: "Dispatched",
-    color: "bg-sky-100 text-sky-700",
-  },
-  [ORDER_ITEM_STATUS.COMPLETED]: {
-    label: "Completed",
-    color: "bg-green-100 text-green-700",
-  },
+  RECEIVED: { label: "Received", color: "bg-blue-100 text-blue-800" },
+  AWAITING_CUSTOMER_FORM_APPROVAL: { label: "Awaiting Customer Approval", color: "bg-yellow-100 text-yellow-800" },
+  INVENTORY_CHECK: { label: "Inventory Check", color: "bg-purple-100 text-purple-800" },
+  AWAITING_MATERIAL: { label: "Awaiting Material", color: "bg-orange-100 text-orange-800" },
+  CREATE_PACKET: { label: "Create Packet", color: "bg-indigo-100 text-indigo-800" },
+  PACKET_CHECK: { label: "Packet Check", color: "bg-cyan-100 text-cyan-800" },
+  READY_FOR_PRODUCTION: { label: "Ready for Production", color: "bg-teal-100 text-teal-800" },
+  IN_PRODUCTION: { label: "In Production", color: "bg-amber-100 text-amber-800" },
+  PRODUCTION_COMPLETED: { label: "Production Completed", color: "bg-lime-100 text-lime-800" },
+  AWAITING_CLIENT_APPROVAL: { label: "Awaiting Client Approval", color: "bg-pink-100 text-pink-800" },
+  CLIENT_APPROVED: { label: "Client Approved", color: "bg-emerald-100 text-emerald-800" },
+  DISPATCHED: { label: "Dispatched", color: "bg-sky-100 text-sky-800" },
+  COMPLETED: { label: "Completed", color: "bg-green-100 text-green-800" },
+  REWORK_REQUIRED: { label: "Rework Required", color: "bg-red-100 text-red-800" },
+  CANCELLED: { label: "Cancelled", color: "bg-gray-100 text-gray-800" },
 }
 
-// Order source
+// Order source - where the order came from
 export const ORDER_SOURCE = {
   SHOPIFY: "shopify",
   MANUAL: "manual",
@@ -92,30 +52,39 @@ export const PAYMENT_STATUS = {
   PAID: "PAID",
   EXTRA_PAID: "EXTRA_PAID",
   PENDING: "PENDING",
+  PARTIAL: "PARTIAL",
 }
 
-// Urgent order types
-export const URGENT_TYPE = {
-  EVENT: "EVENT",
-  RTS: "RTS", // Ready to Ship
+export const PAYMENT_STATUS_CONFIG = {
+  PAID: { label: "Paid", color: "bg-green-100 text-green-800" },
+  EXTRA_PAID: { label: "Extra Paid", color: "bg-blue-100 text-blue-800" },
+  PENDING: { label: "Pending", color: "bg-red-100 text-red-800" },
+  PARTIAL: { label: "Partial", color: "bg-yellow-100 text-yellow-800" },
 }
 
-// Size types
+// Size type - standard or custom
 export const SIZE_TYPE = {
   STANDARD: "standard",
   CUSTOM: "custom",
 }
 
-// Standard sizes
-export const STANDARD_SIZES = ["XS", "S", "M", "L", "XL", "XXL"]
-
-// Customization types (for style, color, fabric)
+// Customization type - original or customized
 export const CUSTOMIZATION_TYPE = {
   ORIGINAL: "original",
   CUSTOMIZED: "customized",
 }
 
-// Currency options
+// Standard sizes (from measurement charts)
+export const STANDARD_SIZES = [
+  { value: "XS", label: "XS - Extra Small" },
+  { value: "S", label: "S - Small" },
+  { value: "M", label: "M - Medium" },
+  { value: "L", label: "L - Large" },
+  { value: "XL", label: "XL - Extra Large" },
+  { value: "XXL", label: "XXL - Double Extra Large" },
+]
+
+// Currencies
 export const CURRENCIES = [
   { value: "USD", label: "USD - US Dollar" },
   { value: "PKR", label: "PKR - Pakistani Rupee" },
@@ -147,3 +116,35 @@ export const DISPATCH_METHODS = [
   { value: "pickup", label: "Pickup" },
   { value: "other", label: "Other" },
 ]
+
+// Urgent flags
+export const URGENT_FLAGS = [
+  { value: "EVENT", label: "EVENT - Time Sensitive" },
+  { value: "RTS", label: "RTS - Ready to Ship" },
+]
+
+// Height ranges for dropdown (2-inch increments)
+export const HEIGHT_RANGES = [
+  { value: "4ft0in-4ft2in", label: "4 ft 0 in - 4 ft 2 in" },
+  { value: "4ft3in-4ft5in", label: "4 ft 3 in - 4 ft 5 in" },
+  { value: "4ft6in-4ft8in", label: "4 ft 6 in - 4 ft 8 in" },
+  { value: "4ft9in-4ft11in", label: "4 ft 9 in - 4 ft 11 in" },
+  { value: "5ft0in-5ft2in", label: "5 ft 0 in - 5 ft 2 in" },
+  { value: "5ft3in-5ft5in", label: "5 ft 3 in - 5 ft 5 in" },
+  { value: "5ft6in-5ft8in", label: "5 ft 6 in - 5 ft 8 in" },
+  { value: "5ft9in-5ft11in", label: "5 ft 9 in - 5 ft 11 in" },
+  { value: "6ft0in-6ft2in", label: "6 ft 0 in - 6 ft 2 in" },
+  { value: "6ft3in-6ft5in", label: "6 ft 3 in - 6 ft 5 in" },
+  { value: "6ft6in-6ft8in", label: "6 ft 6 in - 6 ft 8 in" },
+  { value: "6ft9in-6ft11in", label: "6 ft 9 in - 6 ft 11 in" },
+  { value: "7ft0in+", label: "7 ft 0 in and above" },
+]
+
+// Modesty options
+export const MODESTY_OPTIONS = [
+  { value: "YES", label: "Yes" },
+  { value: "NO", label: "No" },
+]
+
+// Aliases for backwards compatibility
+export const URGENT_TYPE = URGENT_FLAGS
