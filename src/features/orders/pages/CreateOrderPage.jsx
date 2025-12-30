@@ -4,14 +4,6 @@ import { useForm, Controller } from "react-hook-form"
 import { useCreateOrder } from "@/hooks/useOrders"
 import { useProducts } from "@/hooks/useProducts"
 import { useAuth } from "@/features/auth/hooks/useAuth"
-import {
-  CURRENCIES,
-  PAYMENT_METHODS,
-  URGENT_TYPE,
-  SIZE_TYPE,
-  STANDARD_SIZES,
-  HEIGHT_RANGES,
-} from "@/constants/orderConstants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,27 +15,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
+import { ArrowLeft, Plus, Trash2, Loader2, Save } from "lucide-react"
 import { toast } from "sonner"
 import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  Loader2,
-  Package,
-  User,
-  MapPin,
-  CreditCard,
-  Calendar,
-  AlertTriangle,
-} from "lucide-react"
+  CURRENCIES,
+  PAYMENT_METHODS,
+  URGENT_FLAGS,
+  HEIGHT_RANGES,
+  SIZE_TYPE,
+  STANDARD_SIZES,
+} from "@/constants/orderConstants"
 
 export default function CreateOrderPage() {
   const navigate = useNavigate()
@@ -55,15 +44,19 @@ export default function CreateOrderPage() {
 
   // Order items state
   const [orderItems, setOrderItems] = useState([])
-  const [itemModalOpen, setItemModalOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState(null)
-  const [selectedSizeType, setSelectedSizeType] = useState(SIZE_TYPE.STANDARD)
-  const [selectedSize, setSelectedSize] = useState("")
+  const [showItemModal, setShowItemModal] = useState(false)
+  const [currentItem, setCurrentItem] = useState({
+    productId: "",
+    productName: "",
+    sizeType: SIZE_TYPE.STANDARD,
+    size: "",
+    quantity: 1,
+  })
 
   const {
     register,
-    control,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -72,108 +65,145 @@ export default function CreateOrderPage() {
       address: "",
       clientHeight: "",
       modesty: "NO",
+      consultantId: user?.id?.toString() || "",
+      consultantName: user?.name || "",
       currency: "USD",
-      paymentMethod: "paypal",
+      paymentMethod: "",
       totalAmount: "",
-      fwdDate: new Date().toISOString().split("T")[0],
+      fwdDate: "",
       productionShippingDate: "",
-      urgent: "",
+      urgent: "none",
       notes: "",
     },
   })
 
-  // Add item to order
+  // Handle adding item
   const handleAddItem = () => {
-    if (!selectedProduct) {
+    setCurrentItem({
+      productId: "",
+      productName: "",
+      sizeType: SIZE_TYPE.STANDARD,
+      size: "",
+      quantity: 1,
+    })
+    setShowItemModal(true)
+  }
+
+  // Handle saving item
+  const handleSaveItem = () => {
+    if (!currentItem.productId) {
       toast.error("Please select a product")
       return
     }
-    if (selectedSizeType === SIZE_TYPE.STANDARD && !selectedSize) {
+    if (!currentItem.size) {
       toast.error("Please select a size")
       return
     }
 
-    const newItem = {
-      tempId: Date.now(),
-      productId: selectedProduct.id,
-      productName: selectedProduct.name,
-      productImage: selectedProduct.image,
-      productSku: selectedProduct.sku,
-      sizeType: selectedSizeType,
-      size: selectedSizeType === SIZE_TYPE.CUSTOM ? "Custom" : selectedSize,
-      quantity: 1,
-    }
+    const selectedProduct = products.find(
+      (p) => p.id.toString() === currentItem.productId
+    )
 
-    setOrderItems((prev) => [...prev, newItem])
-    setItemModalOpen(false)
-    setSelectedProduct(null)
-    setSelectedSizeType(SIZE_TYPE.STANDARD)
-    setSelectedSize("")
+    setOrderItems([
+      ...orderItems,
+      {
+        ...currentItem,
+        id: Date.now(),
+        productName: selectedProduct?.name || "",
+        productImage: selectedProduct?.image || "",
+      },
+    ])
+    setShowItemModal(false)
   }
 
-  // Remove item from order
-  const removeItem = (tempId) => {
-    setOrderItems((prev) => prev.filter((item) => item.tempId !== tempId))
+  // Handle removing item
+  const handleRemoveItem = (itemId) => {
+    setOrderItems(orderItems.filter((item) => item.id !== itemId))
   }
 
-  // Handle form submission
-  const onSubmit = (data) => {
+  // Form submission
+  const onSubmit = async (data) => {
     if (orderItems.length === 0) {
       toast.error("Please add at least one item to the order")
       return
     }
 
-    const orderData = {
-      ...data,
-      totalAmount: parseFloat(data.totalAmount) || 0,
-      consultantId: user?.id,
-      consultantName: user?.name,
-      items: orderItems.map(({ tempId, ...item }) => item),
-    }
+    try {
+      const orderData = {
+        ...data,
+        urgent: data.urgent === "none" ? "" : data.urgent,
+        totalAmount: parseFloat(data.totalAmount) || 0,
+        items: orderItems.map((item) => ({
+          productId: item.productId,
+          productName: item.productName,
+          sizeType: item.sizeType,
+          size: item.size,
+          quantity: item.quantity,
+        })),
+      }
 
-    createOrder.mutate(orderData, {
-      onSuccess: (newOrder) => {
-        toast.success("Order created successfully")
-        navigate(`/orders/${newOrder.id}`)
-      },
-      onError: () => {
-        toast.error("Failed to create order")
-      },
-    })
+      await createOrder.mutateAsync(orderData)
+      toast.success("Order created successfully")
+      navigate("/orders")
+    } catch (error) {
+      toast.error("Failed to create order")
+    }
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => navigate("/orders")}>
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Create New Order</h1>
-          <p className="text-sm text-slate-500">Manually create a customer order</p>
+          <h1 className="text-2xl font-bold">Create New Order</h1>
+          <p className="text-muted-foreground">
+            Add a new manual order to the system
+          </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Customer Information */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Customer Information
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Customer Information</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Customer Name *</Label>
               <Input
-                {...register("customerName", { required: "Customer name is required" })}
+                {...register("customerName", {
+                  required: "Customer name is required",
+                })}
                 placeholder="Enter customer name"
               />
               {errors.customerName && (
-                <p className="text-sm text-red-500 mt-1">{errors.customerName.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.customerName.message}
+                </p>
               )}
             </div>
+
+            <div>
+              <Label>Destination (Country)</Label>
+              <Input
+                {...register("destination")}
+                placeholder="e.g., UAE, USA, UK"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <Label>Full Address</Label>
+              <Textarea
+                {...register("address")}
+                placeholder="Enter complete shipping address"
+                rows={2}
+              />
+            </div>
+
             <div>
               <Label>Client Height</Label>
               <Controller
@@ -195,16 +225,7 @@ export default function CreateOrderPage() {
                 )}
               />
             </div>
-            <div>
-              <Label>Destination Country *</Label>
-              <Input
-                {...register("destination", { required: "Destination is required" })}
-                placeholder="e.g., United Arab Emirates"
-              />
-              {errors.destination && (
-                <p className="text-sm text-red-500 mt-1">{errors.destination.message}</p>
-              )}
-            </div>
+
             <div>
               <Label>Modesty Requirement</Label>
               <Controller
@@ -223,96 +244,15 @@ export default function CreateOrderPage() {
                 )}
               />
             </div>
-            <div className="sm:col-span-2">
-              <Label>Full Address *</Label>
-              <Textarea
-                {...register("address", { required: "Address is required" })}
-                placeholder="Enter complete shipping address"
-                rows={2}
-              />
-              {errors.address && (
-                <p className="text-sm text-red-500 mt-1">{errors.address.message}</p>
-              )}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Order Items */}
-        <div className="bg-white rounded-lg border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Order Items ({orderItems.length})
-            </h3>
-            <Button type="button" size="sm" onClick={() => setItemModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Item
-            </Button>
-          </div>
-
-          {orderItems.length === 0 ? (
-            <div className="text-center py-8 border-2 border-dashed rounded-lg">
-              <Package className="h-12 w-12 mx-auto text-slate-300 mb-2" />
-              <p className="text-slate-500">No items added yet</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => setItemModalOpen(true)}
-              >
-                Add First Item
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {orderItems.map((item) => (
-                <div
-                  key={item.tempId}
-                  className="flex items-center gap-4 p-4 bg-slate-50 rounded-lg"
-                >
-                  <div className="w-12 h-12 bg-slate-200 rounded flex items-center justify-center flex-shrink-0">
-                    {item.productImage ? (
-                      <img
-                        src={item.productImage}
-                        alt={item.productName}
-                        className="w-full h-full object-cover rounded"
-                      />
-                    ) : (
-                      <Package className="h-6 w-6 text-slate-400" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{item.productName}</p>
-                    <p className="text-sm text-slate-500">
-                      {item.size}
-                      {item.sizeType === SIZE_TYPE.CUSTOM && (
-                        <span className="text-amber-600"> (Custom)</span>
-                      )}
-                      {" • "}SKU: {item.productSku}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeItem(item.tempId)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Payment & Dates */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Payment & Dates
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Payment Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Information</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>Currency</Label>
               <Controller
@@ -334,6 +274,7 @@ export default function CreateOrderPage() {
                 )}
               />
             </div>
+
             <div>
               <Label>Payment Method</Label>
               <Controller
@@ -342,7 +283,7 @@ export default function CreateOrderPage() {
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select method" />
                     </SelectTrigger>
                     <SelectContent>
                       {PAYMENT_METHODS.map((method) => (
@@ -355,87 +296,191 @@ export default function CreateOrderPage() {
                 )}
               />
             </div>
+
             <div>
               <Label>Total Amount</Label>
               <Input
                 type="number"
+                step="0.01"
                 {...register("totalAmount")}
-                placeholder="0"
+                placeholder="0.00"
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Dates & Flags */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Dates & Priority</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label>FWD Date</Label>
+              <Label>FWD Date (Confirmed)</Label>
               <Input type="date" {...register("fwdDate")} />
             </div>
+
             <div>
-              <Label>Production Ship Date</Label>
+              <Label>Production Shipping Date</Label>
               <Input type="date" {...register("productionShippingDate")} />
             </div>
+
             <div>
-              <Label>Urgent</Label>
+              <Label>Urgent Flag</Label>
               <Controller
                 name="urgent"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Not urgent" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Not Urgent</SelectItem>
-                      <SelectItem value={URGENT_TYPE.EVENT}>Event</SelectItem>
-                      <SelectItem value={URGENT_TYPE.RTS}>RTS</SelectItem>
+                      {URGENT_FLAGS.map((flag) => (
+                        <SelectItem key={flag.value} value={flag.value}>
+                          {flag.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
               />
             </div>
-          </div>
-        </div>
 
-        {/* Notes */}
-        <div className="bg-white rounded-lg border p-6">
-          <h3 className="font-semibold mb-4">Notes</h3>
-          <Textarea
-            {...register("notes")}
-            placeholder="Add internal notes or special instructions..."
-            rows={3}
-          />
-        </div>
+            <div className="md:col-span-3">
+              <Label>Internal Notes</Label>
+              <Textarea
+                {...register("notes")}
+                placeholder="Add any internal notes"
+                rows={2}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate("/orders")}>
+        {/* Order Items */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Order Items</CardTitle>
+            <Button type="button" onClick={handleAddItem} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Item
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {orderItems.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No items added yet</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddItem}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Item
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {orderItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.productImage && (
+                        <img
+                          src={item.productImage}
+                          alt={item.productName}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium">{item.productName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Size: {item.size} | Type:{" "}
+                          {item.sizeType === SIZE_TYPE.STANDARD
+                            ? "Standard"
+                            : "Custom"}{" "}
+                          | Qty: {item.quantity}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveItem(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Submit Buttons */}
+        <div className="flex gap-4 justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(-1)}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={createOrder.isPending}>
-            {createOrder.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Create Order
+            {createOrder.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Create Order
+              </>
+            )}
           </Button>
         </div>
       </form>
 
       {/* Add Item Modal */}
-      <Dialog open={itemModalOpen} onOpenChange={setItemModalOpen}>
+      <Dialog open={showItemModal} onOpenChange={setShowItemModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Order Item</DialogTitle>
-            <DialogDescription>Select a product and size to add to this order.</DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4 py-4">
             <div>
               <Label>Product *</Label>
               <Select
-                value={selectedProduct?.id || ""}
-                onValueChange={(id) => setSelectedProduct(products.find((p) => p.id === id))}
+                value={currentItem.productId}
+                onValueChange={(value) => {
+                  const product = products.find(
+                    (p) => p.id.toString() === value
+                  )
+                  setCurrentItem({
+                    ...currentItem,
+                    productId: value,
+                    productName: product?.name || "",
+                  })
+                }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a product" />
+                  <SelectValue placeholder="Select product" />
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {product.name} ({product.sku})
+                    <SelectItem
+                      key={product.id}
+                      value={product.id.toString()}
+                    >
+                      {product.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -443,50 +488,81 @@ export default function CreateOrderPage() {
             </div>
 
             <div>
-              <Label>Size Type *</Label>
-              <Select value={selectedSizeType} onValueChange={setSelectedSizeType}>
+              <Label>Size Type</Label>
+              <Select
+                value={currentItem.sizeType}
+                onValueChange={(value) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    sizeType: value,
+                    size: "",
+                  })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SIZE_TYPE.STANDARD}>Standard Size</SelectItem>
+                  <SelectItem value={SIZE_TYPE.STANDARD}>
+                    Standard Size
+                  </SelectItem>
                   <SelectItem value={SIZE_TYPE.CUSTOM}>Custom Size</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedSizeType === SIZE_TYPE.STANDARD && (
-              <div>
-                <Label>Size *</Label>
-                <Select value={selectedSize} onValueChange={setSelectedSize}>
+            <div>
+              <Label>Size *</Label>
+              {currentItem.sizeType === SIZE_TYPE.STANDARD ? (
+                <Select
+                  value={currentItem.size}
+                  onValueChange={(value) =>
+                    setCurrentItem({ ...currentItem, size: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select size" />
                   </SelectTrigger>
                   <SelectContent>
                     {STANDARD_SIZES.map((size) => (
-                      <SelectItem key={size} value={size}>
-                        {size}
+                      <SelectItem key={size.value} value={size.value}>
+                        {size.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            )}
+              ) : (
+                <Input
+                  value={currentItem.size}
+                  onChange={(e) =>
+                    setCurrentItem({ ...currentItem, size: e.target.value })
+                  }
+                  placeholder="Enter custom size label"
+                />
+              )}
+            </div>
 
-            {selectedSizeType === SIZE_TYPE.CUSTOM && (
-              <div className="p-3 bg-amber-50 rounded-lg flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-                <p className="text-sm text-amber-800">
-                  Custom measurements will be entered when generating the order form.
-                </p>
-              </div>
-            )}
+            <div>
+              <Label>Quantity</Label>
+              <Input
+                type="number"
+                min="1"
+                value={currentItem.quantity}
+                onChange={(e) =>
+                  setCurrentItem({
+                    ...currentItem,
+                    quantity: parseInt(e.target.value) || 1,
+                  })
+                }
+              />
+            </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setItemModalOpen(false)}>
+            <Button variant="outline" onClick={() => setShowItemModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddItem}>Add Item</Button>
+            <Button onClick={handleSaveItem}>Add Item</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

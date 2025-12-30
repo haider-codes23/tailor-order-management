@@ -1,112 +1,114 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useOrder, useOrderItem, useApproveOrderForm } from "@/hooks/useOrders"
+import { useProduct } from "@/hooks/useProducts"
 import { useAuth } from "@/features/auth/hooks/useAuth"
-import { ORDER_ITEM_STATUS_CONFIG, SIZE_TYPE, CUSTOMIZATION_TYPE } from "@/constants/orderConstants"
-import { getMeasurementCategoryById } from "@/constants/measurementCategories"
+import {
+  ORDER_ITEM_STATUS,
+  ORDER_ITEM_STATUS_CONFIG,
+  SIZE_TYPE,
+  CUSTOMIZATION_TYPE,
+} from "@/constants/orderConstants"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "sonner"
 import {
   ArrowLeft,
+  FileText,
+  CheckCircle,
+  Clock,
   Package,
   Loader2,
-  AlertCircle,
-  Clock,
-  CheckCircle,
-  FileText,
-  Ruler,
   Palette,
   Scissors,
-  Shirt,
-  User,
-  Calendar,
+  Ruler,
+  Image as ImageIcon,
 } from "lucide-react"
+import { toast } from "sonner"
+import { hasPermission } from "@/lib/rbac"
 
 export default function OrderItemDetailPage() {
   const { id: orderId, itemId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState("details")
 
-  const { data: order } = useOrder(orderId)
-  const { data: item, isLoading, isError } = useOrderItem(itemId)
+  const { data: order, isLoading: orderLoading } = useOrder(orderId)
+  const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
   const approveForm = useApproveOrderForm()
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "—"
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  const item = itemData?.data
+  
+  // Fetch product details to get the image
+  const { data: productData } = useProduct(item?.productId, {
+  enabled: !!item?.productId,
+})
+  const product = productData?.data
 
-  const getStatusBadge = (status) => {
-    const config = ORDER_ITEM_STATUS_CONFIG[status]
-    return config?.color || "bg-slate-100 text-slate-700"
-  }
+  const canManageForms = hasPermission(user, "orders.manage_customer_forms")
+  const canApprove = hasPermission(user, "orders.approve_customer_forms")
 
-  const handleApproveForm = () => {
-    if (!confirm("Mark this item as customer approved? This will move it to Inventory Check.")) {
-      return
+  const handleApprove = async () => {
+    try {
+      await approveForm.mutateAsync(itemId)
+      toast.success("Order form approved")
+    } catch (error) {
+      toast.error("Failed to approve form")
     }
-
-    approveForm.mutate(
-      { itemId, data: { approvedBy: user?.name } },
-      {
-        onSuccess: () => toast.success("Order form approved"),
-        onError: () => toast.error("Failed to approve form"),
-      }
-    )
   }
 
-  if (isLoading) {
+  if (orderLoading || itemLoading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
 
-  if (isError || !item) {
+  if (!item) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-96">
-        <AlertCircle className="h-12 w-12 text-red-400 mb-4" />
-        <p className="text-lg font-medium text-slate-900">Item not found</p>
-        <Button variant="outline" className="mt-4" onClick={() => navigate(`/orders/${orderId}`)}>
+      <div className="p-6">
+        <p>Order item not found</p>
+        <Button variant="outline" onClick={() => navigate(`/orders/${orderId}`)}>
           Back to Order
         </Button>
       </div>
     )
   }
 
+  const statusConfig = ORDER_ITEM_STATUS_CONFIG[item.status] || {
+    label: item.status,
+    color: "bg-gray-100 text-gray-800",
+  }
+
+  // Get product image - check multiple sources
+  const productImage = product?.image || item.productImage || item.product?.image
+
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/orders/${orderId}`)}>
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Order
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(`/orders/${orderId}`)}
+          >
+            <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{item.productName}</h1>
-            <p className="text-sm text-slate-500">
-              {order?.orderNumber} • SKU: {item.productSku}
+            <h1 className="text-2xl font-bold">{item.productName || product?.name}</h1>
+            <p className="text-muted-foreground">
+              {order?.data?.orderNumber} • SKU: {product?.sku || "N/A"}
             </p>
           </div>
         </div>
-        <span
-          className={`px-4 py-2 text-sm font-medium rounded-full ${getStatusBadge(item.status)}`}
-        >
-          {ORDER_ITEM_STATUS_CONFIG[item.status]?.label || item.status}
-        </span>
+        <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="details" className="space-y-6">
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="form">Order Form</TabsTrigger>
@@ -115,238 +117,230 @@ export default function OrderItemDetailPage() {
 
         {/* Details Tab */}
         <TabsContent value="details" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Product Card */}
-            <div className="bg-white rounded-lg border p-6">
-              <div className="aspect-square bg-slate-100 rounded-lg mb-4 flex items-center justify-center">
-                {item.productImage ? (
-                  <img
-                    src={item.productImage}
-                    alt={item.productName}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                ) : (
-                  <Package className="h-16 w-16 text-slate-400" />
-                )}
-              </div>
-              <h3 className="font-semibold text-lg">{item.productName}</h3>
-              <p className="text-sm text-slate-500">SKU: {item.productSku}</p>
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Size</span>
-                  <span className="font-medium">
-                    {item.size}
-                    {item.sizeType === SIZE_TYPE.CUSTOM && (
-                      <span className="ml-1 text-amber-600">(Custom)</span>
-                    )}
-                  </span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Product Image Card */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                  {productImage ? (
+                    <img
+                      src={productImage}
+                      alt={item.productName || product?.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <ImageIcon className="h-16 w-16 mx-auto mb-2 opacity-50" />
+                      <p>No image available</p>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Quantity</span>
-                  <span className="font-medium">{item.quantity}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Customizations */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Style */}
-              <div className="bg-white rounded-lg border p-6">
-                <h4 className="font-medium flex items-center gap-2 mb-3">
-                  <Shirt className="h-4 w-4" />
-                  Style
-                </h4>
-                {item.style?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
-                  <div className="space-y-2">
-                    {item.style.details?.top && (
-                      <div>
-                        <span className="text-sm text-slate-500">Top: </span>
-                        <span>{item.style.details.top}</span>
-                      </div>
-                    )}
-                    {item.style.details?.bottom && (
-                      <div>
-                        <span className="text-sm text-slate-500">Bottom: </span>
-                        <span>{item.style.details.bottom}</span>
-                      </div>
-                    )}
-                    {item.style.details?.dupattaShawl && (
-                      <div>
-                        <span className="text-sm text-slate-500">Dupatta/Shawl: </span>
-                        <span>{item.style.details.dupattaShawl}</span>
-                      </div>
-                    )}
+                <div className="mt-4">
+                  <h3 className="font-semibold text-lg">{item.productName || product?.name}</h3>
+                  <p className="text-sm text-muted-foreground">SKU: {product?.sku || "N/A"}</p>
+                  <div className="flex justify-between mt-2 text-sm">
+                    <span>Size</span>
+                    <span className="font-medium">{item.size}</span>
                   </div>
-                ) : (
-                  <p className="text-slate-500">Original (no customization)</p>
-                )}
-              </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Quantity</span>
+                    <span className="font-medium">{item.quantity}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Size Type</span>
+                    <span className="font-medium">
+                      {item.sizeType === SIZE_TYPE.STANDARD ? "Standard" : "Custom"}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Color & Fabric */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg border p-6">
-                  <h4 className="font-medium flex items-center gap-2 mb-3">
+            {/* Customization Details */}
+            <div className="space-y-4">
+              {/* Style */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Scissors className="h-4 w-4" />
+                    Style
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {item.style?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
+                    <div className="space-y-2">
+                      <Badge variant="outline">Customized</Badge>
+                      {item.style.details && (
+                        <div className="text-sm">
+                          <p className="font-medium">Details:</p>
+                          <p className="text-muted-foreground">{item.style.details}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">Original (no customization)</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Color */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
                     <Palette className="h-4 w-4" />
                     Color
-                  </h4>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   {item.color?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
-                    <p>{item.color.details}</p>
+                    <div className="space-y-2">
+                      <Badge variant="outline">Customized</Badge>
+                      {item.color.details && (
+                        <p className="text-sm text-muted-foreground">{item.color.details}</p>
+                      )}
+                    </div>
                   ) : (
-                    <p className="text-slate-500">Original</p>
+                    <p className="text-muted-foreground">Original</p>
                   )}
-                </div>
-                <div className="bg-white rounded-lg border p-6">
-                  <h4 className="font-medium flex items-center gap-2 mb-3">
-                    <Scissors className="h-4 w-4" />
-                    Fabric
-                  </h4>
-                  {item.fabric?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
-                    <p>{item.fabric.details}</p>
-                  ) : (
-                    <p className="text-slate-500">Original</p>
-                  )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              {/* Custom Measurements */}
-              {item.sizeType === SIZE_TYPE.CUSTOM && item.measurementCategories?.length > 0 && (
-                <div className="bg-white rounded-lg border p-6">
-                  <h4 className="font-medium flex items-center gap-2 mb-4">
-                    <Ruler className="h-4 w-4" />
-                    Custom Measurements (inches)
-                  </h4>
-                  {item.measurementCategories.map((catId) => {
-                    const category = getMeasurementCategoryById(catId)
-                    if (!category) return null
-                    return (
-                      <div key={catId} className="mb-4">
-                        <h5 className="text-sm font-medium text-slate-700 mb-2">{category.name}</h5>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {category.groups.map((group) =>
-                            group.measurements.map((m) => {
-                              const value = item.measurements?.[m.id]
-                              if (!value) return null
-                              return (
-                                <div key={m.id} className="text-sm">
-                                  <span className="text-slate-500">{m.label}: </span>
-                                  <span className="font-medium">{value}"</span>
-                                </div>
-                              )
-                            })
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+              {/* Fabric */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Fabric
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {item.fabric?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
+                    <div className="space-y-2">
+                      <Badge variant="outline">Customized</Badge>
+                      {item.fabric.details && (
+                        <p className="text-sm text-muted-foreground">{item.fabric.details}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">Original</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
 
         {/* Order Form Tab */}
-        <TabsContent value="form" className="space-y-4">
-          <div className="bg-white rounded-lg border p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="font-semibold text-lg">Order Form Status</h3>
-                <p className="text-sm text-slate-500">
-                  Generate and manage the customer confirmation form
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {/* Form Generated Status */}
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-slate-50">
-                {item.orderFormGenerated ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <Clock className="h-5 w-5 text-amber-500" />
-                )}
-                <div className="flex-1">
-                  <p className="font-medium">
-                    {item.orderFormGenerated ? "Form Generated" : "Form Not Generated"}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    {item.orderFormGenerated
-                      ? "The order form has been created and can be sent to customer"
-                      : "Generate the order form to send to customer for approval"}
-                  </p>
-                </div>
-                {!item.orderFormGenerated && (
-                  <Button
-                    onClick={() => navigate(`/orders/${orderId}/items/${itemId}/generate-form`)}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate Form
-                  </Button>
-                )}
-              </div>
-
-              {/* Customer Approval Status */}
-              {item.orderFormGenerated && (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-slate-50">
-                  {item.orderFormApproved ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <Clock className="h-5 w-5 text-amber-500" />
-                  )}
-                  <div className="flex-1">
-                    <p className="font-medium">
-                      {item.orderFormApproved ? "Customer Approved" : "Awaiting Customer Approval"}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      {item.orderFormApproved
-                        ? "Customer has approved the order details"
-                        : "Waiting for customer to confirm the order form"}
-                    </p>
+        <TabsContent value="form" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Order Form Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {item.orderForm ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                    <span>Form generated on {new Date(item.orderForm.generatedAt).toLocaleDateString()}</span>
                   </div>
-                  {!item.orderFormApproved && (
-                    <Button onClick={handleApproveForm} disabled={approveForm.isPending}>
-                      {approveForm.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Mark Approved
+
+                  {item.status === ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL && canApprove && (
+                    <Button onClick={handleApprove} disabled={approveForm.isPending}>
+                      {approveForm.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Approving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Mark as Customer Approved
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-yellow-600">
+                    <Clock className="h-5 w-5" />
+                    <span>Form not yet generated</span>
+                  </div>
+
+                  {canManageForms && (
+                    <Button
+                      onClick={() =>
+                        navigate(`/orders/${orderId}/items/${itemId}/form`)
+                      }
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate Order Form
                     </Button>
                   )}
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Show measurements if form exists */}
+          {item.orderForm?.measurements && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Ruler className="h-5 w-5" />
+                  Measurements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {Object.entries(item.orderForm.measurements).map(([key, value]) => (
+                    <div key={key} className="flex justify-between border-b pb-2">
+                      <span className="text-muted-foreground capitalize">
+                        {key.replace(/_/g, " ")}
+                      </span>
+                      <span className="font-medium">{value}"</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Timeline Tab */}
         <TabsContent value="timeline">
-          <div className="bg-white rounded-lg border p-6">
-            <h3 className="font-semibold text-lg mb-6">Activity Timeline</h3>
-            {item.timeline?.length === 0 ? (
-              <p className="text-slate-500 text-center py-8">No activity recorded</p>
-            ) : (
-              <div className="space-y-4">
-                {item.timeline?.map((entry, index) => (
-                  <div key={entry.id} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Clock className="h-4 w-4 text-blue-600" />
-                      </div>
-                      {index < item.timeline.length - 1 && (
-                        <div className="w-0.5 h-full bg-slate-200 mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-4">
-                      <p className="font-medium text-slate-900">{entry.action}</p>
-                      <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <User className="h-3 w-3" />
-                        <span>{entry.user}</span>
-                        <span>•</span>
-                        <Calendar className="h-3 w-3" />
-                        <span>{formatDate(entry.timestamp)}</span>
+          <Card>
+            <CardHeader>
+              <CardTitle>Activity Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {item.timeline && item.timeline.length > 0 ? (
+                <div className="space-y-4">
+                  {item.timeline.map((entry, index) => (
+                    <div key={index} className="flex gap-4 pb-4 border-b last:border-0">
+                      <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
+                      <div className="flex-1">
+                        <p className="font-medium">{entry.action}</p>
+                        {entry.details && (
+                          <p className="text-sm text-muted-foreground">{entry.details}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(entry.timestamp).toLocaleString()} by {entry.userName}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">
+                  No activity recorded yet
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

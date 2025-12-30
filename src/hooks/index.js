@@ -59,6 +59,22 @@ export {
   orderItemKeys,
 } from "./useOrders"
 
+export {
+  useProducts,
+  useProduct,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+  useProductBOMs,
+  useActiveBOM,
+  useBOM,
+  useCreateBOM,
+  useUpdateBOM,
+  useDeleteBOM,
+  useSetActiveBOM,
+  productKeys,
+} from "./useProducts"
+
 // Future hook exports will be added here as we build more features:
 // export { useProducts, useCreateProduct, useUpdateProduct } from "./useProducts"
 // export { useInventoryItems, useStockMovements } from "./useInventory"
