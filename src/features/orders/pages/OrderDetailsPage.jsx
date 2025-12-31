@@ -100,12 +100,12 @@ export default function OrderDetailPage() {
   }
 
   const calculateDelayedDays = () => {
-    if (!order?.productionShippingDate || !order?.actualShippingDate) return null
-    const planned = new Date(order.productionShippingDate)
-    const actual = new Date(order.actualShippingDate)
-    const diffDays = Math.ceil((actual - planned) / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
+  if (!order?.productionShippingDate || !order?.actualShippingDate) return null
+  const planned = new Date(order.productionShippingDate)
+  const actual = new Date(order.actualShippingDate)
+  const diffDays = Math.ceil((actual - planned) / (1000 * 60 * 60 * 24))
+  return diffDays
+}
 
   // Handle add payment
   const handleAddPayment = () => {
