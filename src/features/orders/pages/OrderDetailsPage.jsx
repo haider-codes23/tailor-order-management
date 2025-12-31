@@ -100,12 +100,19 @@ export default function OrderDetailPage() {
   }
 
   const calculateDelayedDays = () => {
-  if (!order?.productionShippingDate || !order?.actualShippingDate) return null
-  const planned = new Date(order.productionShippingDate)
-  const actual = new Date(order.actualShippingDate)
-  const diffDays = Math.ceil((actual - planned) / (1000 * 60 * 60 * 24))
-  return diffDays
-}
+    if (!order?.actualShippingDate) return null
+
+    // Use dispatch date if dispatched, otherwise use today
+    const compareDate = order?.dispatchedAt ? new Date(order.dispatchedAt) : new Date()
+    const promisedDate = new Date(order.actualShippingDate)
+
+    // Reset time to midnight for accurate day comparison
+    compareDate.setHours(0, 0, 0, 0)
+    promisedDate.setHours(0, 0, 0, 0)
+
+    const diffDays = Math.ceil((compareDate - promisedDate) / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
 
   // Handle add payment
   const handleAddPayment = () => {
@@ -287,8 +294,8 @@ export default function OrderDetailPage() {
                       ? delayedDays > 0
                         ? `+${delayedDays} days late`
                         : delayedDays < 0
-                        ? `${Math.abs(delayedDays)} days early`
-                        : "On time"
+                          ? `${delayedDays} days early`
+                          : "On time"
                       : "—"}
                   </p>
                 </div>
@@ -408,8 +415,8 @@ export default function OrderDetailPage() {
                               Form Not Generated
                             </span>
                           )}
-                          {item.orderFormGenerated && (
-                            item.orderFormApproved ? (
+                          {item.orderFormGenerated &&
+                            (item.orderFormApproved ? (
                               <span className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded">
                                 Customer Approved
                               </span>
@@ -417,8 +424,7 @@ export default function OrderDetailPage() {
                               <span className="text-xs px-2 py-1 bg-amber-50 text-amber-700 rounded">
                                 Awaiting Approval
                               </span>
-                            )
-                          )}
+                            ))}
                         </div>
                       </div>
 
