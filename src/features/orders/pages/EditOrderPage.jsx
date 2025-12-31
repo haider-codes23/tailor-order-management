@@ -79,7 +79,7 @@ export default function EditOrderPage() {
   const onSubmit = async (data) => {
     try {
       await updateOrder.mutateAsync({
-        id,
+        orderId: id,
         data: {
           ...data,
           totalAmount: parseFloat(data.totalAmount) || 0,
