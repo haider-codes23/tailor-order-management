@@ -84,12 +84,9 @@ export const ordersHandlers = [
       return HttpResponse.json({ error: "Order not found" }, { status: 404 })
     }
     return HttpResponse.json({
-      success: true,
-      data: {
-        ...order,
-        remainingAmount: calculateRemainingAmount(order),
-        statusSummary: getOrderStatusSummary(order.id),
-      },
+      ...order,
+      remainingAmount: calculateRemainingAmount(order),
+      statusSummary: getOrderStatusSummary(order.id),
     })
   }),
 
@@ -165,7 +162,10 @@ export const ordersHandlers = [
     }
 
     mockOrders.push(newOrder)
-    return HttpResponse.json({ success: true, data: getOrderWithItems(newOrder.id) }, { status: 201 })
+    return HttpResponse.json(
+      { success: true, data: getOrderWithItems(newOrder.id) },
+      { status: 201 }
+    )
   }),
 
   http.put(`${BASE_URL}/orders/:id`, async ({ params, request }) => {
@@ -174,7 +174,11 @@ export const ordersHandlers = [
     if (orderIndex === -1) {
       return HttpResponse.json({ error: "Order not found" }, { status: 404 })
     }
-    mockOrders[orderIndex] = { ...mockOrders[orderIndex], ...data, updatedAt: new Date().toISOString() }
+    mockOrders[orderIndex] = {
+      ...mockOrders[orderIndex],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    }
     return HttpResponse.json({ success: true, data: getOrderWithItems(params.id) })
   }),
 
@@ -208,7 +212,8 @@ export const ordersHandlers = [
     mockOrders[orderIndex].updatedAt = new Date().toISOString()
     const totalPaid = mockOrders[orderIndex].payments.reduce((sum, p) => sum + p.amount, 0)
     if (totalPaid >= mockOrders[orderIndex].totalAmount) {
-      mockOrders[orderIndex].paymentStatus = totalPaid > mockOrders[orderIndex].totalAmount ? "EXTRA_PAID" : "PAID"
+      mockOrders[orderIndex].paymentStatus =
+        totalPaid > mockOrders[orderIndex].totalAmount ? "EXTRA_PAID" : "PAID"
     }
     return HttpResponse.json({ success: true, data: getOrderWithItems(params.id) })
   }),
@@ -225,7 +230,12 @@ export const ordersHandlers = [
     mockOrders[orderIndex].payments.splice(paymentIndex, 1)
     mockOrders[orderIndex].updatedAt = new Date().toISOString()
     const totalPaid = mockOrders[orderIndex].payments.reduce((sum, p) => sum + p.amount, 0)
-    mockOrders[orderIndex].paymentStatus = totalPaid >= mockOrders[orderIndex].totalAmount ? (totalPaid > mockOrders[orderIndex].totalAmount ? "EXTRA_PAID" : "PAID") : "PENDING"
+    mockOrders[orderIndex].paymentStatus =
+      totalPaid >= mockOrders[orderIndex].totalAmount
+        ? totalPaid > mockOrders[orderIndex].totalAmount
+          ? "EXTRA_PAID"
+          : "PAID"
+        : "PENDING"
     return HttpResponse.json({ success: true, data: getOrderWithItems(params.orderId) })
   }),
 
@@ -298,7 +308,14 @@ export const ordersHandlers = [
       measurements: {},
       orderFormGenerated: false,
       orderFormApproved: false,
-      timeline: [{ id: generateTimelineId(), action: "Order item added", user: data.addedBy || "System", timestamp: now }],
+      timeline: [
+        {
+          id: generateTimelineId(),
+          action: "Order item added",
+          user: data.addedBy || "System",
+          timestamp: now,
+        },
+      ],
       createdAt: now,
       updatedAt: now,
     }
@@ -316,7 +333,9 @@ export const ordersHandlers = [
     const item = mockOrderItems[itemIndex]
     const orderIndex = mockOrders.findIndex((o) => o.id === item.orderId)
     if (orderIndex !== -1) {
-      mockOrders[orderIndex].itemIds = mockOrders[orderIndex].itemIds.filter((id) => id !== params.id)
+      mockOrders[orderIndex].itemIds = mockOrders[orderIndex].itemIds.filter(
+        (id) => id !== params.id
+      )
       mockOrders[orderIndex].updatedAt = new Date().toISOString()
     }
     mockOrderItems.splice(itemIndex, 1)
@@ -333,7 +352,12 @@ export const ordersHandlers = [
     mockOrderItems[itemIndex].orderFormApproved = true
     mockOrderItems[itemIndex].status = ORDER_ITEM_STATUS.INVENTORY_CHECK
     mockOrderItems[itemIndex].updatedAt = now
-    mockOrderItems[itemIndex].timeline.push({ id: generateTimelineId(), action: "Customer approved order form", user: data.approvedBy || "System", timestamp: now })
+    mockOrderItems[itemIndex].timeline.push({
+      id: generateTimelineId(),
+      action: "Customer approved order form",
+      user: data.approvedBy || "System",
+      timestamp: now,
+    })
     return HttpResponse.json({ success: true, data: mockOrderItems[itemIndex] })
   }),
 
@@ -356,7 +380,12 @@ export const ordersHandlers = [
       status: ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL,
       updatedAt: now,
     }
-    mockOrderItems[itemIndex].timeline.push({ id: generateTimelineId(), action: "Order form generated", user: data.generatedBy || "System", timestamp: now })
+    mockOrderItems[itemIndex].timeline.push({
+      id: generateTimelineId(),
+      action: "Order form generated",
+      user: data.generatedBy || "System",
+      timestamp: now,
+    })
     return HttpResponse.json({ success: true, data: mockOrderItems[itemIndex] })
   }),
 ]

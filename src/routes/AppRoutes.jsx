@@ -104,7 +104,7 @@ export default function AppRoutes() {
             }
           />
           <Route
-            path=":id/items/:itemId/generate-form"
+            path=":id/items/:itemId/form"
             element={
               <ProtectedRoute requiredPermissions={["orders.edit"]}>
                 <OrderFormGeneratorPage />

@@ -38,7 +38,7 @@ export default function OrderItemDetailPage() {
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
   const approveForm = useApproveOrderForm()
 
-  const order = orderData?.data
+  const order = orderData
   const item = itemData?.data
 
   // Fetch product details to get the image - only when item is loaded
