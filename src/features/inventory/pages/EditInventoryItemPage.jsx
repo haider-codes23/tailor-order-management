@@ -154,8 +154,8 @@ export default function EditInventoryItemPage() {
     } else {
       updates.unit_price = parseFloat(data.unit_price) || 0
       updates.remaining_stock = parseFloat(data.remaining_stock) || 0
-      updates.reorder_level = parseFloat(data.reorder_level) || 0,
-      updates.reorder_amount = parseFloat(data.reorder_amount) || 0
+      ;((updates.reorder_level = parseFloat(data.reorder_level) || 0),
+        (updates.reorder_amount = parseFloat(data.reorder_amount) || 0))
     }
 
     // Submit the mutation
@@ -447,7 +447,7 @@ export default function EditInventoryItemPage() {
                       required: "Reorder amount is required",
                       min: { value: 1, message: "Reorder amount must be at least 1" },
                     })}
-                    disabled={createItem.isPending}
+                    disabled={updateItem.isPending}
                   />
                   {errors.reorder_amount && (
                     <p className="text-sm text-destructive">{errors.reorder_amount.message}</p>
