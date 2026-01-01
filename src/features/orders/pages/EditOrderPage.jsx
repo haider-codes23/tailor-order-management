@@ -35,46 +35,40 @@ export default function EditOrderPage() {
     register,
     handleSubmit,
     control,
-    reset,
     formState: { errors, isDirty },
-  } = useForm()
+  } = useForm({
+    values: order
+      ? {
+          customerName: order.customerName || "",
+          destination: order.destination || "",
+          address: order.address || "",
+          clientHeight: order.clientHeight || "",
+          modesty: order.modesty || "",
+          consultantId: order.consultantId || "",
+          productionInchargeId: order.productionInchargeId || "",
+          currency: order.currency || "",
+          paymentMethod: order.paymentMethod || "",
+          totalAmount: order.totalAmount || "",
+          fwdDate: order.fwdDate ? order.fwdDate.split("T")[0] : "",
+          productionShippingDate: order.productionShippingDate
+            ? order.productionShippingDate.split("T")[0]
+            : "",
+          actualShippingDate: order.actualShippingDate
+            ? order.actualShippingDate.split("T")[0]
+            : "",
+          preTrackingId: order.preTrackingId || "",
+          urgent: order.urgent || "",
+          notes: order.notes || "",
+          orderFormLink: order.orderFormLink || "",
+        }
+      : undefined,
+  })
 
   // Populate form when order data loads
-  useEffect(() => {
-    if (order) {
-      reset({
-        customerName: order.customerName || "",
-        destination: order.destination || "",
-        address: order.address || "",
-        clientHeight: order.clientHeight || "",
-        modesty: order.modesty || "NO",
-        consultantId: order.consultantId || "",
-        productionInchargeId: order.productionInchargeId || "",
-        currency: order.currency || "USD",
-        paymentMethod: order.paymentMethod || "",
-        totalAmount: order.totalAmount || "",
-        fwdDate: order.fwdDate ? order.fwdDate.split("T")[0] : "",
-        productionShippingDate: order.productionShippingDate
-          ? order.productionShippingDate.split("T")[0]
-          : "",
-        actualShippingDate: order.actualShippingDate
-          ? order.actualShippingDate.split("T")[0]
-          : "",
-        preTrackingId: order.preTrackingId || "",
-        urgent: order.urgent || "",
-        notes: order.notes || "",
-        orderFormLink: order.orderFormLink || "",
-      })
-    }
-  }, [order, reset])
 
   const users = usersData?.data || []
-  const salesUsers = users.filter(
-    (u) => u.role === "SALES" || u.role === "ADMIN"
-  )
-  const productionUsers = users.filter(
-    (u) => u.role === "PRODUCTION_HEAD" || u.role === "ADMIN"
-  )
+  const salesUsers = users.filter((u) => u.role === "SALES" || u.role === "ADMIN")
+  const productionUsers = users.filter((u) => u.role === "PRODUCTION_HEAD" || u.role === "ADMIN")
 
   const onSubmit = async (data) => {
     try {
@@ -120,9 +114,7 @@ export default function EditOrderPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">Edit Order</h1>
-          <p className="text-muted-foreground">
-            Order #{order.orderNumber}
-          </p>
+          <p className="text-muted-foreground">Order #{order.orderNumber}</p>
         </div>
       </div>
 
@@ -142,18 +134,13 @@ export default function EditOrderPage() {
                 placeholder="Enter customer name"
               />
               {errors.customerName && (
-                <p className="text-sm text-red-500 mt-1">
-                  {errors.customerName.message}
-                </p>
+                <p className="text-sm text-red-500 mt-1">{errors.customerName.message}</p>
               )}
             </div>
 
             <div>
               <Label>Destination (Country)</Label>
-              <Input
-                {...register("destination")}
-                placeholder="e.g., UAE, USA, UK"
-              />
+              <Input {...register("destination")} placeholder="e.g., UAE, USA, UK" />
             </div>
 
             <div className="md:col-span-2">
@@ -220,7 +207,7 @@ export default function EditOrderPage() {
                 name="consultantId"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value?.toString() || ""} onValueChange={field.onChange}>
+                  <Select value={field.value?.toString()} onValueChange={field.onChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select consultant" />
                     </SelectTrigger>
@@ -242,7 +229,7 @@ export default function EditOrderPage() {
                 name="productionInchargeId"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value?.toString() || ""} onValueChange={field.onChange}>
+                  <Select value={field.value?.toString()} onValueChange={field.onChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select production incharge" />
                     </SelectTrigger>
@@ -312,12 +299,7 @@ export default function EditOrderPage() {
 
             <div>
               <Label>Total Amount</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("totalAmount")}
-                placeholder="0.00"
-              />
+              <Input type="number" step="0.01" {...register("totalAmount")} placeholder="0.00" />
             </div>
           </CardContent>
         </Card>
@@ -345,18 +327,12 @@ export default function EditOrderPage() {
 
             <div>
               <Label>Tracking ID</Label>
-              <Input
-                {...register("preTrackingId")}
-                placeholder="Courier tracking number"
-              />
+              <Input {...register("preTrackingId")} placeholder="Courier tracking number" />
             </div>
 
             <div>
               <Label>Order Form Link</Label>
-              <Input
-                {...register("orderFormLink")}
-                placeholder="Google Drive link"
-              />
+              <Input {...register("orderFormLink")} placeholder="Google Drive link" />
             </div>
           </CardContent>
         </Card>
@@ -373,7 +349,10 @@ export default function EditOrderPage() {
                 name="urgent"
                 control={control}
                 render={({ field }) => (
-                  <Select value={field.value || "none"} onValueChange={(val) => field.onChange(val === "none" ? "" : val)}>
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => field.onChange(val === "none" ? "" : val)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Not urgent" />
                     </SelectTrigger>
@@ -403,17 +382,10 @@ export default function EditOrderPage() {
 
         {/* Submit Buttons */}
         <div className="flex gap-4 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate(-1)}
-          >
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={!isDirty || updateOrder.isPending}
-          >
+          <Button type="submit" disabled={!isDirty || updateOrder.isPending}>
             {updateOrder.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
