@@ -62,6 +62,7 @@ export default function EditInventoryItemPage() {
       base_price: "",
       remaining_stock: "",
       reorder_level: "",
+      reorder_amount: "",
       vendor_name: "",
       vendor_contact: "",
       rack_location: "",
@@ -98,6 +99,7 @@ export default function EditInventoryItemPage() {
         base_price: item.base_price || "",
         remaining_stock: item.remaining_stock || "",
         reorder_level: item.reorder_level || "",
+        reorder_amount: item.reorder_amount || "",
         vendor_name: item.vendor_name || "",
         vendor_contact: item.vendor_contact || "",
         rack_location: item.rack_location || "",
@@ -145,13 +147,15 @@ export default function EditInventoryItemPage() {
         sku: variant.sku || `${data.sku.trim().toUpperCase()}-${variant.size.trim().toUpperCase()}`,
         remaining_stock: parseInt(variant.remaining_stock) || 0,
         reorder_level: parseInt(variant.reorder_level) || 1,
+        reorder_amount: parseFloat(data.reorder_amount) || 0,
         price: parseFloat(variant.price) || parseFloat(data.base_price) || 0,
         image_url: variant.image_url || data.image_url.trim(),
       }))
     } else {
       updates.unit_price = parseFloat(data.unit_price) || 0
       updates.remaining_stock = parseFloat(data.remaining_stock) || 0
-      updates.reorder_level = parseFloat(data.reorder_level) || 0
+      updates.reorder_level = parseFloat(data.reorder_level) || 0,
+      updates.reorder_amount = parseFloat(data.reorder_amount) || 0
     }
 
     // Submit the mutation
@@ -427,6 +431,28 @@ export default function EditInventoryItemPage() {
                   {errors.reorder_level && (
                     <p className="text-sm text-destructive">{errors.reorder_level.message}</p>
                   )}
+                </div>
+                {/* Reorder Amount - NEW FIELD */}
+                <div className="space-y-2">
+                  <Label htmlFor="reorder_amount">
+                    Reorder Amount <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="reorder_amount"
+                    type="number"
+                    step="1"
+                    min="1"
+                    placeholder="100"
+                    {...register("reorder_amount", {
+                      required: "Reorder amount is required",
+                      min: { value: 1, message: "Reorder amount must be at least 1" },
+                    })}
+                    disabled={createItem.isPending}
+                  />
+                  {errors.reorder_amount && (
+                    <p className="text-sm text-destructive">{errors.reorder_amount.message}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">How much to order when restocking</p>
                 </div>
               </div>
             </CardContent>
