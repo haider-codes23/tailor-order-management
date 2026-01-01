@@ -13,8 +13,8 @@ export const MEASUREMENT_CATEGORIES = {
         name: "Upper Body",
         measurements: [
           { id: "shoulder", label: "Shoulder measurement" },
-          { id: "front_carriage", label: "Front carriage measurement" },
-          { id: "back_carriage", label: "Back carriage measurement" },
+          { id: "front_carrure", label: "Front carrure measurement" },
+          { id: "back_carrure", label: "Back carrure measurement" },
           { id: "round_upper_chest", label: "Round upper chest measurement" },
           { id: "round_chest", label: "Round chest measurement" },
           { id: "round_empire_line", label: "Round empire line measurement" },
@@ -56,8 +56,8 @@ export const MEASUREMENT_CATEGORIES = {
         name: "Upper Body / Blouse / Shirt Measurements",
         measurements: [
           { id: "shoulder", label: "Shoulder measurement" },
-          { id: "front_carriage", label: "Front carriage measurement" },
-          { id: "back_carriage", label: "Back carriage measurement" },
+          { id: "front_carrure", label: "Front carrure measurement" },
+          { id: "back_carrure", label: "Back carrure measurement" },
           { id: "shoulder_till_floor", label: "Shoulder till floor measurement" },
           { id: "round_chest", label: "Round chest measurement" },
           { id: "round_waist", label: "Round waist measurement" },
@@ -90,8 +90,8 @@ export const MEASUREMENT_CATEGORIES = {
         name: "Upper Body / Blouse / Shirt Measurements",
         measurements: [
           { id: "shoulder", label: "Shoulder measurement" },
-          { id: "front_carriage", label: "Front carriage measurement" },
-          { id: "back_carriage", label: "Back carriage measurement" },
+          { id: "front_carrure", label: "Front carrure measurement" },
+          { id: "back_carrure", label: "Back carrure measurement" },
           { id: "shoulder_till_apex", label: "Shoulder till apex (nipple) point – dart length" },
           {
             id: "shoulder_till_empire",
@@ -135,8 +135,8 @@ export const MEASUREMENT_CATEGORIES = {
         name: "Upper Body / Blouse / Shirt Measurements",
         measurements: [
           { id: "shoulder", label: "Shoulder measurement" },
-          { id: "front_carriage", label: "Front carriage measurement" },
-          { id: "back_carriage", label: "Back carriage measurement" },
+          { id: "front_carrure", label: "Front carrure measurement" },
+          { id: "back_carrure", label: "Back carrure measurement" },
           { id: "shoulder_till_apex", label: "Shoulder till apex (nipple) point – dart length" },
           {
             id: "shoulder_till_empire",
@@ -179,8 +179,8 @@ export const MEASUREMENT_CATEGORIES = {
         name: "Upper Body / Blouse / Shirt Measurements",
         measurements: [
           { id: "shoulder", label: "Shoulder measurement" },
-          { id: "front_carriage", label: "Front carriage measurement" },
-          { id: "back_carriage", label: "Back carriage measurement" },
+          { id: "front_carrure", label: "Front carrure measurement" },
+          { id: "back_carrure", label: "Back carrure measurement" },
           { id: "shoulder_till_apex", label: "Shoulder till apex (nipple) point – dart length" },
           {
             id: "shoulder_till_empire",
@@ -228,8 +228,8 @@ export const MEASUREMENT_CATEGORIES = {
         name: "Upper Body / Blouse / Shirt Measurements",
         measurements: [
           { id: "shoulder", label: "Shoulder measurement" },
-          { id: "front_carriage", label: "Front carriage measurement" },
-          { id: "back_carriage", label: "Back carriage measurement" },
+          { id: "front_carrure", label: "Front carrure measurement" },
+          { id: "back_carrure", label: "Back carrure measurement" },
           { id: "shoulder_till_apex", label: "Shoulder till apex (nipple) point – dart length" },
           {
             id: "shoulder_till_empire",
