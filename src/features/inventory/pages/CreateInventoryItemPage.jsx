@@ -126,7 +126,7 @@ export default function CreateInventoryItemPage() {
         sku: `${data.sku.trim().toUpperCase()}-${variant.size.trim().toUpperCase()}`,
         remaining_stock: parseInt(variant.remaining_stock) || 0,
         reorder_level: parseInt(variant.reorder_level) || 1,
-        reorder_amount: parseFloat(data.reorder_amount) || 0,
+        reorder_amount: parseFloat(variant.reorder_amount) || 0,
         price: parseFloat(variant.price) || parseFloat(data.base_price) || 0,
         image_url: data.image_url.trim(), // Same image for all variants initially
       }))
