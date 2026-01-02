@@ -134,7 +134,7 @@ export default function CreateInventoryItemPage() {
       // For simple items: add unit price and stock levels
       itemData.unit_price = parseFloat(data.unit_price) || 0
       itemData.remaining_stock = parseFloat(data.remaining_stock) || 0
-      itemData.reorder_level = parseFloat(data.reorder_level) || 0,
+      itemData.reorder_level = parseFloat(data.reorder_level) || 0
       itemData.reorder_amount = parseFloat(data.reorder_amount) || 0
     }
 
