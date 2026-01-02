@@ -1,11 +1,34 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useLowStockItems } from "@/hooks/useInventory"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table"
-import {Loader2, AlertTriangle, Package, TrendingDown, ArrowRight, CheckCircle} from "lucide-react"
+import { Label } from "@/components/ui/label"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Loader2,
+  AlertTriangle,
+  Package,
+  TrendingDown,
+  ArrowRight,
+  CheckCircle,
+} from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 /**
  * Low Stock Alerts Page
@@ -41,11 +64,23 @@ export default function LowStockAlertsPage() {
   // comes back to this page after working in another tab, they see current data
   const { data, isLoading, isError, error } = useLowStockItems()
 
+  // Add state inside component
+  const [categoryFilter, setCategoryFilter] = useState("all")
   /**
    * Loading state while fetching alerts
    * This initial load might take a moment because the backend is calculating
    * urgency scores for all low stock items
    */
+  // Add category options constant
+  const CATEGORIES = [
+    { value: "all", label: "All Categories" },
+    { value: "FABRIC", label: "Fabric" },
+    { value: "RAW_MATERIAL", label: "Raw Material" },
+    { value: "ADA_MATERIAL", label: "ADA Material" },
+    { value: "READY_STOCK", label: "Ready Stock" },
+    { value: "READY_SAMPLE", label: "Ready Sample" },
+  ]
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-6 px-4">
@@ -78,6 +113,10 @@ export default function LowStockAlertsPage() {
   // Extract alerts and metadata from response
   const alerts = data?.data || []
   const meta = data?.meta || {}
+
+  // Filter alerts by category
+  const filteredAlerts =
+    categoryFilter === "all" ? alerts : alerts.filter((item) => item.category === categoryFilter)
 
   /**
    * Calculate summary statistics for the dashboard header
@@ -172,7 +211,22 @@ export default function LowStockAlertsPage() {
           </Card>
         </div>
       </div>
-
+      {/* Category Filter - NEW */}
+      <div className="flex items-center gap-4 mb-4">
+        <Label>Category</Label>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((cat) => (
+              <SelectItem key={cat.value} value={cat.value}>
+                {cat.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {/* Alerts Table or Empty State */}
       <Card>
         <CardHeader>
@@ -210,7 +264,7 @@ export default function LowStockAlertsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {alerts.map((item) => {
+                  {filteredAlerts.map((item) => {
                     const severity = getSeverity(item.urgency_score)
                     const shortage = item.has_variants
                       ? item.critical_variants.reduce(
