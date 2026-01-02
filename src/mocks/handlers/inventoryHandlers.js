@@ -251,12 +251,14 @@ export const createInventoryItem = http.post("/api/inventory", async ({ request 
       sku: variant.sku || `${data.sku}-${variant.size}`,
       remaining_stock: variant.remaining_stock || 0,
       reorder_level: variant.reorder_level || 1,
+      reorder_amount: variant.reorder_amount || 5,
       price: variant.price || data.base_price || 0,
       image_url: variant.image_url || data.image_url || "/images/inventory/placeholder.jpg",
     }))
   } else {
     newItem.remaining_stock = data.remaining_stock
     newItem.reorder_level = data.reorder_level
+    newItem.reorder_amount = data.reorder_amount || 0
   }
 
   // Add to mock database
