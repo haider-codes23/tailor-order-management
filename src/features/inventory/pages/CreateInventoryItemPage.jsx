@@ -74,10 +74,10 @@ export default function CreateInventoryItemPage() {
       image_url: "",
       notes: "",
       variants: [
-        { size: "S", remaining_stock: 0, reorder_level: 1, price: "" },
-        { size: "M", remaining_stock: 0, reorder_level: 1, price: "" },
-        { size: "L", remaining_stock: 0, reorder_level: 1, price: "" },
-        { size: "XL", remaining_stock: 0, reorder_level: 1, price: "" },
+        { size: "S", remaining_stock: 0, reorder_level: 1, reorder_amount: 5, price: "" },
+        { size: "M", remaining_stock: 0, reorder_level: 1, reorder_amount: 5, price: "" },
+        { size: "L", remaining_stock: 0, reorder_level: 1, reorder_amount: 5, price: "" },
+        { size: "XL", remaining_stock: 0, reorder_level: 1, reorder_amount: 5, price: "" },
       ],
     },
   })
