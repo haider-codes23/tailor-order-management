@@ -241,12 +241,11 @@ export default function InventoryDetailPage() {
               <CardContent>
                 <div className="text-3xl font-bold">
                   {item.has_variants
-                    ? Math.max(...item.variants.map((v) => v.reorder_amount || 0))
+                    ? item.variants.reduce((sum, v) => sum + v.reorder_amount, 0)
                     : item.reorder_amount || 0}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {item.unit}
-                  {item.has_variants ? "s per size" : "s"} to order
+                  {item.unit}s to order{item.has_variants ? " (total)" : ""}
                 </p>
               </CardContent>
             </Card>
