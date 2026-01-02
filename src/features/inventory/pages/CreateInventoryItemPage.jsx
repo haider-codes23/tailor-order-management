@@ -465,7 +465,7 @@ export default function CreateInventoryItemPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                     {/* Size Name */}
                     <div className="space-y-2">
                       <Label htmlFor={`variants.${index}.size`}>Size</Label>
