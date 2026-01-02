@@ -334,6 +334,7 @@ export default function InventoryDetailPage() {
                           <TableCell className="text-muted-foreground">
                             {variant.reorder_level}
                           </TableCell>
+                          <TableCell>{variant.reorder_amount}</TableCell>
                           <TableCell>PKR {variant.price?.toLocaleString()}</TableCell>
                           <TableCell>
                             {isLow ? (
