@@ -147,7 +147,7 @@ export default function EditInventoryItemPage() {
         sku: variant.sku || `${data.sku.trim().toUpperCase()}-${variant.size.trim().toUpperCase()}`,
         remaining_stock: parseInt(variant.remaining_stock) || 0,
         reorder_level: parseInt(variant.reorder_level) || 1,
-        reorder_amount: parseFloat(data.reorder_amount) || 0,
+        reorder_amount: parseFloat(variant.reorder_amount) || 0,
         price: parseFloat(variant.price) || parseFloat(data.base_price) || 0,
         image_url: variant.image_url || data.image_url.trim(),
       }))
@@ -512,6 +512,18 @@ export default function EditInventoryItemPage() {
                         type="number"
                         min="0"
                         {...register(`variants.${index}.reorder_level`, {
+                          valueAsNumber: true,
+                        })}
+                        disabled={updateItem.isPending}
+                      />
+                    </div>
+                    {/* Reorder Amount */}
+                    <div className="space-y-2">
+                      <Label>Reorder Amt</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        {...register(`variants.${index}.reorder_amount`, {
                           valueAsNumber: true,
                         })}
                         disabled={updateItem.isPending}
