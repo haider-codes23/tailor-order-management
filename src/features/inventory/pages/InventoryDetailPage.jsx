@@ -280,7 +280,9 @@ export default function InventoryDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  {item.unit_price?.toLocaleString() || item.base_price?.toLocaleString() || 0}
+                  {item.has_variants
+                    ? item.base_price?.toLocaleString() || 0
+                    : item.unit_price?.toLocaleString() || 0}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">PKR per {item.unit}</p>
               </CardContent>
