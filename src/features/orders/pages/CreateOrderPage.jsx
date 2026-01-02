@@ -70,7 +70,7 @@ export default function CreateOrderPage() {
       currency: "USD",
       paymentMethod: "",
       totalAmount: "",
-      fwdDate: "",
+      fwdDate: new Date().toISOString().split("T")[0],
       productionShippingDate: "",
       urgent: "none",
       notes: "",
@@ -316,8 +316,13 @@ export default function CreateOrderPage() {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label>FWD Date (Confirmed)</Label>
-              <Input type="date" {...register("fwdDate")} />
+              <Label>FWD Date</Label>
+              <Input
+                type="date"
+                {...register("fwdDate")}
+                readOnly
+                className="bg-muted cursor-not-allowed"
+              />
             </div>
 
             <div>
