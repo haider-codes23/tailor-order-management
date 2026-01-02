@@ -542,6 +542,7 @@ export default function CreateInventoryItemPage() {
                     size: "",
                     remaining_stock: 0,
                     reorder_level: 1,
+                    reorder_amount: 5,
                     price: "",
                   })
                 }
