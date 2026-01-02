@@ -154,8 +154,8 @@ export default function EditInventoryItemPage() {
     } else {
       updates.unit_price = parseFloat(data.unit_price) || 0
       updates.remaining_stock = parseFloat(data.remaining_stock) || 0
-      ;((updates.reorder_level = parseFloat(data.reorder_level) || 0),
-        (updates.reorder_amount = parseFloat(data.reorder_amount) || 0))
+      updates.reorder_level = parseFloat(data.reorder_level) || 0
+      updates.reorder_amount = parseFloat(data.reorder_amount) || 0
     }
 
     // Submit the mutation
