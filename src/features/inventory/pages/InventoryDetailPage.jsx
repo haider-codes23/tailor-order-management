@@ -314,6 +314,7 @@ export default function InventoryDetailPage() {
                       <TableHead>SKU</TableHead>
                       <TableHead>Current Stock</TableHead>
                       <TableHead>Reorder Level</TableHead>
+                      <TableHead>Reorder Amount</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
