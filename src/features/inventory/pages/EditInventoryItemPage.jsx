@@ -484,7 +484,7 @@ export default function EditInventoryItemPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <div className="space-y-2">
                       <Label>Size</Label>
                       <Input
