@@ -505,7 +505,19 @@ export default function CreateInventoryItemPage() {
                         disabled={createItem.isPending}
                       />
                     </div>
-
+                    {/* Reorder Amount */}
+                    <div className="space-y-2">
+                      <Label htmlFor={`variants.${index}.reorder_amount`}>Reorder Amt</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        {...register(`variants.${index}.reorder_amount`, {
+                          valueAsNumber: true,
+                        })}
+                        placeholder="5"
+                        disabled={createItem.isPending}
+                      />
+                    </div>
                     {/* Price Override */}
                     <div className="space-y-2">
                       <Label htmlFor={`variants.${index}.price`}>Price (PKR)</Label>
