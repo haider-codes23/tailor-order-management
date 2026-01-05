@@ -312,7 +312,12 @@ export default function EditOrderPage() {
           <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <Label>FWD Date (Confirmed)</Label>
-              <Input type="date" {...register("fwdDate")} />
+              <Input
+                type="date"
+                {...register("fwdDate")}
+                readOnly
+                className="bg-muted cursor-not-allowed"
+              />
             </div>
 
             <div>
