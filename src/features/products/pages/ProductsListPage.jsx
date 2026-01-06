@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Plus, Search } from "lucide-react"
 import { useProducts } from "@/hooks/useProducts"
+import { getPieceLabel } from "@/constants/productConstants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -17,9 +18,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 const CATEGORIES = [
   { value: "ALL", label: "All Categories" },
-  { value: "FORMAL", label: "Formal" },
-  { value: "SEMI_FORMAL", label: "Semi-Formal" },
-  { value: "CASUAL", label: "Casual" },
+  { value: "Bridal", label: "Bridal" },
+  { value: "Formal", label: "Formal" },
+  { value: "Semi-Formal", label: "Semi-Formal" },
+  { value: "Casual", label: "Casual" },
+  { value: "Party Wear", label: "Party Wear" },
 ]
 
 export default function ProductsListPage() {
@@ -148,9 +151,31 @@ export default function ProductsListPage() {
                     <span className="text-muted-foreground">Category:</span>
                     <span className="font-medium">{product.category}</span>
                   </div>
+                  {/* Product Items */}
+                  {product.product_items && product.product_items.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Includes: </span>
+                      <span className="font-medium">
+                        {product.product_items.map((item) => getPieceLabel(item.piece)).join(", ")}
+                      </span>
+                    </div>
+                  )}
+                  {/* Add-ons */}
+                  {product.add_ons && product.add_ons.length > 0 && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Add-ons: </span>
+                      <span className="font-medium">
+                        {product.add_ons.map((item) => getPieceLabel(item.piece)).join(", ")}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Price:</span>
-                    <span className="font-medium">PKR {product.base_price?.toLocaleString()}</span>
+                    <span className="font-medium">
+                      PKR{" "}
+                      {product.total_price?.toLocaleString() ||
+                        product.base_price?.toLocaleString()}
+                    </span>
                   </div>
 
                   {product.description && (
