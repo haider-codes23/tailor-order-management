@@ -1,5 +1,6 @@
 import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
+import { getPieceLabel } from "@/constants/productConstants"
 import { useCreateBOMItem, useUpdateBOMItem } from "../../../hooks/useProducts"
 import { useInventoryItems } from "../../../hooks/useInventory"
 import {
@@ -30,9 +31,17 @@ const BOM_ALLOWED_CATEGORIES = ["FABRIC", "RAW_MATERIAL", "MULTI_HEAD", "ADDA_MA
 const UNITS = ["Meter", "Yard", "Kg", "Gram", "Piece", "Set"]
 
 // Garment pieces
-const GARMENT_PIECES = ["Shirt", "Trouser", "Dupatta", "Kameez", "Shalwar", "Waistcoat", "Kurta"]
+const GARMENT_PIECES = ["Shirt", "Pants/Trouser", "Kaftan", "Jacket", "Gown", "Pashwas", "Saree", "Peti Coat", "Blouse", "Sherwani", "Kurta", "Farshi Sharara", "Gharara", "Lehnga","Waistcoat", "Dupatta", "Unstitched Suit", "Dupatta", "Veil", "Pouch", "Shawl", "Hijab", "Shoes"]
 
-export default function BOMItemModal({ isOpen, onClose, bomId, productId, size, itemToEdit = null }) {
+export default function BOMItemModal({
+  isOpen,
+  onClose,
+  bomId,
+  productId,
+  size,
+  itemToEdit = null,
+  piece,
+}) {
   const isEditMode = !!itemToEdit
 
   const {
@@ -46,7 +55,6 @@ export default function BOMItemModal({ isOpen, onClose, bomId, productId, size, 
       inventory_item_id: "",
       quantity_per_unit: "",
       unit: "",
-      garment_piece: "",
       notes: "",
     },
   })
@@ -66,7 +74,6 @@ export default function BOMItemModal({ isOpen, onClose, bomId, productId, size, 
         inventory_item_id: itemToEdit.inventory_item_id?.toString() || "",
         quantity_per_unit: itemToEdit.quantity_per_unit?.toString() || "",
         unit: itemToEdit.unit || "",
-        garment_piece: itemToEdit.garment_piece || "",
         notes: itemToEdit.notes || "",
       })
     } else {
@@ -74,7 +81,6 @@ export default function BOMItemModal({ isOpen, onClose, bomId, productId, size, 
         inventory_item_id: "",
         quantity_per_unit: "",
         unit: "",
-        garment_piece: "",
         notes: "",
       })
     }
@@ -86,7 +92,7 @@ export default function BOMItemModal({ isOpen, onClose, bomId, productId, size, 
         inventory_item_id: parseInt(data.inventory_item_id),
         quantity_per_unit: parseFloat(data.quantity_per_unit),
         unit: data.unit,
-        garment_piece: data.garment_piece || null,
+        piece: piece, // Use piece from props, not from form
         notes: data.notes || null,
       }
 
@@ -128,7 +134,9 @@ export default function BOMItemModal({ isOpen, onClose, bomId, productId, size, 
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit BOM Item" : "Add BOM Item"}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Edit" : "Add"} BOM Item - {getPieceLabel(piece)}
+          </DialogTitle>
           <DialogDescription>
             {isEditMode
               ? "Update the material details for this BOM item."
