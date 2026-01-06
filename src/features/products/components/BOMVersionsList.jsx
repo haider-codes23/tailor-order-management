@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { Plus, ChevronDown, ChevronUp, Check, XCircle, Trash2 } from "lucide-react"
+import { getPieceLabel } from "@/constants/productConstants"
+import { useProduct } from "../../../hooks/useProducts"
 import { useProductBOMs, useUpdateBOM, useDeleteBOM } from "../../../hooks/useProducts"
 import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
@@ -36,8 +38,15 @@ export default function BOMVersionsList({ productId }) {
   const [bomToDeactivate, setBomToDeactivate] = useState(null)
   const [bomToDelete, setBomToDelete] = useState(null)
 
+  // Fetch product to get pieces for display
+  const { data: productData } = useProduct(productId)
+  const product = productData?.data
+
   // Fetch BOMs for selected size
-  const { data: bomsResponse, isLoading } = useProductBOMs(productId, selectedSize === "ALL" ? null : selectedSize)
+  const { data: bomsResponse, isLoading } = useProductBOMs(
+    productId,
+    selectedSize === "ALL" ? null : selectedSize
+  )
   const updateBOMMutation = useUpdateBOM()
   const deleteBOMMutation = useDeleteBOM()
 
@@ -172,16 +181,16 @@ export default function BOMVersionsList({ productId }) {
                       <Badge variant={bom.is_active ? "default" : "secondary"}>
                         {bom.is_active ? "ACTIVE" : "INACTIVE"}
                       </Badge>
-                      {selectedSize === "ALL" && (
-                        <Badge variant="outline">Size {bom.size}</Badge>
-                      )}
+                      {selectedSize === "ALL" && <Badge variant="outline">Size {bom.size}</Badge>}
                     </div>
-                    {bom.notes && (
-                      <p className="text-sm text-muted-foreground mb-2">{bom.notes}</p>
-                    )}
+                    {bom.notes && <p className="text-sm text-muted-foreground mb-2">{bom.notes}</p>}
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Items: {bom.items?.length || 0}</span>
+                      <span>
+                        Items: {bom.pieces?.length || 0} section
+                        {(bom.pieces?.length || 0) !== 1 ? "s" : ""}
+                      </span>
                       <span>•</span>
+                      <span>Items: {bom.items?.length || 0}</span>
                       <span>Created: {new Date(bom.created_at).toLocaleDateString()}</span>
                       <span>•</span>
                       <span>Version {bom.version}</span>
@@ -191,11 +200,7 @@ export default function BOMVersionsList({ productId }) {
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
                     {/* Expand/Collapse */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleExpand(bom.id)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => toggleExpand(bom.id)}>
                       {isExpanded ? (
                         <>
                           <ChevronUp className="h-4 w-4 mr-1" />
@@ -253,7 +258,12 @@ export default function BOMVersionsList({ productId }) {
                 {/* Expanded: Show BOM Items */}
                 {isExpanded && (
                   <div className="mt-4 pt-4 border-t">
-                    <BOMItemsTable bomId={bom.id} productId={productId} size={bom.size} />
+                    <BOMItemsTable
+                      bomId={bom.id}
+                      productId={productId}
+                      size={bom.size}
+                      pieces={bom.pieces || []}
+                    />
                   </div>
                 )}
               </Card>
@@ -315,10 +325,7 @@ export default function BOMVersionsList({ productId }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
