@@ -55,6 +55,373 @@ export const productsHandlers = [
     })
   }),
 
+  // ==================== PRODUCT MEASUREMENT CHARTS HANDLERS ====================
+
+  // GET /products/:productId/measurement-charts - Get product measurement charts
+  http.get(`${appConfig.apiBaseUrl}/products/:productId/measurement-charts`, async ({ params }) => {
+    await new Promise((resolve) => setTimeout(resolve, 200))
+
+    const { productId } = params
+    const product = mockProducts.find((p) => p.id === productId)
+
+    if (!product) {
+      return HttpResponse.json({ success: false, error: "Product not found" }, { status: 404 })
+    }
+
+    return HttpResponse.json({
+      success: true,
+      data: product.measurement_charts || null,
+    })
+  }),
+
+  // PUT /products/:productId/measurement-charts/size-chart - Update product size chart
+  http.put(
+    `${appConfig.apiBaseUrl}/products/:productId/measurement-charts/size-chart`,
+    async ({ params, request }) => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      const { productId } = params
+      const body = await request.json()
+      const productIndex = mockProducts.findIndex((p) => p.id === productId)
+
+      if (productIndex === -1) {
+        return HttpResponse.json({ success: false, error: "Product not found" }, { status: 404 })
+      }
+
+      const product = mockProducts[productIndex]
+
+      // Initialize measurement_charts if not exists
+      if (!product.measurement_charts) {
+        product.measurement_charts = {
+          has_size_chart: false,
+          has_height_chart: false,
+          enabled_size_fields: [],
+          enabled_height_fields: [],
+          size_chart: null,
+          height_chart: null,
+        }
+      }
+
+      // Validate rows
+      if (!body.rows || !Array.isArray(body.rows)) {
+        return HttpResponse.json(
+          { success: false, error: "Invalid data format. Expected rows array." },
+          { status: 400 }
+        )
+      }
+
+      // Update size chart
+      product.measurement_charts.has_size_chart = true
+      product.measurement_charts.enabled_size_fields =
+        body.enabled_fields || product.measurement_charts.enabled_size_fields
+      product.measurement_charts.size_chart = {
+        rows: body.rows,
+        updated_at: new Date().toISOString(),
+      }
+      product.updated_at = new Date().toISOString()
+
+      return HttpResponse.json({
+        success: true,
+        data: product.measurement_charts,
+        message: "Size chart updated successfully",
+      })
+    }
+  ),
+
+  // PUT /products/:productId/measurement-charts/height-chart - Update product height chart
+  http.put(
+    `${appConfig.apiBaseUrl}/products/:productId/measurement-charts/height-chart`,
+    async ({ params, request }) => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      const { productId } = params
+      const body = await request.json()
+      const productIndex = mockProducts.findIndex((p) => p.id === productId)
+
+      if (productIndex === -1) {
+        return HttpResponse.json({ success: false, error: "Product not found" }, { status: 404 })
+      }
+
+      const product = mockProducts[productIndex]
+
+      // Initialize measurement_charts if not exists
+      if (!product.measurement_charts) {
+        product.measurement_charts = {
+          has_size_chart: false,
+          has_height_chart: false,
+          enabled_size_fields: [],
+          enabled_height_fields: [],
+          size_chart: null,
+          height_chart: null,
+        }
+      }
+
+      // Validate rows
+      if (!body.rows || !Array.isArray(body.rows)) {
+        return HttpResponse.json(
+          { success: false, error: "Invalid data format. Expected rows array." },
+          { status: 400 }
+        )
+      }
+
+      // Update height chart
+      product.measurement_charts.has_height_chart = true
+      product.measurement_charts.enabled_height_fields =
+        body.enabled_fields || product.measurement_charts.enabled_height_fields
+      product.measurement_charts.height_chart = {
+        rows: body.rows,
+        updated_at: new Date().toISOString(),
+      }
+      product.updated_at = new Date().toISOString()
+
+      return HttpResponse.json({
+        success: true,
+        data: product.measurement_charts,
+        message: "Height chart updated successfully",
+      })
+    }
+  ),
+
+  // POST /products/:productId/measurement-charts/initialize - Initialize charts from template
+  http.post(
+    `${appConfig.apiBaseUrl}/products/:productId/measurement-charts/initialize`,
+    async ({ params, request }) => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      const { productId } = params
+      const body = await request.json()
+      const productIndex = mockProducts.findIndex((p) => p.id === productId)
+
+      if (productIndex === -1) {
+        return HttpResponse.json({ success: false, error: "Product not found" }, { status: 404 })
+      }
+
+      const product = mockProducts[productIndex]
+
+      // Initialize with template (placeholder values of 0)
+      const defaultSizeRows = [
+        {
+          id: 1,
+          size_code: "XS",
+          shoulder: 0,
+          bust: 0,
+          waist: 0,
+          hip: 0,
+          armhole: 0,
+          uk_size: 6,
+          us_size: 2,
+          sequence: 1,
+        },
+        {
+          id: 2,
+          size_code: "S",
+          shoulder: 0,
+          bust: 0,
+          waist: 0,
+          hip: 0,
+          armhole: 0,
+          uk_size: 8,
+          us_size: 4,
+          sequence: 2,
+        },
+        {
+          id: 3,
+          size_code: "M",
+          shoulder: 0,
+          bust: 0,
+          waist: 0,
+          hip: 0,
+          armhole: 0,
+          uk_size: 12,
+          us_size: 8,
+          sequence: 3,
+        },
+        {
+          id: 4,
+          size_code: "L",
+          shoulder: 0,
+          bust: 0,
+          waist: 0,
+          hip: 0,
+          armhole: 0,
+          uk_size: 14,
+          us_size: 10,
+          sequence: 4,
+        },
+        {
+          id: 5,
+          size_code: "XL",
+          shoulder: 0,
+          bust: 0,
+          waist: 0,
+          hip: 0,
+          armhole: 0,
+          uk_size: 16,
+          us_size: 12,
+          sequence: 5,
+        },
+        {
+          id: 6,
+          size_code: "XXL",
+          shoulder: 0,
+          bust: 0,
+          waist: 0,
+          hip: 0,
+          armhole: 0,
+          uk_size: 18,
+          us_size: 14,
+          sequence: 6,
+        },
+      ]
+
+      const defaultHeightRows = [
+        {
+          id: 1,
+          height_range: "5'0\" - 5'2\"",
+          height_min_inches: 60,
+          height_max_inches: 62,
+          kaftan_length: 0,
+          sleeve_front_length: 0,
+          sleeve_back_length: 0,
+          sequence: 1,
+        },
+        {
+          id: 2,
+          height_range: "5'3\" - 5'5\"",
+          height_min_inches: 63,
+          height_max_inches: 65,
+          kaftan_length: 0,
+          sleeve_front_length: 0,
+          sleeve_back_length: 0,
+          sequence: 2,
+        },
+        {
+          id: 3,
+          height_range: "5'6\" - 5'8\"",
+          height_min_inches: 66,
+          height_max_inches: 68,
+          kaftan_length: 0,
+          sleeve_front_length: 0,
+          sleeve_back_length: 0,
+          sequence: 3,
+        },
+        {
+          id: 4,
+          height_range: "5'9\" - 5'11\"",
+          height_min_inches: 69,
+          height_max_inches: 71,
+          kaftan_length: 0,
+          sleeve_front_length: 0,
+          sleeve_back_length: 0,
+          sequence: 4,
+        },
+        {
+          id: 5,
+          height_range: "6'0\" - 6'2\"",
+          height_min_inches: 72,
+          height_max_inches: 74,
+          kaftan_length: 0,
+          sleeve_front_length: 0,
+          sleeve_back_length: 0,
+          sequence: 5,
+        },
+      ]
+
+      const defaultEnabledSizeFields = ["shoulder", "bust", "waist", "hip", "armhole"]
+      const defaultEnabledHeightFields = [
+        "kaftan_length",
+        "sleeve_front_length",
+        "sleeve_back_length",
+      ]
+
+      product.measurement_charts = {
+        has_size_chart: body.initialize_size_chart !== false,
+        has_height_chart: body.initialize_height_chart === true,
+        enabled_size_fields: body.enabled_size_fields || defaultEnabledSizeFields,
+        enabled_height_fields: body.enabled_height_fields || defaultEnabledHeightFields,
+        size_chart:
+          body.initialize_size_chart !== false
+            ? {
+                rows: defaultSizeRows,
+                updated_at: new Date().toISOString(),
+              }
+            : null,
+        height_chart:
+          body.initialize_height_chart === true
+            ? {
+                rows: defaultHeightRows,
+                updated_at: new Date().toISOString(),
+              }
+            : null,
+      }
+      product.updated_at = new Date().toISOString()
+
+      return HttpResponse.json({
+        success: true,
+        data: product.measurement_charts,
+        message: "Measurement charts initialized successfully",
+      })
+    }
+  ),
+
+  // DELETE /products/:productId/measurement-charts/size-chart - Remove size chart
+  http.delete(
+    `${appConfig.apiBaseUrl}/products/:productId/measurement-charts/size-chart`,
+    async ({ params }) => {
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      const { productId } = params
+      const productIndex = mockProducts.findIndex((p) => p.id === productId)
+
+      if (productIndex === -1) {
+        return HttpResponse.json({ success: false, error: "Product not found" }, { status: 404 })
+      }
+
+      const product = mockProducts[productIndex]
+
+      if (product.measurement_charts) {
+        product.measurement_charts.has_size_chart = false
+        product.measurement_charts.size_chart = null
+        product.measurement_charts.enabled_size_fields = []
+      }
+      product.updated_at = new Date().toISOString()
+
+      return HttpResponse.json({
+        success: true,
+        message: "Size chart removed successfully",
+      })
+    }
+  ),
+
+  // DELETE /products/:productId/measurement-charts/height-chart - Remove height chart
+  http.delete(
+    `${appConfig.apiBaseUrl}/products/:productId/measurement-charts/height-chart`,
+    async ({ params }) => {
+      await new Promise((resolve) => setTimeout(resolve, 200))
+
+      const { productId } = params
+      const productIndex = mockProducts.findIndex((p) => p.id === productId)
+
+      if (productIndex === -1) {
+        return HttpResponse.json({ success: false, error: "Product not found" }, { status: 404 })
+      }
+
+      const product = mockProducts[productIndex]
+
+      if (product.measurement_charts) {
+        product.measurement_charts.has_height_chart = false
+        product.measurement_charts.height_chart = null
+        product.measurement_charts.enabled_height_fields = []
+      }
+      product.updated_at = new Date().toISOString()
+
+      return HttpResponse.json({
+        success: true,
+        message: "Height chart removed successfully",
+      })
+    }
+  ),
+
   // GET /products/:id - Get single product
   http.get(`${appConfig.apiBaseUrl}/products/:id`, async ({ params }) => {
     await new Promise((resolve) => setTimeout(resolve, 200))
