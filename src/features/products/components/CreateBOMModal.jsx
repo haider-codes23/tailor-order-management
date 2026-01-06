@@ -1,7 +1,9 @@
 import { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { AlertTriangle } from "lucide-react"
+import { getPieceLabel } from "@/constants/productConstants"
 import { useCreateBOM, useProductBOMs } from "../../../hooks/useProducts"
+import { useProduct } from "../../../hooks/useProducts"
 import {
   Dialog,
   DialogContent,
@@ -11,6 +13,7 @@ import {
   DialogTitle,
 } from "../../../components/ui/dialog"
 import { Button } from "../../../components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
 import { Textarea } from "../../../components/ui/textarea"
@@ -22,7 +25,7 @@ const STANDARD_SIZES = ["XS", "S", "M", "L", "XL", "XXL"]
 
 /**
  * CreateBOMModal - Create new BOM version for a specific size
- * 
+ *
  * @param {boolean} isOpen - Modal open state
  * @param {Function} onClose - Close handler
  * @param {string} productId - Product ID
@@ -48,6 +51,13 @@ export default function CreateBOMModal({ isOpen, onClose, productId, preSelected
   const createBOMMutation = useCreateBOM()
   const { data: allBOMsResponse } = useProductBOMs(productId, null) // Get all BOMs
   const allBOMs = allBOMsResponse?.data || []
+  // Fetch product to get pieces
+  const { data: productData } = useProduct(productId)
+  const product = productData?.data
+  // Get pieces from product
+  const productPieces = product
+    ? [...product.product_items.map((i) => i.piece), ...product.add_ons.map((a) => a.piece)]
+    : []
 
   const selectedSize = watch("size")
   const isActive = watch("is_active")
@@ -131,6 +141,30 @@ export default function CreateBOMModal({ isOpen, onClose, productId, preSelected
             )}
           </div>
 
+          {/* Show pieces that will be created */}
+          {selectedSize && productPieces.length > 0 && (
+            <Alert>
+              <AlertDescription>
+                <p className="font-medium mb-2">This BOM will include sections for:</p>
+                <div className="flex flex-wrap gap-2">
+                  {productPieces.map((piece) => (
+                    <Badge key={piece} variant="outline">
+                      {getPieceLabel(piece)}
+                    </Badge>
+                  ))}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {productPieces.length === 0 && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                This product has no items defined. Please add product items first.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Version Name - Optional */}
           <div className="space-y-2">
             <Label htmlFor="name">Version Name (Optional)</Label>
@@ -201,7 +235,10 @@ export default function CreateBOMModal({ isOpen, onClose, productId, preSelected
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createBOMMutation.isPending || !selectedSize}>
+            <Button
+              type="submit"
+              disabled={createBOMMutation.isPending || !selectedSize || productPieces.length === 0}
+            >
               {createBOMMutation.isPending ? "Creating..." : "Create BOM"}
             </Button>
           </DialogFooter>
