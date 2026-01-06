@@ -10,12 +10,18 @@ export const productKeys = {
   details: () => [...productKeys.all, "detail"],
   detail: (id) => [...productKeys.details(), id],
   // ✅ SIZE-BASED: BOM keys now include size parameter
-  boms: (productId, size = null) => 
-    size ? [...productKeys.detail(productId), "boms", size] : [...productKeys.detail(productId), "boms"],
-  activeBom: (productId, size = null) => 
-    size ? [...productKeys.detail(productId), "active-bom", size] : [...productKeys.detail(productId), "active-bom"],
+  boms: (productId, size = null) =>
+    size
+      ? [...productKeys.detail(productId), "boms", size]
+      : [...productKeys.detail(productId), "boms"],
+  activeBom: (productId, size = null) =>
+    size
+      ? [...productKeys.detail(productId), "active-bom", size]
+      : [...productKeys.detail(productId), "active-bom"],
   bom: (bomId) => ["boms", bomId],
   bomItems: (bomId) => [...productKeys.bom(bomId), "items"],
+  // ✅ NEW: Measurement charts keys
+  measurementCharts: (productId) => [...productKeys.detail(productId), "measurementCharts"],
 }
 
 // ==================== PRODUCTS QUERIES ====================
@@ -220,50 +226,50 @@ export function useUpdateBOM() {
 
   return useMutation({
     mutationFn: ({ bomId, updates }) => productsApi.updateBOM(bomId, updates),
-    
+
     onSuccess: (response) => {
-      console.log('✅ BOM Update Response:', response)
-      
+      console.log("✅ BOM Update Response:", response)
+
       // Extract the updated BOM from response
       const updatedBOM = response?.data
-      
+
       if (!updatedBOM) {
-        console.error('❌ No BOM data in response!')
+        console.error("❌ No BOM data in response!")
         return
       }
 
       const { id: bomId, product_id: productId, size } = updatedBOM
-      
+
       console.log(`🔄 Invalidating queries for BOM ${bomId}, Product ${productId}, Size ${size}`)
 
       // SIMPLE APPROACH: Just invalidate all related queries
       // React Query will automatically refetch active queries
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: productKeys.bom(bomId),
-        refetchType: 'active' 
-      })
-      
-      queryClient.invalidateQueries({ 
-        queryKey: productKeys.boms(productId, size),
-        refetchType: 'active'
-      })
-      
-      queryClient.invalidateQueries({ 
-        queryKey: productKeys.activeBom(productId, size),
-        refetchType: 'active'
-      })
-      
-      // Also invalidate the "all BOMs" query (without size filter)
-      queryClient.invalidateQueries({ 
-        queryKey: productKeys.boms(productId),
-        refetchType: 'active'
+        refetchType: "active",
       })
 
-      console.log('✅ All queries invalidated - React Query will refetch automatically')
+      queryClient.invalidateQueries({
+        queryKey: productKeys.boms(productId, size),
+        refetchType: "active",
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: productKeys.activeBom(productId, size),
+        refetchType: "active",
+      })
+
+      // Also invalidate the "all BOMs" query (without size filter)
+      queryClient.invalidateQueries({
+        queryKey: productKeys.boms(productId),
+        refetchType: "active",
+      })
+
+      console.log("✅ All queries invalidated - React Query will refetch automatically")
     },
-    
+
     onError: (error) => {
-      console.error('❌ BOM Update Failed:', error)
+      console.error("❌ BOM Update Failed:", error)
     },
   })
 }
@@ -279,12 +285,16 @@ export function useDeleteBOM() {
     onSuccess: (data, variables) => {
       // Remove from cache and invalidate related queries
       queryClient.removeQueries({ queryKey: productKeys.bom(variables.bomId) })
-      queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+      queryClient.invalidateQueries({
+        queryKey: productKeys.boms(variables.productId, variables.size),
+      })
       queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
       queryClient.invalidateQueries({ queryKey: productKeys.detail(variables.productId) })
 
       // Refetch
-      queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+      queryClient.refetchQueries({
+        queryKey: productKeys.boms(variables.productId, variables.size),
+      })
       queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
 
       toast.success("BOM deleted successfully")
@@ -321,7 +331,7 @@ export function useCreateBOMItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ bomId, itemData, productId, size }) => 
+    mutationFn: ({ bomId, itemData, productId, size }) =>
       productsApi.createBOMItem(bomId, itemData),
     onSuccess: (data, variables) => {
       // Invalidate BOM items and the BOM itself
@@ -330,17 +340,23 @@ export function useCreateBOMItem() {
 
       // Also invalidate BOMs list for this product+size
       if (variables.productId && variables.size) {
-        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.invalidateQueries({
+          queryKey: productKeys.boms(variables.productId, variables.size),
+        })
         queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
-        queryClient.invalidateQueries({ queryKey: productKeys.activeBom(variables.productId, variables.size) })
+        queryClient.invalidateQueries({
+          queryKey: productKeys.activeBom(variables.productId, variables.size),
+        })
       }
 
       // Refetch
       queryClient.refetchQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.refetchQueries({ queryKey: productKeys.bom(variables.bomId) })
-      
+
       if (variables.productId && variables.size) {
-        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.refetchQueries({
+          queryKey: productKeys.boms(variables.productId, variables.size),
+        })
         queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
       }
 
@@ -360,7 +376,7 @@ export function useUpdateBOMItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ bomId, itemId, updates, productId, size }) => 
+    mutationFn: ({ bomId, itemId, updates, productId, size }) =>
       productsApi.updateBOMItem(bomId, itemId, updates),
     onSuccess: (data, variables) => {
       // Invalidate BOM items and the BOM itself
@@ -369,16 +385,20 @@ export function useUpdateBOMItem() {
 
       // Also invalidate BOMs list for this product+size
       if (variables.productId && variables.size) {
-        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.invalidateQueries({
+          queryKey: productKeys.boms(variables.productId, variables.size),
+        })
         queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
       }
 
       // Refetch
       queryClient.refetchQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.refetchQueries({ queryKey: productKeys.bom(variables.bomId) })
-      
+
       if (variables.productId && variables.size) {
-        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.refetchQueries({
+          queryKey: productKeys.boms(variables.productId, variables.size),
+        })
         queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
       }
 
@@ -398,8 +418,7 @@ export function useDeleteBOMItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ bomId, itemId, productId, size }) => 
-      productsApi.deleteBOMItem(bomId, itemId),
+    mutationFn: ({ bomId, itemId, productId, size }) => productsApi.deleteBOMItem(bomId, itemId),
     onSuccess: (data, variables) => {
       // Invalidate BOM items and the BOM itself
       queryClient.invalidateQueries({ queryKey: productKeys.bomItems(variables.bomId) })
@@ -407,17 +426,23 @@ export function useDeleteBOMItem() {
 
       // Also invalidate BOMs list for this product+size
       if (variables.productId && variables.size) {
-        queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.invalidateQueries({
+          queryKey: productKeys.boms(variables.productId, variables.size),
+        })
         queryClient.invalidateQueries({ queryKey: productKeys.boms(variables.productId, null) })
-        queryClient.invalidateQueries({ queryKey: productKeys.activeBom(variables.productId, variables.size) })
+        queryClient.invalidateQueries({
+          queryKey: productKeys.activeBom(variables.productId, variables.size),
+        })
       }
 
       // Refetch
       queryClient.refetchQueries({ queryKey: productKeys.bomItems(variables.bomId) })
       queryClient.refetchQueries({ queryKey: productKeys.bom(variables.bomId) })
-      
+
       if (variables.productId && variables.size) {
-        queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, variables.size) })
+        queryClient.refetchQueries({
+          queryKey: productKeys.boms(variables.productId, variables.size),
+        })
         queryClient.refetchQueries({ queryKey: productKeys.boms(variables.productId, null) })
       }
 
@@ -425,6 +450,178 @@ export function useDeleteBOMItem() {
     },
     onError: (error) => {
       const message = error.response?.data?.error || "Failed to delete BOM item"
+      toast.error(message)
+    },
+  })
+}
+
+// ==================== PRODUCT MEASUREMENT CHARTS HOOKS ====================
+
+/**
+ * Get product measurement charts
+ * @param {string} productId - Product ID
+ * @param {Object} options - React Query options
+ */
+export function useProductMeasurementCharts(productId, options = {}) {
+  return useQuery({
+    queryKey: productKeys.measurementCharts(productId),
+    queryFn: () => productsApi.getProductMeasurementCharts(productId),
+    enabled: !!productId && options.enabled !== false,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+/**
+ * Update product size chart
+ */
+export function useUpdateProductSizeChart() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ productId, data }) => productsApi.updateProductSizeChart(productId, data),
+    onSuccess: (_, variables) => {
+      // Invalidate measurement charts and product detail
+      queryClient.invalidateQueries({
+        queryKey: productKeys.measurementCharts(variables.productId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(variables.productId),
+      })
+
+      // Refetch
+      queryClient.refetchQueries({
+        queryKey: productKeys.measurementCharts(variables.productId),
+      })
+
+      toast.success("Size chart updated successfully")
+    },
+    onError: (error) => {
+      const message = error.message || "Failed to update size chart"
+      toast.error(message)
+    },
+  })
+}
+
+/**
+ * Update product height chart
+ */
+export function useUpdateProductHeightChart() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ productId, data }) => productsApi.updateProductHeightChart(productId, data),
+    onSuccess: (_, variables) => {
+      // Invalidate measurement charts and product detail
+      queryClient.invalidateQueries({
+        queryKey: productKeys.measurementCharts(variables.productId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(variables.productId),
+      })
+
+      // Refetch
+      queryClient.refetchQueries({
+        queryKey: productKeys.measurementCharts(variables.productId),
+      })
+
+      toast.success("Height chart updated successfully")
+    },
+    onError: (error) => {
+      const message = error.message || "Failed to update height chart"
+      toast.error(message)
+    },
+  })
+}
+
+/**
+ * Initialize product measurement charts from template
+ */
+export function useInitializeProductMeasurementCharts() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ productId, options }) =>
+      productsApi.initializeProductMeasurementCharts(productId, options),
+    onSuccess: (_, variables) => {
+      // Invalidate measurement charts and product detail
+      queryClient.invalidateQueries({
+        queryKey: productKeys.measurementCharts(variables.productId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(variables.productId),
+      })
+
+      // Refetch
+      queryClient.refetchQueries({
+        queryKey: productKeys.measurementCharts(variables.productId),
+      })
+
+      toast.success("Measurement charts initialized successfully")
+    },
+    onError: (error) => {
+      const message = error.message || "Failed to initialize measurement charts"
+      toast.error(message)
+    },
+  })
+}
+
+/**
+ * Remove product size chart
+ */
+export function useRemoveProductSizeChart() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (productId) => productsApi.removeProductSizeChart(productId),
+    onSuccess: (_, productId) => {
+      // Invalidate measurement charts and product detail
+      queryClient.invalidateQueries({
+        queryKey: productKeys.measurementCharts(productId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(productId),
+      })
+
+      // Refetch
+      queryClient.refetchQueries({
+        queryKey: productKeys.measurementCharts(productId),
+      })
+
+      toast.success("Size chart removed successfully")
+    },
+    onError: (error) => {
+      const message = error.message || "Failed to remove size chart"
+      toast.error(message)
+    },
+  })
+}
+
+/**
+ * Remove product height chart
+ */
+export function useRemoveProductHeightChart() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (productId) => productsApi.removeProductHeightChart(productId),
+    onSuccess: (_, productId) => {
+      // Invalidate measurement charts and product detail
+      queryClient.invalidateQueries({
+        queryKey: productKeys.measurementCharts(productId),
+      })
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(productId),
+      })
+
+      // Refetch
+      queryClient.refetchQueries({
+        queryKey: productKeys.measurementCharts(productId),
+      })
+
+      toast.success("Height chart removed successfully")
+    },
+    onError: (error) => {
+      const message = error.message || "Failed to remove height chart"
       toast.error(message)
     },
   })
