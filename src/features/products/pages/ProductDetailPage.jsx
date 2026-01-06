@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { useProduct, useDeleteProduct, useProductBOMs } from "../../../hooks/useProducts"
+import { getPieceLabel, isMainGarment, isAddOn } from "@/constants/productConstants"
 import { Button } from "../../../components/ui/button"
 import { Card, CardContent, CardHeader } from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
@@ -28,7 +29,7 @@ export default function ProductDetailPage() {
 
   const { data: productResponse, isLoading, error } = useProduct(id)
   const deleteProductMutation = useDeleteProduct()
-  
+
   // Fetch all BOMs for this product to check if deletion is allowed
   const { data: bomsResponse } = useProductBOMs(id, null)
   const productBOMs = bomsResponse?.data || []
@@ -48,7 +49,7 @@ export default function ProductDetailPage() {
     // Check if product has BOMs
     if (hasBOMs) {
       toast.error("Cannot delete product", {
-        description: `This product has ${productBOMs.length} BOM${productBOMs.length !== 1 ? 's' : ''}. Delete all BOMs first.`,
+        description: `This product has ${productBOMs.length} BOM${productBOMs.length !== 1 ? "s" : ""}. Delete all BOMs first.`,
         duration: 5000,
       })
       return
@@ -118,9 +119,10 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Product Info */}
-            <div className="flex-1 space-y-4">
+            {/* Product Info */}
+            <div className="space-y-4">
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-3 mb-1">
                   <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
                   <Badge variant={product.active ? "default" : "secondary"}>
                     {product.active ? "Active" : "Inactive"}
@@ -135,21 +137,70 @@ export default function ProductDetailPage() {
                   <Badge variant="outline">{product.category}</Badge>
                 </div>
                 <div>
-                  <p className="text-gray-600">Base Price</p>
-                  <p className="font-medium text-gray-900">
-                    {product.base_price ? `PKR ${product.base_price.toLocaleString()}` : "Not set"}
+                  <p className="text-gray-600">Total Price</p>
+                  <p className="font-medium text-gray-900 text-lg">
+                    PKR {product.total_price?.toLocaleString() || 0}
                   </p>
                 </div>
-                {product.description && (
-                  <div className="col-span-2">
-                    <p className="text-gray-600 mb-1">Description</p>
-                    <p className="text-gray-900">{product.description}</p>
-                  </div>
-                )}
               </div>
 
+              {/* Product Items */}
+              {product.product_items && product.product_items.length > 0 && (
+                <div>
+                  <p className="text-gray-600 mb-2">Includes</p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.product_items.map((item) => (
+                      <Badge key={item.piece} variant="outline" className="bg-blue-50">
+                        {getPieceLabel(item.piece)} - PKR {item.price?.toLocaleString() || 0}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add-ons */}
+              {product.add_ons && product.add_ons.length > 0 && (
+                <div>
+                  <p className="text-gray-600 mb-2">Add-ons</p>
+                  <div className="flex flex-wrap gap-2">
+                    {product.add_ons.map((item) => (
+                      <Badge key={item.piece} variant="outline" className="bg-green-50">
+                        {getPieceLabel(item.piece)}
+                        {item.price > 0 ? ` - PKR ${item.price.toLocaleString()}` : " (Included)"}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pricing Breakdown */}
+              {product.subtotal > 0 && (
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>PKR {product.subtotal?.toLocaleString()}</span>
+                  </div>
+                  {product.discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount</span>
+                      <span>- PKR {product.discount?.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-semibold border-t pt-2">
+                    <span>Total</span>
+                    <span>PKR {product.total_price?.toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
+
+              {product.description && (
+                <div>
+                  <p className="text-gray-600 mb-1">Description</p>
+                  <p className="text-gray-900">{product.description}</p>
+                </div>
+              )}
               {/* Action Buttons */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-4">
                 <Button onClick={handleEdit}>
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Product
@@ -255,9 +306,7 @@ export default function ProductDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteProductMutation.isPending}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteProductMutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleteProductMutation.isPending}
