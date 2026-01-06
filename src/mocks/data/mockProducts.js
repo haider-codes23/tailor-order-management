@@ -1,349 +1,397 @@
 /**
- * Mock Products and BOMs - COMPLETE VERSION
- *
- * Data Structure:
- * - 5 Products with full details
- * - BOMs for ALL sizes (XS, S, M, L, XL, XXL, CUSTOM) for each product
- * - BOM items for every BOM
+ * Mock Products Data
+ * 
+ * New Structure:
+ * - product_items: Array of main garment pieces with individual prices
+ * - add_ons: Array of add-on items with prices (often 0 if included free)
+ * - subtotal: Sum of all item prices
+ * - discount: Fixed discount amount in PKR
+ * - total_price: subtotal - discount
  */
 
-// ==================== SIZE CONSTANTS ====================
-export const STANDARD_SIZES = ["XS", "S", "M", "L", "XL", "XXL"]
-export const ALL_SIZES = [...STANDARD_SIZES, "CUSTOM"]
-
 // ==================== PRODUCTS ====================
+
 export const mockProducts = [
+  // 1. ROUGE LEGACY - Bridal (Peshwas, Lehnga, Dupatta + Pouch, Veil)
   {
     id: "prod_1",
-    name: "GOLDESS",
-    sku: "GOLD-001",
-    description: "Elegant golden ensemble with intricate embroidery",
-    category: "FORMAL",
+    name: "Rouge Legacy",
+    sku: "RL-001",
+    description: "A masterclass in tradition and grandeur, this couture ensemble is rendered in a rich deep red hue and harmoniously blends classic paisley, floral jaal, and geometric patterns.",
+    category: "Bridal",
     active: true,
-    shopify_product_id: "gid://shopify/Product/8234567890",
-    shopify_variant_id: "gid://shopify/ProductVariant/44123456789",
-    images: [
-      "https://musferahsaad.net/cdn/shop/files/EmeraldOracle8_1800x1800.webp?v=1759854964",
-      "https://musferahsaad.net/cdn/shop/files/EmeraldOracle7_1800x1800.webp?v=1759854964",
+    primary_image:
+      "https://musferahsaad.net/cdn/shop/files/47_f391d8d8-af44-46dc-a132-12d78198aa11.jpg?v=1757143827&width=1080",
+    
+    product_items: [
+      { piece: "peshwas", price: 350000 },
+      { piece: "lehnga", price: 150000 },
+      { piece: "dupatta", price: 75000 },
     ],
-    primary_image: "https://musferahsaad.net/cdn/shop/files/EmeraldOracle5.webp?v=1759854964&width=1080",
-    base_price: 45000,
+    add_ons: [
+      { piece: "pouch", price: 0 },
+      { piece: "veil", price: 0 },
+    ],
+    
+    subtotal: 575000,
+    discount: 0,
+    total_price: 575000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
     created_at: "2024-01-15T10:00:00Z",
-    updated_at: "2024-12-20T14:30:00Z",
+    updated_at: "2024-04-20T14:30:00Z",
   },
+
+  // 2. CELESTIAL REGALIA - Bridal (Peshwas, Lehnga, Dupatta + Pouch)
   {
     id: "prod_2",
-    name: "MAUVE MAGIC",
-    sku: "MAUVE-001",
-    description: "Stunning mauve dress with delicate detailing",
-    category: "SEMI_FORMAL",
+    name: "Celestial Regalia",
+    sku: "CR-002",
+    description: "Celestial Regalia evokes a vision of modern majesty—where celestial light meets couture brilliance. This contoured bridal silhouette is meticulously handcrafted with silver tilla and resham embroidery.",
+    category: "Bridal",
     active: true,
-    shopify_product_id: "gid://shopify/Product/8234567891",
-    shopify_variant_id: "gid://shopify/ProductVariant/44123456790",
-    images: ["https://musferahsaad.net/cdn/shop/files/SunsetOmbre5_1800x1800.webp?v=1760088371"],
-    primary_image: "https://musferahsaad.net/cdn/shop/files/SunsetOmbre2.webp?v=1760088371&width=1080",
-    base_price: 38000,
-    created_at: "2024-02-10T09:00:00Z",
-    updated_at: "2024-12-18T11:20:00Z",
+    primary_image: "https://musferahsaad.net/cdn/shop/files/16_42c5f09a-6c3c-4efc-9892-73c9e0d6a984.jpg?v=1757160715&width=1080",
+    
+    product_items: [
+      { piece: "peshwas", price: 350000 },
+      { piece: "lehnga", price: 150000 },
+      { piece: "dupatta", price: 75000 },
+    ],
+    add_ons: [
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 575000,
+    discount: 0,
+    total_price: 575000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-01-20T11:00:00Z",
+    updated_at: "2024-04-21T15:00:00Z",
   },
+
+  // 3. RUBY MAHARANI - Bridal (Peshwas, Lehnga, Dupatta + Pouch, Veil)
   {
     id: "prod_3",
-    name: "EMERALD GRACE",
-    sku: "EMER-001",
-    description: "Vibrant emerald green outfit with traditional embellishments",
-    category: "CASUAL",
+    name: "Ruby Maharani",
+    sku: "RM-003",
+    description: "Ruby Maharani is a celebration of grandeur and color, capturing the spirit of regal femininity in full bloom. Crafted in a deep garnet red, this couture peshwas features elaborate multicolor resham and tilla embroidery.",
+    category: "Bridal",
     active: true,
-    shopify_product_id: "gid://shopify/Product/8234567892",
-    shopify_variant_id: "gid://shopify/ProductVariant/44123456791",
-    images: ["https://musferahsaad.net/cdn/shop/files/MysticEmerald4_1800x1800.webp?v=1759854950"],
-    primary_image: "https://musferahsaad.net/cdn/shop/files/White1.webp?v=1746992812&width=1080",
-    base_price: 32000,
-    created_at: "2024-03-05T08:30:00Z",
-    updated_at: "2024-12-19T16:45:00Z",
+    primary_image: "https://musferahsaad.net/cdn/shop/files/58_5175da28-2ab8-44da-ae27-16f92aed8f68.jpg?v=1757160657&width=1080",
+    
+    product_items: [
+      { piece: "peshwas", price: 350000 },
+      { piece: "lehnga", price: 150000 },
+      { piece: "dupatta", price: 75000 },
+    ],
+    add_ons: [
+      { piece: "pouch", price: 0 },
+      { piece: "veil", price: 0 },
+    ],
+    
+    subtotal: 575000,
+    discount: 0,
+    total_price: 575000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-02-01T09:00:00Z",
+    updated_at: "2024-04-22T10:00:00Z",
   },
+
+  // 4. MOONLIT BLUSH - Formal (Kaftan + Pouch)
   {
     id: "prod_4",
-    name: "RUBY ELEGANCE",
-    sku: "RUBY-001",
-    description: "Deep ruby red formal wear with crystal embellishments",
-    category: "FORMAL",
+    name: "Moonlit Blush",
+    sku: "MB-004",
+    description: "A vision of chic sophistication, Moonlit Blush reimagines the kaftan in luminous rose-pink tissue. The neckline is exquisitely embroidered with cutwork and layered with intricate hand embellishments.",
+    category: "Formal",
     active: true,
-    shopify_product_id: "gid://shopify/Product/8234567893",
-    shopify_variant_id: "gid://shopify/ProductVariant/44123456792",
-    images: ["https://musferahsaad.net/cdn/shop/files/CrimsonQueen3_1800x1800.webp?v=1759854932"],
-    primary_image: "https://musferahsaad.net/cdn/shop/files/Romance1.webp?v=1746992837&width=1080",
-    base_price: 52000,
-    created_at: "2024-04-12T11:00:00Z",
-    updated_at: "2024-12-21T10:15:00Z",
+    primary_image: "https://musferahsaad.net/cdn/shop/files/MoonlitBlush6_087a435f-95ec-4314-bce8-001aa2a28134.webp?v=1758891284&width=1080",
+    
+    product_items: [
+      { piece: "kaftan", price: 62000 },
+    ],
+    add_ons: [
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 62000,
+    discount: 0,
+    total_price: 62000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-02-10T12:00:00Z",
+    updated_at: "2024-04-23T13:00:00Z",
   },
+
+  // 5. ELYSIAN VERDE - Formal (Shirt, Farshi Sharara + Dupatta, Shawl, Pouch)
   {
     id: "prod_5",
-    name: "AZURE DREAM",
-    sku: "AZUR-001",
-    description: "Light blue summer collection with floral embroidery",
-    category: "CASUAL",
+    name: "Elysian Verde",
+    sku: "EV-005",
+    description: "Elysian Verde brings the beauty of nature to couture form. In deep green tones with gorgeous gold hand embellishments, the silhouette flows with effortless sophistication.",
+    category: "Formal",
     active: true,
-    shopify_product_id: "gid://shopify/Product/8234567894",
-    shopify_variant_id: "gid://shopify/ProductVariant/44123456793",
-    images: ["https://musferahsaad.net/cdn/shop/files/SkylineMuse2_1800x1800.webp?v=1759854970"],
-    primary_image: "https://musferahsaad.net/cdn/shop/files/Symphony1.webp?v=1746992802&width=1080",
-    base_price: 28000,
-    created_at: "2024-05-20T09:30:00Z",
-    updated_at: "2024-12-22T14:20:00Z",
+    primary_image: "https://musferahsaad.net/cdn/shop/files/67.png?v=1761888916&width=1080",
+    
+    product_items: [
+      { piece: "shirt", price: 100000 },
+      { piece: "farshi", price: 50000 },
+      { piece: "sharara", price: 30000 },
+    ],
+    add_ons: [
+      { piece: "dupatta", price: 0 },
+      { piece: "shawl", price: 0 },
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 180000,
+    discount: 0,
+    total_price: 180000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-02-15T14:00:00Z",
+    updated_at: "2024-04-24T15:00:00Z",
+  },
+
+  // 6. DRAPE OF DIVINITY - Formal (Saree, Peti Coat, Blouse + Pouch)
+  {
+    id: "prod_6",
+    name: "Drape of Divinity",
+    sku: "DD-006",
+    description: "Drape of Divinity reimagines the saree as an emblem of a goddess. Its flowing form, enriched with artisanal handwork, intricate tilla work and resham embroidery, embodies timeless allure.",
+    category: "Formal",
+    active: true,
+    primary_image: "https://musferahsaad.net/cdn/shop/files/10.png?v=1762027513&width=1080",
+    
+    product_items: [
+      { piece: "saree", price: 100000 },
+      { piece: "peti_coat", price: 30000 },
+      { piece: "blouse", price: 30000 },
+    ],
+    add_ons: [
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 160000,
+    discount: 0,
+    total_price: 160000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-02-20T10:00:00Z",
+    updated_at: "2024-04-25T11:00:00Z",
+  },
+
+  // 7. CORAL MIRAGE - Formal (Blouse, Sharara + Dupatta, Pouch)
+  {
+    id: "prod_7",
+    name: "Coral Mirage",
+    sku: "CM-007",
+    description: "A symphony of coral tones brought to life through exquisite craftsmanship. Coral Mirage captures the poetry of soft structure and fluid grace.",
+    category: "Formal",
+    active: true,
+    primary_image: "https://musferahsaad.net/cdn/shop/files/78.png?v=1761866944&width=1080",
+    
+    product_items: [
+      { piece: "blouse", price: 100000 },
+      { piece: "sharara", price: 50000 },
+    ],
+    add_ons: [
+      { piece: "dupatta", price: 30000 },
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 180000,
+    discount: 0,
+    total_price: 180000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-03-01T09:00:00Z",
+    updated_at: "2024-04-26T10:00:00Z",
+  },
+
+  // 8. SUNLIT GRACE - Formal (Jacket, Gown + Dupatta, Pouch)
+  {
+    id: "prod_8",
+    name: "Sunlit Grace",
+    sku: "SG-008",
+    description: "Sunlit Grace evokes the golden warmth of daylight woven into couture. The silhouette reflects refined tailoring with delicate embellishment, blending tradition with effortless sophistication.",
+    category: "Formal",
+    active: true,
+    primary_image: "https://musferahsaad.net/cdn/shop/files/35.png?v=1761868233&width=1080",
+    
+    product_items: [
+      { piece: "jacket", price: 150000 },
+      { piece: "gown", price: 100000 },
+    ],
+    add_ons: [
+      { piece: "dupatta", price: 30000 },
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 280000,
+    discount: 0,
+    total_price: 280000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-03-05T11:00:00Z",
+    updated_at: "2024-04-27T12:00:00Z",
+  },
+
+  // 9. AQUA ELEGANCE - Ready to Ship (Kaftan + Pouch)
+  {
+    id: "prod_9",
+    name: "Aqua Elegance",
+    sku: "AE-009",
+    description: "Immerse yourself in the lavish splendor of Aqua Elegance. This magnificent creation showcases a harmonious fusion of architectural elements and gentle floral vines.",
+    category: "Semi-Formal",
+    active: true,
+    primary_image: "https://musferahsaad.net/cdn/shop/files/Aqua1.webp?v=1746994128&width=1080",
+    
+    product_items: [
+      { piece: "kaftan", price: 58000 },
+    ],
+    add_ons: [
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 58000,
+    discount: 0,
+    total_price: 58000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-03-10T14:00:00Z",
+    updated_at: "2024-04-28T15:00:00Z",
+  },
+
+  // 10. IVORY SENSATION - Ready to Ship (Shirt, Pants + Dupatta, Pouch)
+  {
+    id: "prod_10",
+    name: "Ivory Sensation",
+    sku: "IS-010",
+    description: "Ivory Sensation stands as a true testament to artistic craftsmanship. It showcases a stunning embroidered chiffon chikankari shirt, embellished with the finesse of delicate Adda work.",
+    category: "Semi-Formal",
+    active: true,
+    primary_image: "https://musferahsaad.net/cdn/shop/files/Ivory1.webp?v=1746993676&width=1080",
+    
+    product_items: [
+      { piece: "shirt", price: 40000 },
+      { piece: "pants", price: 18000 },
+    ],
+    add_ons: [
+      { piece: "dupatta", price: 10000 },
+      { piece: "pouch", price: 0 },
+    ],
+    
+    subtotal: 68000,
+    discount: 0,
+    total_price: 68000,
+    
+    shopify_product_id: null,
+    shopify_variant_id: null,
+    created_at: "2024-03-15T10:00:00Z",
+    updated_at: "2024-04-29T11:00:00Z",
   },
 ]
 
-// ==================== BOMs (ALL SIZES FOR ALL PRODUCTS) ====================
-export const mockBOMs = [
-  // === GOLDESS (prod_1) - ALL SIZES ===
-  { id: "bom_1", product_id: "prod_1", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-01-15T10:00:00Z", updated_at: "2024-01-15T10:00:00Z" },
-  { id: "bom_2", product_id: "prod_1", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-01-15T10:05:00Z", updated_at: "2024-01-15T10:05:00Z" },
-  { id: "bom_3", product_id: "prod_1", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-01-15T10:10:00Z", updated_at: "2024-01-15T10:10:00Z" },
-  { id: "bom_4", product_id: "prod_1", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-01-15T10:15:00Z", updated_at: "2024-01-15T10:15:00Z" },
-  { id: "bom_5", product_id: "prod_1", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-01-15T10:20:00Z", updated_at: "2024-01-15T10:20:00Z" },
-  { id: "bom_6", product_id: "prod_1", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-01-15T10:25:00Z", updated_at: "2024-01-15T10:25:00Z" },
-  { id: "bom_7", product_id: "prod_1", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-01-15T10:30:00Z", updated_at: "2024-01-15T10:30:00Z" },
+// ==================== BOMs ====================
 
-  // === MAUVE MAGIC (prod_2) - ALL SIZES ===
-  { id: "bom_8", product_id: "prod_2", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-02-10T09:00:00Z", updated_at: "2024-02-10T09:00:00Z" },
-  { id: "bom_9", product_id: "prod_2", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-02-10T09:05:00Z", updated_at: "2024-02-10T09:05:00Z" },
-  { id: "bom_10", product_id: "prod_2", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-02-10T09:10:00Z", updated_at: "2024-02-10T09:10:00Z" },
-  { id: "bom_11", product_id: "prod_2", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-02-10T09:15:00Z", updated_at: "2024-02-10T09:15:00Z" },
-  { id: "bom_12", product_id: "prod_2", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-02-10T09:20:00Z", updated_at: "2024-02-10T09:20:00Z" },
-  { id: "bom_13", product_id: "prod_2", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-02-10T09:25:00Z", updated_at: "2024-02-10T09:25:00Z" },
-  { id: "bom_14", product_id: "prod_2", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-02-10T09:30:00Z", updated_at: "2024-02-10T09:30:00Z" },
+const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "CUSTOM"]
 
-  // === EMERALD GRACE (prod_3) - ALL SIZES ===
-  { id: "bom_15", product_id: "prod_3", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-03-05T08:30:00Z", updated_at: "2024-03-05T08:30:00Z" },
-  { id: "bom_16", product_id: "prod_3", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-03-05T08:35:00Z", updated_at: "2024-03-05T08:35:00Z" },
-  { id: "bom_17", product_id: "prod_3", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-03-05T08:40:00Z", updated_at: "2024-03-05T08:40:00Z" },
-  { id: "bom_18", product_id: "prod_3", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-03-05T08:45:00Z", updated_at: "2024-03-05T08:45:00Z" },
-  { id: "bom_19", product_id: "prod_3", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-03-05T08:50:00Z", updated_at: "2024-03-05T08:50:00Z" },
-  { id: "bom_20", product_id: "prod_3", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-03-05T08:55:00Z", updated_at: "2024-03-05T08:55:00Z" },
-  { id: "bom_21", product_id: "prod_3", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-03-05T09:00:00Z", updated_at: "2024-03-05T09:00:00Z" },
+/**
+ * Generate BOMs for all products
+ * Each product gets one active BOM per size
+ */
+function generateBOMs() {
+  const boms = []
+  let bomId = 1
 
-  // === RUBY ELEGANCE (prod_4) - ALL SIZES ===
-  { id: "bom_22", product_id: "prod_4", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-04-12T11:00:00Z", updated_at: "2024-04-12T11:00:00Z" },
-  { id: "bom_23", product_id: "prod_4", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-04-12T11:05:00Z", updated_at: "2024-04-12T11:05:00Z" },
-  { id: "bom_24", product_id: "prod_4", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-04-12T11:10:00Z", updated_at: "2024-04-12T11:10:00Z" },
-  { id: "bom_25", product_id: "prod_4", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-04-12T11:15:00Z", updated_at: "2024-04-12T11:15:00Z" },
-  { id: "bom_26", product_id: "prod_4", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-04-12T11:20:00Z", updated_at: "2024-04-12T11:20:00Z" },
-  { id: "bom_27", product_id: "prod_4", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-04-12T11:25:00Z", updated_at: "2024-04-12T11:25:00Z" },
-  { id: "bom_28", product_id: "prod_4", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-04-12T11:30:00Z", updated_at: "2024-04-12T11:30:00Z" },
+  mockProducts.forEach((product) => {
+    // Get all pieces from product (items + add-ons)
+    const allPieces = [
+      ...product.product_items.map((i) => i.piece),
+      ...product.add_ons.map((a) => a.piece),
+    ]
 
-  // === AZURE DREAM (prod_5) - ALL SIZES ===
-  { id: "bom_29", product_id: "prod_5", size: "XS", version: 1, name: "Size XS - Version 1", is_active: true, notes: "Extra Small size", created_at: "2024-05-20T09:30:00Z", updated_at: "2024-05-20T09:30:00Z" },
-  { id: "bom_30", product_id: "prod_5", size: "S", version: 1, name: "Size S - Version 1", is_active: true, notes: "Small size", created_at: "2024-05-20T09:35:00Z", updated_at: "2024-05-20T09:35:00Z" },
-  { id: "bom_31", product_id: "prod_5", size: "M", version: 1, name: "Size M - Version 1", is_active: true, notes: "Medium size", created_at: "2024-05-20T09:40:00Z", updated_at: "2024-05-20T09:40:00Z" },
-  { id: "bom_32", product_id: "prod_5", size: "L", version: 1, name: "Size L - Version 1", is_active: true, notes: "Large size", created_at: "2024-05-20T09:45:00Z", updated_at: "2024-05-20T09:45:00Z" },
-  { id: "bom_33", product_id: "prod_5", size: "XL", version: 1, name: "Size XL - Version 1", is_active: true, notes: "Extra Large size", created_at: "2024-05-20T09:50:00Z", updated_at: "2024-05-20T09:50:00Z" },
-  { id: "bom_34", product_id: "prod_5", size: "XXL", version: 1, name: "Size XXL - Version 1", is_active: true, notes: "Double Extra Large size", created_at: "2024-05-20T09:55:00Z", updated_at: "2024-05-20T09:55:00Z" },
-  { id: "bom_35", product_id: "prod_5", size: "CUSTOM", version: 1, name: "Size CUSTOM - Version 1", is_active: true, notes: "Custom measurements", created_at: "2024-05-20T10:00:00Z", updated_at: "2024-05-20T10:00:00Z" },
-]
+    // Create BOMs for common sizes (M and L for each product)
+    ;["M", "L"].forEach((size, sizeIdx) => {
+      boms.push({
+        id: `bom_${bomId}`,
+        product_id: product.id,
+        size: size,
+        version: 1,
+        name: `Size ${size} - Version 1`,
+        is_active: true,
+        notes: `Standard BOM for ${product.name} - Size ${size}`,
+        pieces: allPieces, // Derived from product
+        created_at: product.created_at,
+        updated_at: product.updated_at,
+      })
+      bomId++
+    })
+  })
+
+  return boms
+}
+
+export const mockBOMs = generateBOMs()
 
 // ==================== BOM ITEMS ====================
-// Pattern: Each size needs scaled material quantities
-// Formula: Base quantity + (size_factor * increment)
-// Size factors: XS=-2, S=-1, M=0, L=+1, XL=+2, XXL=+3, CUSTOM=0
 
-const generateBOMItems = () => {
+/**
+ * Generate BOM items grouped by piece type
+ */
+function generateBOMItems() {
   const items = []
   let itemId = 1
 
-  // Size scaling factors
   const sizeScales = {
-    XS: -0.3,
-    S: -0.15,
+    XS: -0.2,
+    S: -0.1,
     M: 0,
-    L: 0.15,
-    XL: 0.3,
-    XXL: 0.45,
+    L: 0.1,
+    XL: 0.2,
+    XXL: 0.3,
     CUSTOM: 0,
   }
 
-  // === GOLDESS (prod_1) BOMs - Formal wear with heavy embroidery ===
-  ALL_SIZES.forEach((size, idx) => {
-    const bomId = `bom_${idx + 1}`
-    const scale = sizeScales[size]
-    
-    // Velvet fabric for shirt
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_1", // Velvet - Royal Gold
-      quantity_per_unit: parseFloat((2.8 + scale * 0.5).toFixed(2)),
-      unit: "METER",
-      garment_piece: "SHIRT",
-      sequence_order: 1,
-      notes: `Main shirt fabric - Size ${size}`,
-    })
+  mockBOMs.forEach((bom) => {
+    const product = mockProducts.find((p) => p.id === bom.product_id)
+    if (!product) return
 
-    // Raw silk for trouser
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_2", // Raw Silk - Black
-      quantity_per_unit: parseFloat((2.0 + scale * 0.4).toFixed(2)),
-      unit: "METER",
-      garment_piece: "TROUSER",
-      sequence_order: 2,
-      notes: `Trouser fabric - Size ${size}`,
-    })
+    const scale = sizeScales[bom.size]
+    const allPieces = [
+      ...product.product_items.map((i) => i.piece),
+      ...product.add_ons.map((a) => a.piece),
+    ]
 
-    // Zari thread for embroidery
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_11", // Zari Thread - Gold
-      quantity_per_unit: Math.round(350 + scale * 80),
-      unit: "GRAM",
-      garment_piece: "SHIRT",
-      sequence_order: 3,
-      notes: `Heavy embroidery - Size ${size}`,
-    })
-  })
-
-  // === MAUVE MAGIC (prod_2) BOMs - Semi-formal with sequins ===
-  ALL_SIZES.forEach((size, idx) => {
-    const bomId = `bom_${idx + 8}`
-    const scale = sizeScales[size]
-    
-    // Chiffon fabric
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_5", // Chiffon - Mauve
-      quantity_per_unit: parseFloat((2.6 + scale * 0.4).toFixed(2)),
-      unit: "METER",
-      garment_piece: "SHIRT",
-      sequence_order: 1,
-      notes: `Delicate chiffon - Size ${size}`,
-    })
-
-    // Sequins
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_12", // Sequins - Gold
-      quantity_per_unit: Math.round(250 + scale * 50),
-      unit: "PIECE",
-      garment_piece: "SHIRT",
-      sequence_order: 2,
-      notes: `Sequin embellishment - Size ${size}`,
-    })
-  })
-
-  // === EMERALD GRACE (prod_3) BOMs - Casual with buttons ===
-  ALL_SIZES.forEach((size, idx) => {
-    const bomId = `bom_${idx + 15}`
-    const scale = sizeScales[size]
-    
-    // Lawn fabric
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_6", // Lawn - Emerald Green
-      quantity_per_unit: parseFloat((2.4 + scale * 0.4).toFixed(2)),
-      unit: "METER",
-      garment_piece: "SHIRT",
-      sequence_order: 1,
-      notes: `Lightweight lawn - Size ${size}`,
-    })
-
-    // Buttons
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_10", // Buttons - White Pearl
-      quantity_per_unit: 8,
-      unit: "PIECE",
-      garment_piece: "SHIRT",
-      sequence_order: 2,
-      notes: `Button closure - Size ${size}`,
-    })
-  })
-
-  // === RUBY ELEGANCE (prod_4) BOMs - Premium formal with crystals ===
-  ALL_SIZES.forEach((size, idx) => {
-    const bomId = `bom_${idx + 22}`
-    const scale = sizeScales[size]
-    
-    // Silk velvet
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_3", // Silk - Ruby Red
-      quantity_per_unit: parseFloat((3.0 + scale * 0.5).toFixed(2)),
-      unit: "METER",
-      garment_piece: "SHIRT",
-      sequence_order: 1,
-      notes: `Luxurious silk - Size ${size}`,
-    })
-
-    // Crystal embellishments
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_12", // Sequins - Gold (using as crystal placeholder)
-      quantity_per_unit: Math.round(400 + scale * 80),
-      unit: "PIECE",
-      garment_piece: "SHIRT",
-      sequence_order: 2,
-      notes: `Crystal work - Size ${size}`,
-    })
-
-    // Zari thread
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_11", // Zari Thread - Gold
-      quantity_per_unit: Math.round(300 + scale * 70),
-      unit: "GRAM",
-      garment_piece: "SHIRT",
-      sequence_order: 3,
-      notes: `Premium embroidery - Size ${size}`,
-    })
-  })
-
-  // === AZURE DREAM (prod_5) BOMs - Casual summer with floral ===
-  ALL_SIZES.forEach((size, idx) => {
-    const bomId = `bom_${idx + 29}`
-    const scale = sizeScales[size]
-    
-    // Cotton lawn
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_6", // Lawn - Emerald Green (reusing as blue placeholder)
-      quantity_per_unit: parseFloat((2.2 + scale * 0.3).toFixed(2)),
-      unit: "METER",
-      garment_piece: "SHIRT",
-      sequence_order: 1,
-      notes: `Summer cotton - Size ${size}`,
-    })
-
-    // Embroidery thread
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_11", // Zari Thread - Gold
-      quantity_per_unit: Math.round(150 + scale * 30),
-      unit: "GRAM",
-      garment_piece: "SHIRT",
-      sequence_order: 2,
-      notes: `Floral embroidery - Size ${size}`,
-    })
-
-    // Buttons
-    items.push({
-      id: `bom_item_${itemId++}`,
-      bom_id: bomId,
-      inventory_item_id: "inv_10", // Buttons - White Pearl
-      quantity_per_unit: 6,
-      unit: "PIECE",
-      garment_piece: "SHIRT",
-      sequence_order: 3,
-      notes: `Button closure - Size ${size}`,
+    // Generate items for each piece
+    allPieces.forEach((piece, pieceIdx) => {
+      // Add 1-3 materials per piece
+      const materialsPerPiece = piece === "pouch" ? 1 : (pieceIdx % 2 === 0 ? 3 : 2)
+      
+      for (let i = 0; i < materialsPerPiece; i++) {
+        items.push({
+          id: `bom_item_${itemId++}`,
+          bom_id: bom.id,
+          inventory_item_id: `inv_${(pieceIdx * 3 + i) % 12 + 1}`,
+          quantity_per_unit: parseFloat((2.0 + scale * 0.3 + i * 0.5).toFixed(2)),
+          unit: i === 0 ? "METER" : (i === 1 ? "GRAM" : "PIECE"),
+          piece: piece, // Link to piece type
+          sequence_order: i + 1,
+          notes: `Material ${i + 1} for ${piece} - Size ${bom.size}`,
+        })
+      }
     })
   })
 
@@ -354,59 +402,57 @@ export const mockBOMItems = generateBOMItems()
 
 // ==================== HELPER FUNCTIONS ====================
 
-/**
- * Get active BOM for a product and specific size
- */
 export function getActiveBOM(productId, size) {
-  return mockBOMs.find((bom) => bom.product_id === productId && bom.size === size && bom.is_active)
+  return mockBOMs.find(
+    (bom) => bom.product_id === productId && bom.size === size && bom.is_active
+  )
 }
 
-/**
- * Get all active BOMs for a product (across all sizes)
- */
 export function getAllActiveBOMs(productId) {
   return mockBOMs.filter((bom) => bom.product_id === productId && bom.is_active)
 }
 
-/**
- * Get BOM items for a specific BOM
- */
 export function getBOMItems(bomId) {
   return mockBOMItems.filter((item) => item.bom_id === bomId)
 }
 
-/**
- * Get all BOMs for a product, optionally filtered by size
- */
+export function getBOMItemsByPiece(bomId, piece) {
+  return mockBOMItems.filter((item) => item.bom_id === bomId && item.piece === piece)
+}
+
 export function getProductBOMs(productId, size = null) {
   let boms = mockBOMs.filter((bom) => bom.product_id === productId)
-
   if (size) {
     boms = boms.filter((bom) => bom.size === size)
   }
-
   return boms.sort((a, b) => {
-    if (a.size !== b.size) {
-      return a.size.localeCompare(b.size)
-    }
+    if (a.size !== b.size) return a.size.localeCompare(b.size)
     return b.version - a.version
   })
 }
 
-/**
- * Get available sizes for a product
- */
 export function getAvailableSizes(productId) {
   const productBOMs = mockBOMs.filter((bom) => bom.product_id === productId)
   const sizes = [...new Set(productBOMs.map((bom) => bom.size))]
   return sizes.sort()
 }
 
-/**
- * Generate next version number for a product+size combination
- */
 export function getNextVersionNumber(productId, size) {
-  const existingBOMs = mockBOMs.filter((bom) => bom.product_id === productId && bom.size === size)
+  const existingBOMs = mockBOMs.filter(
+    (bom) => bom.product_id === productId && bom.size === size
+  )
   if (existingBOMs.length === 0) return 1
   return Math.max(...existingBOMs.map((bom) => bom.version)) + 1
+}
+
+/**
+ * Get all pieces for a product (for BOM section creation)
+ */
+export function getProductPieces(productId) {
+  const product = mockProducts.find((p) => p.id === productId)
+  if (!product) return []
+  return [
+    ...product.product_items.map((i) => i.piece),
+    ...product.add_ons.map((a) => a.piece),
+  ]
 }
