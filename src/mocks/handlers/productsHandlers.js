@@ -10,7 +10,6 @@ import {
   getProductBOMs,
   getAvailableSizes,
   getNextVersionNumber,
-  STANDARD_SIZES,
 } from "../data/mockProducts"
 
 // ==================== PRODUCTS HANDLERS ====================
@@ -116,6 +115,13 @@ export const productsHandlers = [
       )
     }
 
+    // Calculate totals from product_items and add_ons
+    const productItems = body.product_items || []
+    const addOns = body.add_ons || []
+    const subtotal = [...productItems, ...addOns].reduce((sum, item) => sum + (item.price || 0), 0)
+    const discount = body.discount || 0
+    const totalPrice = subtotal - discount
+
     const newProduct = {
       id: `prod_${Math.max(...mockProducts.map((p) => parseInt(p.id.split("_")[1])), 0) + 1}`,
       name: body.name,
@@ -125,9 +131,15 @@ export const productsHandlers = [
       active: body.is_active !== undefined ? body.is_active : true,
       shopify_product_id: body.shopify_product_id || null,
       shopify_variant_id: body.shopify_variant_id || null,
-      images: body.images || [],
       primary_image: body.image_url || null,
-      base_price: body.base_price || 0,
+
+      // New structure
+      product_items: productItems,
+      add_ons: addOns,
+      subtotal: subtotal,
+      discount: discount,
+      total_price: totalPrice,
+
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -164,13 +176,59 @@ export const productsHandlers = [
 
     const product = mockProducts[productIndex]
 
+    // If product_items or add_ons changed, recalculate totals
+    let subtotal = product.subtotal
+    let totalPrice = product.total_price
+
+    if (body.product_items !== undefined || body.add_ons !== undefined) {
+      const productItems =
+        body.product_items !== undefined ? body.product_items : product.product_items
+      const addOns = body.add_ons !== undefined ? body.add_ons : product.add_ons
+      subtotal = [...productItems, ...addOns].reduce((sum, item) => sum + (item.price || 0), 0)
+      const discount = body.discount !== undefined ? body.discount : product.discount
+      totalPrice = subtotal - discount
+    } else if (body.discount !== undefined) {
+      totalPrice = subtotal - body.discount
+    }
+
+    // Check if removing items that have BOM data
+    if (body.product_items !== undefined || body.add_ons !== undefined) {
+      const oldPieces = [
+        ...product.product_items.map((i) => i.piece),
+        ...product.add_ons.map((a) => a.piece),
+      ]
+      const newProductItems =
+        body.product_items !== undefined ? body.product_items : product.product_items
+      const newAddOns = body.add_ons !== undefined ? body.add_ons : product.add_ons
+      const newPieces = [...newProductItems.map((i) => i.piece), ...newAddOns.map((a) => a.piece)]
+
+      const removedPieces = oldPieces.filter((p) => !newPieces.includes(p))
+
+      // Remove BOM items for removed pieces
+      if (removedPieces.length > 0) {
+        const productBOMs = mockBOMs.filter((b) => b.product_id === id)
+        productBOMs.forEach((bom) => {
+          // Update BOM pieces array
+          bom.pieces = bom.pieces.filter((p) => !removedPieces.includes(p))
+
+          // Remove BOM items for removed pieces
+          const itemsToRemove = mockBOMItems.filter(
+            (item) => item.bom_id === bom.id && removedPieces.includes(item.piece)
+          )
+          itemsToRemove.forEach((item) => {
+            const idx = mockBOMItems.findIndex((i) => i.id === item.id)
+            if (idx !== -1) mockBOMItems.splice(idx, 1)
+          })
+        })
+      }
+    }
+
     mockProducts[productIndex] = {
       ...product,
       name: body.name !== undefined ? body.name : product.name,
       description: body.description !== undefined ? body.description : product.description,
       category: body.category !== undefined ? body.category : product.category,
       active: body.is_active !== undefined ? body.is_active : product.active,
-      base_price: body.base_price !== undefined ? body.base_price : product.base_price,
       primary_image: body.image_url !== undefined ? body.image_url : product.primary_image,
       shopify_product_id:
         body.shopify_product_id !== undefined
@@ -180,6 +238,14 @@ export const productsHandlers = [
         body.shopify_variant_id !== undefined
           ? body.shopify_variant_id
           : product.shopify_variant_id,
+
+      // New structure
+      product_items: body.product_items !== undefined ? body.product_items : product.product_items,
+      add_ons: body.add_ons !== undefined ? body.add_ons : product.add_ons,
+      subtotal: subtotal,
+      discount: body.discount !== undefined ? body.discount : product.discount,
+      total_price: totalPrice,
+
       updated_at: new Date().toISOString(),
     }
 
@@ -342,75 +408,53 @@ export const productsHandlers = [
     })
   }),
 
-  // POST /products/:productId/boms - Create new BOM (SIZE REQUIRED)
+  // POST /products/:productId/boms - Create new BOM
   http.post(`${appConfig.apiBaseUrl}/products/:productId/boms`, async ({ params, request }) => {
     await new Promise((resolve) => setTimeout(resolve, 400))
 
     const { productId } = params
     const body = await request.json()
 
-    // Verify product exists
+    // Find product
     const product = mockProducts.find((p) => p.id === productId)
     if (!product) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "Product not found",
-        },
-        { status: 404 }
-      )
+      return HttpResponse.json({ success: false, error: "Product not found" }, { status: 404 })
     }
 
-    // NEW: Validate size is provided
+    // Validation
     if (!body.size) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "Size is required",
-          message: "Please specify a size for this BOM (XS, S, M, L, XL, XXL, or CUSTOM)",
-        },
-        { status: 400 }
-      )
+      return HttpResponse.json({ success: false, error: "Size is required" }, { status: 400 })
     }
 
-    // NEW: Validate size is valid
-    const validSizes = [...STANDARD_SIZES, "CUSTOM"]
-    if (!validSizes.includes(body.size)) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "Invalid size",
-          message: `Size must be one of: ${validSizes.join(", ")}`,
-        },
-        { status: 400 }
-      )
+    // Get pieces from product (auto-populate)
+    const pieces = [
+      ...product.product_items.map((i) => i.piece),
+      ...product.add_ons.map((a) => a.piece),
+    ]
+
+    // Get next version number
+    const existingBOMs = mockBOMs.filter((b) => b.product_id === productId && b.size === body.size)
+    const nextVersion =
+      existingBOMs.length > 0 ? Math.max(...existingBOMs.map((b) => b.version)) + 1 : 1
+
+    // If setting as active, deactivate others for same size
+    if (body.is_active) {
+      existingBOMs.forEach((bom) => {
+        bom.is_active = false
+      })
     }
-
-    // NEW: Generate version number for this product+size combination
-    const version = getNextVersionNumber(productId, body.size)
-
-    // NEW: Auto-generate name if not provided
-    const autoName = `Size ${body.size} - Version ${version}`
 
     const newBOM = {
-      id: `bom_${Math.max(...mockBOMs.map((b) => parseInt(b.id.split("_")[1])), 0) + 1}`,
+      id: `bom_${Date.now()}`,
       product_id: productId,
-      size: body.size, // NEW: Size field
-      version: version,
+      size: body.size,
+      version: nextVersion,
+      name: body.name || `Size ${body.size} - Version ${nextVersion}`,
       is_active: body.is_active || false,
-      name: body.name || autoName, // Use auto-generated name if not provided
       notes: body.notes || "",
+      pieces: pieces, // Auto-populated from product
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    }
-
-    // NEW: If setting as active, deactivate OTHER BOMs for SAME product+size combination
-    if (newBOM.is_active) {
-      mockBOMs.forEach((bom) => {
-        if (bom.product_id === productId && bom.size === body.size && bom.id !== newBOM.id) {
-          bom.is_active = false
-        }
-      })
     }
 
     mockBOMs.push(newBOM)
@@ -553,39 +597,30 @@ export const productsHandlers = [
     const { bomId } = params
     const body = await request.json()
 
-    // Verify BOM exists
     const bom = mockBOMs.find((b) => b.id === bomId)
     if (!bom) {
-      return HttpResponse.json(
-        {
-          success: false,
-          error: "BOM not found",
-        },
-        { status: 404 }
-      )
+      return HttpResponse.json({ success: false, error: "BOM not found" }, { status: 404 })
     }
 
     // Validation
-    if (!body.inventory_item_id || !body.quantity_per_unit || !body.unit) {
+    if (!body.inventory_item_id || !body.quantity_per_unit || !body.unit || !body.piece) {
       return HttpResponse.json(
         {
           success: false,
-          error: "Missing required fields",
-          message: "inventory_item_id, quantity_per_unit, and unit are required",
+          error: "inventory_item_id, quantity_per_unit, unit, and piece are required",
         },
         { status: 400 }
       )
     }
 
     const newItem = {
-      id: `bom_item_${Math.max(...mockBOMItems.map((i) => parseInt(i.id.split("_")[2])), 0) + 1}`,
+      id: `bom_item_${Date.now()}`,
       bom_id: bomId,
-      inventory_item_id: body.inventory_item_id,
-      quantity_per_unit: body.quantity_per_unit,
+      inventory_item_id: body.inventory_item_id.toString(),
+      quantity_per_unit: parseFloat(body.quantity_per_unit),
       unit: body.unit,
-      garment_piece: body.garment_piece || null,
-      sequence_order:
-        body.sequence_order || mockBOMItems.filter((i) => i.bom_id === bomId).length + 1,
+      piece: body.piece, // Required now
+      sequence_order: body.sequence_order || 1,
       notes: body.notes || "",
     }
 
