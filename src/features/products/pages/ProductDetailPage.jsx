@@ -1,13 +1,20 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { useProduct, useDeleteProduct, useProductBOMs } from "../../../hooks/useProducts"
 import { getPieceLabel, isMainGarment, isAddOn } from "@/constants/productConstants"
 import { Button } from "../../../components/ui/button"
-import { Card, CardContent, CardHeader } from "../../../components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardDescription,
+  CardTitle,
+} from "../../../components/ui/card"
 import { Badge } from "../../../components/ui/badge"
 import { Skeleton } from "../../../components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
+import { Ruler } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +27,9 @@ import {
 } from "../../../components/ui/alert-dialog"
 import { toast } from "sonner"
 import BOMVersionsList from "../components/BOMVersionsList"
-
+import { ProductSizeChartEditor } from "../components/ProductSizeChartEditor"
+import { ProductHeightChartEditor } from "../components/ProductHeightChartEditor"
+import { useProductMeasurementCharts } from "../../../hooks/useProducts"
 export default function ProductDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -29,6 +38,12 @@ export default function ProductDetailPage() {
 
   const { data: productResponse, isLoading, error } = useProduct(id)
   const deleteProductMutation = useDeleteProduct()
+
+  // Fetch measurement charts to check if they exist
+  const { data: chartsData } = useProductMeasurementCharts(id, {
+    enabled: !!id,
+  })
+  const measurementCharts = chartsData?.data
 
   // Fetch all BOMs for this product to check if deletion is allowed
   const { data: bomsResponse } = useProductBOMs(id, null)
@@ -66,6 +81,21 @@ export default function ProductDetailPage() {
       // Error toast already shown by mutation
     }
   }
+
+  // Show toast if measurement charts are missing
+  useEffect(() => {
+    if (product && measurementCharts !== undefined) {
+      const hasSizeChart = measurementCharts?.has_size_chart
+      const hasHeightChart = measurementCharts?.has_height_chart
+
+      if (!hasSizeChart) {
+        toast.warning(
+          "This product needs a measurement size chart to generate standard customer order forms. Please create one in the Measurement Charts tab.",
+          { duration: 6000, id: "missing-size-chart" }
+        )
+      }
+    }
+  }, [product, measurementCharts])
 
   // Loading state
   if (isLoading) {
@@ -222,6 +252,10 @@ export default function ProductDetailPage() {
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="versions">BOM Versions</TabsTrigger>
+              <TabsTrigger value="measurements">
+                <Ruler className="h-4 w-4 mr-1" />
+                Measurements
+              </TabsTrigger>
             </TabsList>
           </CardHeader>
 
@@ -291,6 +325,50 @@ export default function ProductDetailPage() {
             {/* BOM Versions Tab - ONLY THIS ONE! */}
             <TabsContent value="versions" className="mt-0">
               <BOMVersionsList productId={id} />
+            </TabsContent>
+
+            {/* Measurement Charts Tab */}
+            <TabsContent value="measurements" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Measurement Charts</CardTitle>
+                  <CardDescription>
+                    Define size and height measurements specific to this product. These are used
+                    when generating standard customer order forms.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Status indicators */}
+                  <div className="flex gap-4 mb-6">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-3 h-3 rounded-full ${measurementCharts?.has_size_chart ? "bg-green-500" : "bg-yellow-500"}`}
+                      />
+                      <span className="text-sm">
+                        Size Chart:{" "}
+                        {measurementCharts?.has_size_chart ? "Configured" : "Not configured"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-3 h-3 rounded-full ${measurementCharts?.has_height_chart ? "bg-green-500" : "bg-gray-300"}`}
+                      />
+                      <span className="text-sm">
+                        Height Chart:{" "}
+                        {measurementCharts?.has_height_chart
+                          ? "Configured"
+                          : "Not configured (optional)"}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Size Chart Editor */}
+              <ProductSizeChartEditor productId={id} productName={product.name} />
+
+              {/* Height Chart Editor */}
+              <ProductHeightChartEditor productId={id} productName={product.name} />
             </TabsContent>
           </CardContent>
         </Tabs>

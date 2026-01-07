@@ -62,48 +62,48 @@ export const deleteProduct = async (productId) => {
 
 /**
  * Get all BOMs for a product, optionally filtered by size
- * 
+ *
  * @param {string} productId - Product ID
  * @param {string} [size] - Optional size filter (XS, S, M, L, XL, XXL, CUSTOM)
  * @returns {Promise} Response with BOMs array and available_sizes
- * 
+ *
  * Examples:
  * - getProductBOMs("prod_1") → All BOMs for product (all sizes)
  * - getProductBOMs("prod_1", "M") → Only Size M BOMs
  */
 export const getProductBOMs = async (productId, size = null) => {
   let url = `/products/${productId}/boms`
-  
+
   if (size) {
     url += `?size=${size}`
   }
-  
+
   const response = await httpClient.get(url)
   return response
 }
 
 /**
  * Get active BOM(s) for a product
- * 
+ *
  * NEW BEHAVIOR:
  * - If size is provided: Returns single active BOM for that size
  * - If size is NOT provided: Returns all active BOMs (one per size)
- * 
+ *
  * @param {string} productId - Product ID
  * @param {string} [size] - Optional size (XS, S, M, L, XL, XXL, CUSTOM)
  * @returns {Promise} Active BOM(s) with items
- * 
+ *
  * Examples:
  * - getActiveBOM("prod_1", "M") → Active BOM for Size M only
  * - getActiveBOM("prod_1") → All active BOMs (array)
  */
 export const getActiveBOM = async (productId, size = null) => {
   let url = `/products/${productId}/boms/active`
-  
+
   if (size) {
     url += `?size=${size}`
   }
-  
+
   const response = await httpClient.get(url)
   return response
 }
@@ -118,16 +118,16 @@ export const getBOM = async (bomId) => {
 
 /**
  * Create a new BOM for a product
- * 
+ *
  * NEW REQUIREMENT: bomData must include `size` field
- * 
+ *
  * @param {string} productId - Product ID
  * @param {Object} bomData - BOM data
  * @param {string} bomData.size - REQUIRED: Size code (XS, S, M, L, XL, XXL, CUSTOM)
  * @param {string} [bomData.name] - Optional: Auto-generated if not provided
  * @param {boolean} [bomData.is_active] - Optional: Default false
  * @param {string} [bomData.notes] - Optional: Notes
- * 
+ *
  * Example:
  * createBOM("prod_1", {
  *   size: "M",
@@ -143,7 +143,7 @@ export const createBOM = async (productId, bomData) => {
 
 /**
  * Update a BOM
- * 
+ *
  * NOTE: Cannot change `size` or `version` after creation
  * Activating a BOM will deactivate other BOMs for the SAME product+size only
  */
@@ -192,4 +192,61 @@ export const updateBOMItem = async (bomId, itemId, updates) => {
 export const deleteBOMItem = async (bomId, itemId) => {
   const response = await httpClient.delete(`/boms/${bomId}/items/${itemId}`)
   return response
+}
+
+/**
+ * Get product measurement charts
+ * @param {string} productId - Product ID
+ * @returns {Promise} Response containing measurement charts
+ */
+export async function getProductMeasurementCharts(productId) {
+  return httpClient.get(`/products/${productId}/measurement-charts`)
+}
+
+/**
+ * Update product size chart
+ * @param {string} productId - Product ID
+ * @param {Object} data - { rows: [], enabled_fields: [] }
+ * @returns {Promise} Response containing updated charts
+ */
+export async function updateProductSizeChart(productId, data) {
+  return httpClient.put(`/products/${productId}/measurement-charts/size-chart`, data)
+}
+
+/**
+ * Update product height chart
+ * @param {string} productId - Product ID
+ * @param {Object} data - { rows: [], enabled_fields: [] }
+ * @returns {Promise} Response containing updated charts
+ */
+export async function updateProductHeightChart(productId, data) {
+  return httpClient.put(`/products/${productId}/measurement-charts/height-chart`, data)
+}
+
+/**
+ * Initialize measurement charts from template
+ * @param {string} productId - Product ID
+ * @param {Object} options - { initialize_size_chart: boolean, initialize_height_chart: boolean, enabled_size_fields: [], enabled_height_fields: [] }
+ * @returns {Promise} Response containing initialized charts
+ */
+export async function initializeProductMeasurementCharts(productId, options = {}) {
+  return httpClient.post(`/products/${productId}/measurement-charts/initialize`, options)
+}
+
+/**
+ * Remove product size chart
+ * @param {string} productId - Product ID
+ * @returns {Promise} Response
+ */
+export async function removeProductSizeChart(productId) {
+  return httpClient.delete(`/products/${productId}/measurement-charts/size-chart`)
+}
+
+/**
+ * Remove product height chart
+ * @param {string} productId - Product ID
+ * @returns {Promise} Response
+ */
+export async function removeProductHeightChart(productId) {
+  return httpClient.delete(`/products/${productId}/measurement-charts/height-chart`)
 }

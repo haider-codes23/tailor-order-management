@@ -67,6 +67,12 @@ export {
   useCreateBOMItem,
   useUpdateBOMItem,
   useDeleteBOMItem,
+   // Measurement Charts (NEW)
+  useProductMeasurementCharts,
+  useUpdateProductSizeChart,
+  useUpdateProductHeightChart,
+  useInitializeProductMeasurementCharts,
+
   // Keys
   productKeys,
 } from "./useProducts"

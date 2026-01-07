@@ -1,9 +1,10 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useForm, Controller } from "react-hook-form"
 import { useOrder, useOrderItem, useGenerateOrderForm } from "@/hooks/useOrders"
 import { useProduct } from "@/hooks/useProducts"
 import { useStandardSizeChart, useStandardHeightChart } from "@/hooks"
+import { useProductMeasurementCharts } from "@/hooks/useProducts"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { SIZE_TYPE, CUSTOMIZATION_TYPE } from "@/constants/orderConstants"
 import {
@@ -39,12 +40,21 @@ export default function OrderFormGeneratorPage() {
 
   const { data: orderData, isLoading: orderLoading } = useOrder(orderId)
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
-  const { data: sizeChartData } = useStandardSizeChart()
-  const { data: heightChartData } = useStandardHeightChart()
-  const generateForm = useGenerateOrderForm()
 
   const order = orderData
   const item = itemData?.data
+  // Fetch product-specific measurement charts
+  const { data: productChartsData, isLoading: chartsLoading } = useProductMeasurementCharts(
+    item?.productId,
+    { enabled: !!item?.productId }
+  )
+
+  const productCharts = productChartsData?.data
+  const sizeChartData = productCharts?.size_chart
+  const heightChartData = productCharts?.height_chart
+  const hasSizeChart = productCharts?.has_size_chart
+  const hasHeightChart = productCharts?.has_height_chart
+  const generateForm = useGenerateOrderForm()
 
   // Fetch product details - only when item is loaded
   const { data: productData } = useProduct(item?.productId, {
@@ -67,34 +77,47 @@ export default function OrderFormGeneratorPage() {
 
   const isStandardSize = item?.sizeType === SIZE_TYPE.STANDARD
 
-  // Get standard size measurements from chart
-  // Get standard size measurements from chart - convert rows array to object
+  // Get product-specific size measurements from chart
   const sizeChartRows = sizeChartData?.rows || []
-const sizeRow = sizeChartRows.find((row) => row.size_code === item?.size)
-// Separate body measurements from size info
-const { id, size_code, sequence, uk_size, us_size, ...bodyMeasurements } = sizeRow || {}
-const standardSizeMeasurements = bodyMeasurements
-const sizeInfo = { uk_size, us_size }
+  const sizeRow = sizeChartRows.find((row) => row.size_code === item?.size)
 
-const heightChartRows = heightChartData?.rows || []
-// Match height - try exact match first, then flexible match
-const heightRow = order?.clientHeight
-  ? heightChartRows.find((row) => {
-      // Exact match
-      if (row.height_range === order.clientHeight) return true
-      // Flexible match - normalize both strings for comparison
-      const normalizeHeight = (str) => str?.toLowerCase().replace(/['"\s-]/g, '') || ''
-      return normalizeHeight(row.height_range) === normalizeHeight(order.clientHeight)
+  // Get enabled fields for this product
+  const enabledSizeFields = productCharts?.enabled_size_fields || []
+
+  // Extract only enabled measurement fields
+  const standardSizeMeasurements = {}
+  if (sizeRow && enabledSizeFields.length > 0) {
+    enabledSizeFields.forEach((field) => {
+      if (sizeRow[field] !== undefined && sizeRow[field] !== null) {
+        standardSizeMeasurements[field] = sizeRow[field]
+      }
     })
-  : null
-// Extract only measurement fields from height row
-const heightMeasurements = heightRow
-  ? { 
-      kaftan_length: heightRow.kaftan_length, 
-      sleeve_front: heightRow.sleeve_front_length, 
-      sleeve_back: heightRow.sleeve_back_length 
-    }
-  : null
+  }
+  const sizeInfo = sizeRow ? { uk_size: sizeRow.uk_size, us_size: sizeRow.us_size } : {}
+
+  const heightChartRows = heightChartData?.rows || []
+  const enabledHeightFields = productCharts?.enabled_height_fields || []
+
+  // Match height - try exact match first, then flexible match
+  const heightRow =
+    order?.clientHeight && hasHeightChart
+      ? heightChartRows.find((row) => {
+          if (row.height_range === order.clientHeight) return true
+          const normalizeHeight = (str) => str?.toLowerCase().replace(/['"\s-]/g, "") || ""
+          return normalizeHeight(row.height_range) === normalizeHeight(order.clientHeight)
+        })
+      : null
+
+  // Extract only enabled height measurement fields
+  const heightMeasurements = {}
+  if (heightRow && enabledHeightFields.length > 0) {
+    enabledHeightFields.forEach((field) => {
+      if (heightRow[field] !== undefined && heightRow[field] !== null) {
+        heightMeasurements[field] = heightRow[field]
+      }
+    })
+  }
+  const hasHeightMeasurements = Object.keys(heightMeasurements).length > 0
 
   // Handle category toggle for custom measurements
   const handleCategoryToggle = (categoryId) => {
@@ -102,6 +125,20 @@ const heightMeasurements = heightRow
       prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId]
     )
   }
+
+  // Show toast if product doesn't have measurement charts configured
+  useEffect(() => {
+    if (item && productCharts !== undefined && isStandardSize) {
+      if (!hasSizeChart) {
+        toast.warning(
+          "This product doesn't have a measurement size chart configured. The order form will be generated without standard measurements. Please configure measurements in Products → " +
+            (product?.name || item?.productName) +
+            " → Measurements tab.",
+          { duration: 8000, id: "no-size-chart" }
+        )
+      }
+    }
+  }, [item, productCharts, isStandardSize, hasSizeChart, product?.name, item?.productName])
 
   const onSubmit = async (data) => {
     try {
@@ -130,14 +167,12 @@ const heightMeasurements = heightRow
       if (isStandardSize) {
         formData.measurements = {
           ...standardSizeMeasurements,
-          ...(heightMeasurements && {
-            kaftan_length: heightMeasurements.kaftan_length,
-            sleeve_front: heightMeasurements.sleeve_front,
-            sleeve_back: heightMeasurements.sleeve_back,
-          }),
+          ...(hasHeightMeasurements && heightMeasurements),
         }
-        formData.standardSizeChart = standardSizeMeasurements
-        formData.heightChart = heightMeasurements
+        formData.standardSizeChart = hasSizeChart ? standardSizeMeasurements : null
+        formData.heightChart = hasHeightMeasurements ? heightMeasurements : null
+        formData.hasSizeChart = hasSizeChart
+        formData.hasHeightChart = hasHeightChart && hasHeightMeasurements
       } else {
         formData.measurements = data.measurements
         formData.selectedCategories = selectedCategories
@@ -528,7 +563,7 @@ const heightMeasurements = heightRow
     product?.images?.[0] ||
     item?.productImage
 
-  if (orderLoading || itemLoading) {
+  if (orderLoading || itemLoading || chartsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -611,69 +646,82 @@ const heightMeasurements = heightRow
         </Card>
 
         {/* Standard Size Measurements */}
+        {/* Standard Size Measurements */}
         {isStandardSize && (
-  <>
-    <Card>
-      <CardHeader>
-        <CardTitle>Standard Size Measurements</CardTitle>
-        <CardDescription>
-          Pre-filled from the size chart for size {item.size}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Object.entries(standardSizeMeasurements).map(([key, value]) => (
-            <div key={key}>
-              <p className="text-sm text-muted-foreground capitalize">
-                {key.replace(/_/g, " ")}
-              </p>
-              <p className="font-medium">{value}"</p>
-            </div>
-          ))}
-          {sizeInfo.uk_size && (
-            <div>
-              <p className="text-sm text-muted-foreground">UK Size</p>
-              <p className="font-medium">{sizeInfo.uk_size}</p>
-            </div>
-          )}
-          {sizeInfo.us_size && (
-            <div>
-              <p className="text-sm text-muted-foreground">US Size</p>
-              <p className="font-medium">{sizeInfo.us_size}</p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          <>
+            {hasSizeChart && Object.keys(standardSizeMeasurements).length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Standard Size Measurements</CardTitle>
+                  <CardDescription>
+                    Product-specific measurements for size {item.size}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {Object.entries(standardSizeMeasurements).map(([key, value]) => (
+                      <div key={key}>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {key.replace(/_/g, " ")}
+                        </p>
+                        <p className="font-medium">{value}"</p>
+                      </div>
+                    ))}
+                    {sizeInfo.uk_size && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">UK Size</p>
+                        <p className="font-medium">{sizeInfo.uk_size}</p>
+                      </div>
+                    )}
+                    {sizeInfo.us_size && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">US Size</p>
+                        <p className="font-medium">{sizeInfo.us_size}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardHeader>
+                  <CardTitle className="text-yellow-800">No Size Chart Configured</CardTitle>
+                  <CardDescription className="text-yellow-700">
+                    This product doesn't have a measurement size chart. The order form will be
+                    generated without standard measurements.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-yellow-600">
+                    To add measurements, go to Products → {product?.name || item?.productName} →
+                    Measurements tab.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-    {heightMeasurements && (
-      <Card>
-        <CardHeader>
-          <CardTitle>Height-Based Measurements</CardTitle>
-          <CardDescription>
-            Based on customer height: {order.clientHeight}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Kaftan Length</p>
-              <p className="font-medium">{heightMeasurements.kaftan_length}"</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Sleeve Front</p>
-              <p className="font-medium">{heightMeasurements.sleeve_front}"</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Sleeve Back</p>
-              <p className="font-medium">{heightMeasurements.sleeve_back}"</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )}
-  </>
-)}
+            {hasHeightChart && hasHeightMeasurements && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Height-Based Measurements</CardTitle>
+                  <CardDescription>Based on customer height: {order?.clientHeight}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {Object.entries(heightMeasurements).map(([key, value]) => (
+                      <div key={key}>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {key.replace(/_/g, " ")}
+                        </p>
+                        <p className="font-medium">{value}"</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
 
         {/* Custom Measurements */}
         {!isStandardSize && (

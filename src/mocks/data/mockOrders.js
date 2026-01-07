@@ -259,8 +259,8 @@ export let mockOrderItems = [
       waist: "27",
       blouse_length: "14",
     },
-    orderFormGenerated: true,
-    orderFormApproved: true,
+    orderFormGenerated: false,
+    orderFormApproved: false,
     timeline: [
       {
         id: "log-019",

@@ -84,19 +84,19 @@ export default function OrderItemDetailPage() {
   }
 
   // Get product image - check multiple sources
-  const productImage = product?.image || product?.primary_image || product?.image_url || 
-                       item.productImage || item.product?.image
+  const productImage =
+    product?.image ||
+    product?.primary_image ||
+    product?.image_url ||
+    item.productImage ||
+    item.product?.image
 
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(`/orders/${orderId}`)}
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate(`/orders/${orderId}`)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -184,16 +184,44 @@ export default function OrderItemDetailPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Style */}
+                {/* Style */}
                 <div>
                   <h4 className="font-medium flex items-center gap-2 mb-2">
                     <Scissors className="h-4 w-4" />
                     Style
                   </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {item.style?.type === CUSTOMIZATION_TYPE.ORIGINAL
-                      ? "Original style"
-                      : item.style?.details || "Custom style"}
-                  </p>
+                  {item.style?.type === CUSTOMIZATION_TYPE.ORIGINAL ? (
+                    <p className="text-sm text-muted-foreground">Original style</p>
+                  ) : (
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {typeof item.style?.details === "object" && item.style?.details !== null ? (
+                        <>
+                          {item.style.details.top && (
+                            <p>
+                              <span className="font-medium">Top:</span> {item.style.details.top}
+                            </p>
+                          )}
+                          {item.style.details.bottom && (
+                            <p>
+                              <span className="font-medium">Bottom:</span>{" "}
+                              {item.style.details.bottom}
+                            </p>
+                          )}
+                          {item.style.details.dupattaShawl && (
+                            <p>
+                              <span className="font-medium">Dupatta/Shawl:</span>{" "}
+                              {item.style.details.dupattaShawl}
+                            </p>
+                          )}
+                          {!item.style.details.top &&
+                            !item.style.details.bottom &&
+                            !item.style.details.dupattaShawl && <p>Custom style</p>}
+                        </>
+                      ) : (
+                        <p>{item.style?.details || "Custom style"}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Color */}
@@ -265,8 +293,7 @@ export default function OrderItemDetailPage() {
                   <div className="flex items-center gap-2 text-green-600">
                     <CheckCircle className="h-5 w-5" />
                     <span>
-                      Form generated on{" "}
-                      {new Date(item.orderForm?.generatedAt).toLocaleDateString()}
+                      Form generated on {new Date(item.orderForm?.generatedAt).toLocaleDateString()}
                     </span>
                   </div>
 
@@ -302,11 +329,7 @@ export default function OrderItemDetailPage() {
                   </div>
 
                   {canManageForms && (
-                    <Button
-                      onClick={() =>
-                        navigate(`/orders/${orderId}/items/${itemId}/form`)
-                      }
-                    >
+                    <Button onClick={() => navigate(`/orders/${orderId}/items/${itemId}/form`)}>
                       <FileText className="mr-2 h-4 w-4" />
                       Generate Order Form
                     </Button>
@@ -338,8 +361,7 @@ export default function OrderItemDetailPage() {
                       <div className="flex-1">
                         <p className="font-medium">{entry.action}</p>
                         <p className="text-sm text-muted-foreground">
-                          {entry.user} •{" "}
-                          {new Date(entry.timestamp).toLocaleString()}
+                          {entry.user} • {new Date(entry.timestamp).toLocaleString()}
                         </p>
                       </div>
                     </div>
