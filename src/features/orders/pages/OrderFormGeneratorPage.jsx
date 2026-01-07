@@ -99,12 +99,42 @@ export default function OrderFormGeneratorPage() {
   const enabledHeightFields = productCharts?.enabled_height_fields || []
 
   // Match height - try exact match first, then flexible match
+  // Match height - try exact match first, then flexible match
   const heightRow =
     order?.clientHeight && hasHeightChart
       ? heightChartRows.find((row) => {
+          // Exact match
           if (row.height_range === order.clientHeight) return true
-          const normalizeHeight = (str) => str?.toLowerCase().replace(/['"\s-]/g, "") || ""
-          return normalizeHeight(row.height_range) === normalizeHeight(order.clientHeight)
+
+          // Flexible match - convert both to comparable format
+          const normalizeHeight = (str) => {
+            if (!str) return ""
+            return (
+              str
+                .toLowerCase()
+                // Replace "ft" with "'" and "in" with nothing
+                .replace(/ft/g, "'")
+                .replace(/in/g, "")
+                // Remove all spaces, quotes, dashes
+                .replace(/['"\s-]/g, "")
+            )
+          }
+
+          // Also try extracting just the numbers for comparison
+          const extractNumbers = (str) => {
+            if (!str) return ""
+            // Extract all numbers from the string
+            const numbers = str.match(/\d+/g)
+            return numbers ? numbers.join("") : ""
+          }
+
+          const normalizedRow = normalizeHeight(row.height_range)
+          const normalizedOrder = normalizeHeight(order.clientHeight)
+
+          if (normalizedRow === normalizedOrder) return true
+
+          // Fallback: compare just the numbers (e.g., "5'0" - 5'2"" and "5ft0in-5ft2in" both have 50 52)
+          return extractNumbers(row.height_range) === extractNumbers(order.clientHeight)
         })
       : null
 
