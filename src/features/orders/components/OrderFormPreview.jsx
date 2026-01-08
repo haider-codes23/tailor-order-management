@@ -27,6 +27,11 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
 
   return (
     <div ref={ref} className="bg-white p-8 max-w-3xl mx-auto text-sm print:text-xs">
+      {/* Add this right after the opening <div ref={ref}> to debug */}
+      <pre className="text-xs bg-yellow-100 p-2 mb-4">
+        includedItems: {JSON.stringify(item?.includedItems)}
+        selectedAddOns: {JSON.stringify(item?.selectedAddOns)}
+      </pre>
       {/* Header */}
       <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-slate-900">ORDER CONFIRMATION FORM</h1>
@@ -35,9 +40,7 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
 
       {/* Basic Information */}
       <section className="mb-6">
-        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">
-          1. Basic Information
-        </h2>
+        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">1. Basic Information</h2>
         <div className="grid grid-cols-2 gap-4 px-3">
           <div>
             <span className="text-slate-500">Order No:</span>
@@ -60,9 +63,7 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
 
       {/* Client Information */}
       <section className="mb-6">
-        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">
-          2. Client Information
-        </h2>
+        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">2. Client Information</h2>
         <div className="grid grid-cols-2 gap-4 px-3">
           <div>
             <span className="text-slate-500">Client Name:</span>
@@ -113,11 +114,50 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
         </div>
       </section>
 
+      {/* What's Included */}
+      <section className="mb-6">
+        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">What's Included</h2>
+        <div className="px-3 grid grid-cols-2 gap-4">
+          <div>
+            <span className="text-slate-500">Included Items:</span>
+            {item?.includedItems && item.includedItems.length > 0 ? (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {item.includedItems.map((included, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded capitalize"
+                  >
+                    {included.piece}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="ml-2 text-slate-400">None</span>
+            )}
+          </div>
+          <div>
+            <span className="text-slate-500">Add-ons:</span>
+            {item?.selectedAddOns && item.selectedAddOns.length > 0 ? (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {item.selectedAddOns.map((addon, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded capitalize"
+                  >
+                    {addon.piece}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="ml-2 text-slate-400">None</span>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* Customizations */}
       <section className="mb-6">
-        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">
-          4. Customizations
-        </h2>
+        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">4. Customizations</h2>
         <div className="px-3 space-y-4">
           {/* Style */}
           <div>
@@ -125,13 +165,20 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
             {formData?.style?.type === CUSTOMIZATION_TYPE.CUSTOMIZED ? (
               <div className="mt-2 pl-4 border-l-2 border-slate-300">
                 {formData.style.details?.top && (
-                  <p><span className="text-slate-500">Top:</span> {formData.style.details.top}</p>
+                  <p>
+                    <span className="text-slate-500">Top:</span> {formData.style.details.top}
+                  </p>
                 )}
                 {formData.style.details?.bottom && (
-                  <p><span className="text-slate-500">Bottom:</span> {formData.style.details.bottom}</p>
+                  <p>
+                    <span className="text-slate-500">Bottom:</span> {formData.style.details.bottom}
+                  </p>
                 )}
                 {formData.style.details?.dupattaShawl && (
-                  <p><span className="text-slate-500">Dupatta/Shawl:</span> {formData.style.details.dupattaShawl}</p>
+                  <p>
+                    <span className="text-slate-500">Dupatta/Shawl:</span>{" "}
+                    {formData.style.details.dupattaShawl}
+                  </p>
                 )}
               </div>
             ) : (
@@ -200,9 +247,7 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
 
       {/* Shipping Details */}
       <section className="mb-6">
-        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">
-          6. Shipping Details
-        </h2>
+        <h2 className="text-lg font-semibold bg-slate-100 px-3 py-2 mb-3">6. Shipping Details</h2>
         <div className="px-3 space-y-2">
           <div>
             <span className="text-slate-500">Country:</span>
@@ -218,8 +263,8 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
       {/* Approval Section */}
       <section className="mt-8 pt-6 border-t-2 border-slate-300">
         <p className="text-center text-slate-600 mb-6">
-          Please confirm that all the above details are correct. If you have any changes,
-          please contact your consultant immediately.
+          Please confirm that all the above details are correct. If you have any changes, please
+          contact your consultant immediately.
         </p>
         <div className="grid grid-cols-2 gap-8 mt-8">
           <div>

@@ -178,6 +178,67 @@ export default function OrderItemDetailPage() {
               </CardContent>
             </Card>
           </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                What's Included
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Included Items */}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Included Items</p>
+                {item.includedItems && item.includedItems.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {item.includedItems.map((included, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 bg-green-100 text-green-800 text-sm rounded-full capitalize flex items-center gap-1"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        {included.piece}
+                        {included.price > 0 && (
+                          <span className="text-green-600 text-xs ml-1">
+                            PKR {included.price.toLocaleString()}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No included items specified</p>
+                )}
+              </div>
+
+              {/* Selected Add-ons */}
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Selected Add-ons</p>
+                {item.selectedAddOns && item.selectedAddOns.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {item.selectedAddOns.map((addon, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 bg-amber-100 text-amber-800 text-sm rounded-full capitalize flex items-center gap-1"
+                      >
+                        <CheckCircle className="h-3.5 w-3.5" />
+                        {addon.piece}
+                        {addon.price > 0 ? (
+                          <span className="text-amber-600 text-xs ml-1">
+                            +PKR {addon.price.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 text-xs ml-1">(Included)</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No add-ons selected</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Customizations */}
           <Card>

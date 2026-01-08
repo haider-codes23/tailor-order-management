@@ -426,6 +426,27 @@ export default function OrderFormGeneratorPage() {
             border-radius: 4px;
             font-size: 11px;
           }
+          .included-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+          }
+          .included-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: capitalize;
+          }
+          .included-badge.green {
+            background: #dcfce7;
+            color: #166534;
+          }
+          .included-badge.amber {
+            background: #fef3c7;
+            color: #92400e;
+          }
           @media print {
             body { padding: 0; }
             .section { break-inside: avoid; }
@@ -572,6 +593,36 @@ export default function OrderFormGeneratorPage() {
             </div>
           </div>
         </div>
+        
+        <div class="section">
+  <div class="section-title">What's Included</div>
+  <div class="grid-2">
+    <div class="field">
+      <label>Included Items:</label>
+      ${
+        item?.includedItems && item.includedItems.length > 0
+          ? `<div class="included-items">
+              ${item.includedItems
+                .map((included) => `<span class="included-badge green">${included.piece}</span>`)
+                .join("")}
+            </div>`
+          : `<p>None specified</p>`
+      }
+    </div>
+    <div class="field">
+      <label>Selected Add-ons:</label>
+      ${
+        item?.selectedAddOns && item.selectedAddOns.length > 0
+          ? `<div class="included-items">
+              ${item.selectedAddOns
+                .map((addon) => `<span class="included-badge amber">${addon.piece}</span>`)
+                .join("")}
+            </div>`
+          : `<p>No add-ons selected</p>`
+      }
+    </div>
+  </div>
+</div>
 
         <div class="section">
           <div class="section-title">Customization Options</div>
@@ -1308,6 +1359,52 @@ export default function OrderFormGeneratorPage() {
                     <span className="text-slate-600">Quantity:</span>
                     <p className="font-semibold text-slate-900">{item?.quantity || 1}</p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section: What's Included - ADD THIS AFTER PRODUCT INFO */}
+            <div className="bg-slate-50 rounded-lg p-4">
+              <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                What's Included
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Included Items */}
+                <div>
+                  <span className="text-slate-600 text-sm">Included Items:</span>
+                  {item?.includedItems && item.includedItems.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {item.includedItems.map((included, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full capitalize"
+                        >
+                          {included.piece}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">None specified</p>
+                  )}
+                </div>
+
+                {/* Selected Add-ons */}
+                <div>
+                  <span className="text-slate-600 text-sm">Selected Add-ons:</span>
+                  {item?.selectedAddOns && item.selectedAddOns.length > 0 ? (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {item.selectedAddOns.map((addon, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full capitalize"
+                        >
+                          {addon.piece}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">No add-ons selected</p>
+                  )}
                 </div>
               </div>
             </div>

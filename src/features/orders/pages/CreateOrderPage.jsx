@@ -7,6 +7,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
@@ -77,14 +78,19 @@ export default function CreateOrderPage() {
     },
   })
 
-  // Handle adding item
+  // Handle adding new item
   const handleAddItem = () => {
     setCurrentItem({
       productId: "",
       productName: "",
+      productImage: "",
+      productSku: "",
       sizeType: SIZE_TYPE.STANDARD,
       size: "",
       quantity: 1,
+      includedItems: [],
+      selectedAddOns: [],
+      availableAddOns: [],
     })
     setShowItemModal(true)
   }
@@ -100,17 +106,20 @@ export default function CreateOrderPage() {
       return
     }
 
-    const selectedProduct = products.find(
-      (p) => p.id.toString() === currentItem.productId
-    )
+    const selectedProduct = products.find((p) => p.id.toString() === currentItem.productId)
 
     setOrderItems([
       ...orderItems,
       {
         ...currentItem,
         id: Date.now(),
-        productName: selectedProduct?.name || "",
-        productImage: selectedProduct?.image || "",
+        productName: selectedProduct?.name || currentItem.productName,
+        productImage:
+          selectedProduct?.primary_image || selectedProduct?.image || currentItem.productImage,
+        productSku: selectedProduct?.sku || currentItem.productSku,
+        // Ensure these are included
+        includedItems: currentItem.includedItems || [],
+        selectedAddOns: currentItem.selectedAddOns || [],
       },
     ])
     setShowItemModal(false)
@@ -136,9 +145,13 @@ export default function CreateOrderPage() {
         items: orderItems.map((item) => ({
           productId: item.productId,
           productName: item.productName,
+          productImage: item.productImage, // ADD THIS
+          productSku: item.productSku, // ADD THIS
           sizeType: item.sizeType,
           size: item.size,
           quantity: item.quantity,
+          includedItems: item.includedItems || [], // ADD THIS
+          selectedAddOns: item.selectedAddOns || [], // ADD THIS
         })),
       }
 
@@ -159,9 +172,7 @@ export default function CreateOrderPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">Create New Order</h1>
-          <p className="text-muted-foreground">
-            Add a new manual order to the system
-          </p>
+          <p className="text-muted-foreground">Add a new manual order to the system</p>
         </div>
       </div>
 
@@ -181,18 +192,13 @@ export default function CreateOrderPage() {
                 placeholder="Enter customer name"
               />
               {errors.customerName && (
-                <p className="text-sm text-red-500 mt-1">
-                  {errors.customerName.message}
-                </p>
+                <p className="text-sm text-red-500 mt-1">{errors.customerName.message}</p>
               )}
             </div>
 
             <div>
               <Label>Destination (Country)</Label>
-              <Input
-                {...register("destination")}
-                placeholder="e.g., UAE, USA, UK"
-              />
+              <Input {...register("destination")} placeholder="e.g., UAE, USA, UK" />
             </div>
 
             <div className="md:col-span-2">
@@ -299,12 +305,7 @@ export default function CreateOrderPage() {
 
             <div>
               <Label>Total Amount</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("totalAmount")}
-                placeholder="0.00"
-              />
+              <Input type="number" step="0.01" {...register("totalAmount")} placeholder="0.00" />
             </div>
           </CardContent>
         </Card>
@@ -355,11 +356,7 @@ export default function CreateOrderPage() {
 
             <div className="md:col-span-3">
               <Label>Internal Notes</Label>
-              <Textarea
-                {...register("notes")}
-                placeholder="Add any internal notes"
-                rows={2}
-              />
+              <Textarea {...register("notes")} placeholder="Add any internal notes" rows={2} />
             </div>
           </CardContent>
         </Card>
@@ -377,12 +374,7 @@ export default function CreateOrderPage() {
             {orderItems.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>No items added yet</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAddItem}
-                  className="mt-2"
-                >
+                <Button type="button" variant="outline" onClick={handleAddItem} className="mt-2">
                   <Plus className="h-4 w-4 mr-2" />
                   Add First Item
                 </Button>
@@ -392,9 +384,9 @@ export default function CreateOrderPage() {
                 {orderItems.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className="flex items-start justify-between p-3 border rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       {item.productImage && (
                         <img
                           src={item.productImage}
@@ -402,15 +394,41 @@ export default function CreateOrderPage() {
                           className="w-12 h-12 object-cover rounded"
                         />
                       )}
-                      <div>
+                      <div className="space-y-1">
                         <p className="font-medium">{item.productName}</p>
                         <p className="text-sm text-muted-foreground">
                           Size: {item.size} | Type:{" "}
-                          {item.sizeType === SIZE_TYPE.STANDARD
-                            ? "Standard"
-                            : "Custom"}{" "}
-                          | Qty: {item.quantity}
+                          {item.sizeType === SIZE_TYPE.STANDARD ? "Standard" : "Custom"} | Qty:{" "}
+                          {item.quantity}
                         </p>
+
+                        {/* Show included items */}
+                        {item.includedItems && item.includedItems.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {item.includedItems.map((included, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded capitalize"
+                              >
+                                {included.piece}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Show selected add-ons */}
+                        {item.selectedAddOns && item.selectedAddOns.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {item.selectedAddOns.map((addon, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded capitalize"
+                              >
+                                + {addon.piece}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Button
@@ -430,11 +448,7 @@ export default function CreateOrderPage() {
 
         {/* Submit Buttons */}
         <div className="flex gap-4 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate(-1)}
-          >
+          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
             Cancel
           </Button>
           <Button type="submit" disabled={createOrder.isPending}>
@@ -455,24 +469,31 @@ export default function CreateOrderPage() {
 
       {/* Add Item Modal */}
       <Dialog open={showItemModal} onOpenChange={setShowItemModal}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Add Order Item</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+            {/* Product Selection */}
             <div>
               <Label>Product *</Label>
               <Select
                 value={currentItem.productId}
                 onValueChange={(value) => {
-                  const product = products.find(
-                    (p) => p.id.toString() === value
-                  )
+                  const product = products.find((p) => p.id.toString() === value)
                   setCurrentItem({
                     ...currentItem,
                     productId: value,
                     productName: product?.name || "",
+                    productImage: product?.primary_image || product?.image || "",
+                    productSku: product?.sku || "",
+                    // Auto-include all product_items
+                    includedItems: product?.product_items || [],
+                    // Reset add-ons selection
+                    selectedAddOns: [],
+                    // Store available add-ons for checkbox selection
+                    availableAddOns: product?.add_ons || [],
                   })
                 }}
               >
@@ -481,10 +502,7 @@ export default function CreateOrderPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
-                    <SelectItem
-                      key={product.id}
-                      value={product.id.toString()}
-                    >
+                    <SelectItem key={product.id} value={product.id.toString()}>
                       {product.name}
                     </SelectItem>
                   ))}
@@ -492,6 +510,69 @@ export default function CreateOrderPage() {
               </Select>
             </div>
 
+            {/* Show Included Items (read-only info) */}
+            {currentItem.includedItems && currentItem.includedItems.length > 0 && (
+              <div className="bg-slate-50 rounded-lg p-3">
+                <Label className="text-sm font-medium text-slate-700">Included Items</Label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  These items are included with this product
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {currentItem.includedItems.map((item, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full capitalize"
+                    >
+                      {item.piece}
+                      {item.price > 0 && ` - PKR ${item.price.toLocaleString()}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Show Add-ons (checkboxes) */}
+            {currentItem.availableAddOns && currentItem.availableAddOns.length > 0 && (
+              <div className="bg-amber-50 rounded-lg p-3">
+                <Label className="text-sm font-medium text-amber-800">Add-ons (Optional)</Label>
+                <p className="text-xs text-amber-600 mb-2">
+                  Select any additional items the customer wants
+                </p>
+                <div className="space-y-2">
+                  {currentItem.availableAddOns.map((addon, idx) => (
+                    <div key={idx} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`addon-${idx}`}
+                        checked={currentItem.selectedAddOns?.some((a) => a.piece === addon.piece)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setCurrentItem({
+                              ...currentItem,
+                              selectedAddOns: [...(currentItem.selectedAddOns || []), addon],
+                            })
+                          } else {
+                            setCurrentItem({
+                              ...currentItem,
+                              selectedAddOns: (currentItem.selectedAddOns || []).filter(
+                                (a) => a.piece !== addon.piece
+                              ),
+                            })
+                          }
+                        }}
+                      />
+                      <label htmlFor={`addon-${idx}`} className="text-sm capitalize cursor-pointer">
+                        {addon.piece}
+                        {addon.price > 0
+                          ? ` (+PKR ${addon.price.toLocaleString()})`
+                          : " (Included)"}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Size Type */}
             <div>
               <Label>Size Type</Label>
               <Select
@@ -508,22 +589,19 @@ export default function CreateOrderPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={SIZE_TYPE.STANDARD}>
-                    Standard Size
-                  </SelectItem>
+                  <SelectItem value={SIZE_TYPE.STANDARD}>Standard Size</SelectItem>
                   <SelectItem value={SIZE_TYPE.CUSTOM}>Custom Size</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Size */}
             <div>
               <Label>Size *</Label>
               {currentItem.sizeType === SIZE_TYPE.STANDARD ? (
                 <Select
                   value={currentItem.size}
-                  onValueChange={(value) =>
-                    setCurrentItem({ ...currentItem, size: value })
-                  }
+                  onValueChange={(value) => setCurrentItem({ ...currentItem, size: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select size" />
@@ -539,14 +617,13 @@ export default function CreateOrderPage() {
               ) : (
                 <Input
                   value={currentItem.size}
-                  onChange={(e) =>
-                    setCurrentItem({ ...currentItem, size: e.target.value })
-                  }
+                  onChange={(e) => setCurrentItem({ ...currentItem, size: e.target.value })}
                   placeholder="Enter custom size label"
                 />
               )}
             </div>
 
+            {/* Quantity */}
             <div>
               <Label>Quantity</Label>
               <Input

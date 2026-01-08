@@ -137,14 +137,18 @@ export const ordersHandlers = [
           sizeType: itemData.sizeType,
           size: itemData.size,
           quantity: itemData.quantity || 1,
+          includedItems: itemData.includedItems || [],
+          selectedAddOns: itemData.selectedAddOns || [],
           status: ORDER_ITEM_STATUS.RECEIVED,
-          style: { type: "original", details: {}, attachments: [] },
-          color: { type: "original", details: "", attachments: [] },
-          fabric: { type: "original", details: "", attachments: [] },
+          style: { type: "original", details: {}, attachments: [], image: null },
+          color: { type: "original", details: "", attachments: [], image: null },
+          fabric: { type: "original", details: "", attachments: [], image: null },
           measurementCategories: [],
           measurements: {},
           orderFormGenerated: false,
           orderFormApproved: false,
+          orderForm: null,
+          orderFormVersions: [],
           timeline: [
             {
               id: generateTimelineId(),
@@ -300,14 +304,18 @@ export const ordersHandlers = [
       sizeType: data.sizeType,
       size: data.size,
       quantity: data.quantity || 1,
+      includedItems: data.includedItems || [],
+      selectedAddOns: data.selectedAddOns || [],
       status: ORDER_ITEM_STATUS.RECEIVED,
-      style: { type: "original", details: {}, attachments: [] },
-      color: { type: "original", details: "", attachments: [] },
-      fabric: { type: "original", details: "", attachments: [] },
+      style: { type: "original", details: {}, attachments: [], image: null },
+      color: { type: "original", details: "", attachments: [], image: null },
+      fabric: { type: "original", details: "", attachments: [], image: null },
       measurementCategories: [],
       measurements: {},
       orderFormGenerated: false,
       orderFormApproved: false,
+      orderForm: null,
+      orderFormVersions: [],
       timeline: [
         {
           id: generateTimelineId(),
@@ -377,6 +385,8 @@ export const ordersHandlers = [
       generatedAt: now,
       generatedBy: data.generatedBy || "System",
       ...data,
+      includedItems: mockOrderItems[itemIndex].includedItems || [],
+      selectedAddOns: mockOrderItems[itemIndex].selectedAddOns || [],
     }
 
     // Get existing versions or create empty array

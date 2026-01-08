@@ -50,6 +50,12 @@ export let mockOrderItems = [
     orderFormApproved: true,
     orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [
+      { piece: "peshwas", price: 350000 },
+      { piece: "lehnga", price: 150000 },
+      { piece: "dupatta", price: 75000 },
+    ],
+    selectedAddOns: [{ piece: "pouch", price: 10000 }],
     timeline: [
       {
         id: "log-001",
@@ -127,6 +133,12 @@ export let mockOrderItems = [
     orderFormApproved: false,
     orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [
+      { piece: "peshwas", price: 350000 },
+      { piece: "lehnga", price: 150000 },
+      { piece: "dupatta", price: 75000 },
+    ],
+    selectedAddOns: [{ piece: "pouch", price: 10000 }],
     timeline: [
       {
         id: "log-010",
@@ -171,8 +183,10 @@ export let mockOrderItems = [
     measurements: {},
     orderFormGenerated: true,
     orderFormApproved: true,
-    orderForm: null,  // Will store current form data
+    orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [{ piece: "kaftan", price: 62000 }],
+    selectedAddOns: [{ piece: "pouch", price: 10000 }],
     timeline: [
       {
         id: "log-013",
@@ -231,6 +245,15 @@ export let mockOrderItems = [
     orderFormApproved: false,
     orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [
+      { piece: "shirt", price: 100000 },
+      { piece: "farshi", price: 50000 },
+      { piece: "sharara", price: 30000 },
+    ],
+    selectedAddOns: [
+      { piece: "dupatta", price: 20000 },
+      { piece: "pouch", price: 12000 },
+    ],
     timeline: [
       {
         id: "log-018",
@@ -275,6 +298,12 @@ export let mockOrderItems = [
     orderFormApproved: false,
     orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [
+      { piece: "saree", price: 100000 },
+      { piece: "peti_coat", price: 30000 },
+      { piece: "blouse", price: 30000 },
+    ],
+    selectedAddOns: [{ piece: "pouch", price: 12000 }],
     timeline: [
       {
         id: "log-019",
@@ -321,6 +350,14 @@ export let mockOrderItems = [
     orderFormApproved: true,
     orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [
+      { piece: "blouse", price: 100000 },
+      { piece: "sharara", price: 50000 },
+    ],
+    selectedAddOns: [
+      { piece: "dupatta", price: 30000 },
+      { piece: "pouch", price: 12000 },
+    ],
     timeline: [
       {
         id: "log-022",
@@ -366,6 +403,8 @@ export let mockOrderItems = [
     orderFormApproved: true,
     orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [{ piece: "kaftan", price: 58000 }],
+    selectedAddOns: [{ piece: "pouch", price: 12000 }],
     timeline: [
       {
         id: "log-025",
@@ -411,6 +450,14 @@ export let mockOrderItems = [
     orderFormApproved: true,
     orderForm: null, // Will store current form data
     orderFormVersions: [],
+    includedItems: [
+      { piece: "shirt", price: 45000 },
+      { piece: "pants", price: 18000 },
+    ],
+    selectedAddOns: [
+      { piece: "dupatta", price: 10000 },
+      { piece: "pouch", price: 12000 },
+    ],
     timeline: [
       {
         id: "log-028",
