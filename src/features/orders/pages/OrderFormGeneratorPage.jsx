@@ -111,7 +111,7 @@ export default function OrderFormGeneratorPage() {
       if (form.fabric?.image) setFabricImage(form.fabric.image)
       if (form.sketchImage) setSketchImage(form.sketchImage)
     }
-  }, [isEditMode, item, reset])
+  }, [isEditMode, item?.orderForm, reset])
 
   const isStandardSize = item?.sizeType === SIZE_TYPE.STANDARD
 
@@ -272,6 +272,21 @@ export default function OrderFormGeneratorPage() {
     const printContent = printRef.current
     if (!printContent) return
 
+    // Format shipping address
+    const formatAddress = () => {
+      const addr = order?.shippingAddress
+      if (!addr) return order?.address || "—"
+      const parts = [
+        addr.street1,
+        addr.street2,
+        addr.city,
+        addr.state,
+        addr.postalCode,
+        addr.country,
+      ].filter(Boolean)
+      return parts.join(", ") || "—"
+    }
+
     const printWindow = window.open("", "_blank")
     printWindow.document.write(`
     <!DOCTYPE html>
@@ -396,6 +411,21 @@ export default function OrderFormGeneratorPage() {
             max-width: 300px;
             border-radius: 4px;
           }
+          .urgent-badge {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+          }
+          .source-badge {
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+          }
           @media print {
             body { padding: 0; }
             .section { break-inside: avoid; }
@@ -406,10 +436,12 @@ export default function OrderFormGeneratorPage() {
         <div class="header">
           <h1>ORDER CONFIRMATION FORM</h1>
           <p>Order #${order?.orderNumber || ""}</p>
+          ${order?.source ? `<span class="source-badge">${order.source}</span>` : ""}
+          ${order?.shopifyOrderNumber ? `<span class="source-badge">Shopify: ${order.shopifyOrderNumber}</span>` : ""}
         </div>
 
         <div class="section">
-          <div class="section-title">Basic Information</div>
+          <div class="section-title">Order Information</div>
           <div class="grid">
             <div class="field">
               <label>Order No:</label>
@@ -428,6 +460,20 @@ export default function OrderFormGeneratorPage() {
               <p>${order?.productionShippingDate ? new Date(order.productionShippingDate).toLocaleDateString() : "—"}</p>
             </div>
             <div class="field">
+              <label>Urgent:</label>
+              <p>${order?.urgent ? `<span class="urgent-badge">${order.urgent}</span>` : "No"}</p>
+            </div>
+            <div class="field">
+              <label>Order Source:</label>
+              <p>${order?.source || "Manual"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Payment Information</div>
+          <div class="grid">
+            <div class="field">
               <label>Payment Status:</label>
               <p>${order?.paymentStatus || "—"}</p>
             </div>
@@ -435,23 +481,39 @@ export default function OrderFormGeneratorPage() {
               <label>Payment Method:</label>
               <p>${order?.paymentMethod?.replace("_", " ") || "—"}</p>
             </div>
+            <div class="field">
+              <label>Currency:</label>
+              <p>${order?.currency || "PKR"}</p>
+            </div>
+            <div class="field">
+              <label>Total Amount:</label>
+              <p>${order?.totalAmount?.toLocaleString() || "0"}</p>
+            </div>
+            <div class="field">
+              <label>Total Received:</label>
+              <p>${order?.totalReceived?.toLocaleString() || "0"}</p>
+            </div>
+            <div class="field">
+              <label>Remaining:</label>
+              <p>${order?.remainingAmount?.toLocaleString() || "0"}</p>
+            </div>
           </div>
         </div>
 
         <div class="section">
-          <div class="section-title">Client & Team Information</div>
+          <div class="section-title">Client Information</div>
           <div class="grid">
             <div class="field">
               <label>Customer Name:</label>
               <p>${order?.customerName || "—"}</p>
             </div>
             <div class="field">
-              <label>Fashion Consultant:</label>
-              <p>${order?.consultantName || "—"}</p>
+              <label>Email:</label>
+              <p>${order?.customerEmail || "—"}</p>
             </div>
             <div class="field">
-              <label>Production Incharge:</label>
-              <p>${order?.productionInchargeName || "Not assigned"}</p>
+              <label>Phone:</label>
+              <p>${order?.customerPhone || "—"}</p>
             </div>
             <div class="field">
               <label>Customer Height:</label>
@@ -460,6 +522,20 @@ export default function OrderFormGeneratorPage() {
             <div class="field">
               <label>Modesty Requirement:</label>
               <p>${order?.modesty || "NO"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Team Information</div>
+          <div class="grid">
+            <div class="field">
+              <label>Fashion Consultant:</label>
+              <p>${order?.consultantName || "—"}</p>
+            </div>
+            <div class="field">
+              <label>Production Incharge:</label>
+              <p>${order?.productionInchargeName || order?.productionInCharge || "Not assigned"}</p>
             </div>
           </div>
         </div>
@@ -526,6 +602,9 @@ export default function OrderFormGeneratorPage() {
             ? `
           <div class="section">
             <div class="section-title">Standard Size Measurements (${item?.size})</div>
+            ${
+              Object.keys(standardSizeMeasurements).length > 0
+                ? `
             <div class="measurements-grid">
               ${Object.entries(standardSizeMeasurements)
                 .map(
@@ -538,6 +617,9 @@ export default function OrderFormGeneratorPage() {
                 )
                 .join("")}
             </div>
+            `
+                : `<p style="color:#64748b;font-size:12px;">No size chart configured for this product</p>`
+            }
             ${
               heightMeasurements && Object.keys(heightMeasurements).length > 0
                 ? `
@@ -602,6 +684,7 @@ export default function OrderFormGeneratorPage() {
           }
         `
         }
+
         ${
           generatedFormData?.sketchImage
             ? `
@@ -622,25 +705,22 @@ export default function OrderFormGeneratorPage() {
             </div>
             <div class="field" style="grid-column: span 2;">
               <label>Full Address:</label>
-              <p>${order?.address || "—"}</p>
+              <p>${formatAddress()}</p>
             </div>
             <div class="field">
               <label>Tracking ID:</label>
               <p>${order?.preTrackingId || "Not assigned"}</p>
             </div>
-            <div class="field">
-              <label>Urgent:</label>
-              <p>${order?.urgent || "No"}</p>
-            </div>
           </div>
         </div>
 
         ${
-          generatedFormData?.notes
+          generatedFormData?.notes || order?.notes
             ? `
           <div class="notes-section">
             <div class="section-title" style="border:none;margin-bottom:8px;padding-bottom:0;">Additional Notes</div>
-            <p style="font-size:13px;">${generatedFormData.notes}</p>
+            <p style="font-size:13px;">${generatedFormData?.notes || ""}</p>
+            ${order?.notes ? `<p style="font-size:12px;color:#92400e;margin-top:8px;"><strong>Order Notes:</strong> ${order.notes}</p>` : ""}
           </div>
         `
             : ""
@@ -648,7 +728,7 @@ export default function OrderFormGeneratorPage() {
 
         <div class="footer">
           <p>Please confirm these details are correct.</p>
-          <p>Generated on ${new Date().toLocaleString()}</p>
+          <p>Generated on ${new Date().toLocaleString()} by ${user?.name || "System"}</p>
         </div>
       </body>
     </html>
