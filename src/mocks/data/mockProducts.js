@@ -195,8 +195,8 @@ export const mockProducts = [
       { piece: "dupatta", price: 75000 },
     ],
     add_ons: [
-      { piece: "pouch", price: 0 },
-      { piece: "veil", price: 0 },
+      { piece: "pouch", price: 10000 },
+      { piece: "veil", price: 5000 },
     ],
 
     subtotal: 575000,
@@ -365,7 +365,7 @@ export const mockProducts = [
       { piece: "lehnga", price: 150000 },
       { piece: "dupatta", price: 75000 },
     ],
-    add_ons: [{ piece: "pouch", price: 0 }],
+    add_ons: [{ piece: "pouch", price: 10000 }],
 
     subtotal: 575000,
     discount: 0,
@@ -700,7 +700,7 @@ export const mockProducts = [
       "https://musferahsaad.net/cdn/shop/files/MoonlitBlush6_087a435f-95ec-4314-bce8-001aa2a28134.webp?v=1758891284&width=1080",
 
     product_items: [{ piece: "kaftan", price: 62000 }],
-    add_ons: [{ piece: "pouch", price: 0 }],
+    add_ons: [{ piece: "pouch", price: 10000 }],
 
     subtotal: 62000,
     discount: 0,
@@ -868,9 +868,9 @@ export const mockProducts = [
       { piece: "sharara", price: 30000 },
     ],
     add_ons: [
-      { piece: "dupatta", price: 0 },
-      { piece: "shawl", price: 0 },
-      { piece: "pouch", price: 0 },
+      { piece: "dupatta", price: 20000 },
+      { piece: "shawl", price: 40000 },
+      { piece: "pouch", price: 12000 },
     ],
 
     subtotal: 180000,
@@ -1039,7 +1039,7 @@ export const mockProducts = [
       { piece: "peti_coat", price: 30000 },
       { piece: "blouse", price: 30000 },
     ],
-    add_ons: [{ piece: "pouch", price: 0 }],
+    add_ons: [{ piece: "pouch", price: 12000 }],
 
     subtotal: 160000,
     discount: 0,
@@ -1208,7 +1208,7 @@ export const mockProducts = [
     ],
     add_ons: [
       { piece: "dupatta", price: 30000 },
-      { piece: "pouch", price: 0 },
+      { piece: "pouch", price: 12000 },
     ],
 
     subtotal: 180000,
@@ -1378,7 +1378,7 @@ export const mockProducts = [
     ],
     add_ons: [
       { piece: "dupatta", price: 30000 },
-      { piece: "pouch", price: 0 },
+      { piece: "pouch", price: 12000 },
     ],
 
     subtotal: 280000,
@@ -1543,7 +1543,7 @@ export const mockProducts = [
     primary_image: "https://musferahsaad.net/cdn/shop/files/Aqua1.webp?v=1746994128&width=1080",
 
     product_items: [{ piece: "kaftan", price: 58000 }],
-    add_ons: [{ piece: "pouch", price: 0 }],
+    add_ons: [{ piece: "pouch", price: 12000 }],
 
     subtotal: 58000,
     discount: 0,
@@ -1711,7 +1711,7 @@ export const mockProducts = [
     ],
     add_ons: [
       { piece: "dupatta", price: 10000 },
-      { piece: "pouch", price: 0 },
+      { piece: "pouch", price: 12000 },
     ],
 
     subtotal: 68000,
