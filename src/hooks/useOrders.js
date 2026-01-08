@@ -221,6 +221,8 @@ export const useGenerateOrderForm = () => {
       queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(data.id) })
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.orderId) })
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+      // Force refetch the order item to get updated data immediately
+      queryClient.refetchQueries({ queryKey: orderItemKeys.detail(data.data.id) })
     },
   })
 }
