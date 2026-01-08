@@ -408,6 +408,13 @@ export const ordersHandlers = [
       timestamp: now,
     })
 
-    return HttpResponse.json({ success: true, data: mockOrderItems[itemIndex] })
+    return HttpResponse.json({
+      success: true,
+      data: {
+        ...mockOrderItems[itemIndex],
+        id: mockOrderItems[itemIndex].id,
+        orderId: mockOrderItems[itemIndex].orderId,
+      },
+    })
   }),
 ]
