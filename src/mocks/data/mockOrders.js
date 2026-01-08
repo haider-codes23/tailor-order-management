@@ -34,9 +34,10 @@ export let mockOrderItems = [
         dupattaShawl: "Matching dupatta with border",
       },
       attachments: [],
+      image: null,
     },
-    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: ["peshwas", "lehnga"],
     measurements: {
       shoulder: "14.5",
@@ -47,6 +48,8 @@ export let mockOrderItems = [
     },
     orderFormGenerated: true,
     orderFormApproved: true,
+    orderForm: null, // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-001",
@@ -104,13 +107,15 @@ export let mockOrderItems = [
         dupattaShawl: "Double dupatta",
       },
       attachments: [],
+      image: null,
     },
     color: {
       type: CUSTOMIZATION_TYPE.CUSTOMIZED,
       details: "Ivory white with silver accents",
       attachments: [],
+      image: null,
     },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: ["peshwas", "lehnga"],
     measurements: {
       shoulder: "14",
@@ -120,6 +125,8 @@ export let mockOrderItems = [
     },
     orderFormGenerated: true,
     orderFormApproved: false,
+    orderForm: null, // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-010",
@@ -157,13 +164,15 @@ export let mockOrderItems = [
     size: "M",
     quantity: 1,
     status: ORDER_ITEM_STATUS.DISPATCHED,
-    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [] },
-    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [], image: null },
+    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: [],
     measurements: {},
     orderFormGenerated: true,
     orderFormApproved: true,
+    orderForm: null,  // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-013",
@@ -213,13 +222,15 @@ export let mockOrderItems = [
     size: "L",
     quantity: 1,
     status: ORDER_ITEM_STATUS.RECEIVED,
-    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [] },
-    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [], image: null },
+    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: [],
     measurements: {},
     orderFormGenerated: false,
     orderFormApproved: false,
+    orderForm: null, // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-018",
@@ -249,9 +260,10 @@ export let mockOrderItems = [
       type: CUSTOMIZATION_TYPE.CUSTOMIZED,
       details: { top: "Pearl work on blouse", bottom: "Saree with tilla work", dupattaShawl: "" },
       attachments: [],
+      image: null,
     },
-    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: ["saree", "blouse"],
     measurements: {
       shoulder: "13.5",
@@ -261,6 +273,8 @@ export let mockOrderItems = [
     },
     orderFormGenerated: false,
     orderFormApproved: false,
+    orderForm: null, // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-019",
@@ -298,13 +312,15 @@ export let mockOrderItems = [
     size: "S",
     quantity: 1,
     status: ORDER_ITEM_STATUS.PRODUCTION_COMPLETED,
-    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [] },
-    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [], image: null },
+    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: [],
     measurements: {},
     orderFormGenerated: true,
     orderFormApproved: true,
+    orderForm: null, // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-022",
@@ -341,13 +357,15 @@ export let mockOrderItems = [
     size: "M",
     quantity: 1,
     status: ORDER_ITEM_STATUS.INVENTORY_CHECK,
-    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [] },
-    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [], image: null },
+    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: [],
     measurements: {},
     orderFormGenerated: true,
     orderFormApproved: true,
+    orderForm: null, // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-025",
@@ -384,13 +402,15 @@ export let mockOrderItems = [
     size: "XL",
     quantity: 1,
     status: ORDER_ITEM_STATUS.READY_FOR_PRODUCTION,
-    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [] },
-    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
-    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [] },
+    style: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: {}, attachments: [], image: null },
+    color: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
+    fabric: { type: CUSTOMIZATION_TYPE.ORIGINAL, details: "", attachments: [], image: null },
     measurementCategories: [],
     measurements: {},
     orderFormGenerated: true,
     orderFormApproved: true,
+    orderForm: null, // Will store current form data
+    orderFormVersions: [],
     timeline: [
       {
         id: "log-028",

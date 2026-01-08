@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   ArrowLeft,
   FileText,
@@ -23,6 +24,10 @@ import {
   Palette,
   Scissors,
   Ruler,
+  Eye,
+  Edit,
+  History,
+  AlertCircle,
   Image as ImageIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -33,6 +38,7 @@ export default function OrderItemDetailPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("details")
+  const [showFormPreview, setShowFormPreview] = useState(false)
 
   const { data: orderData, isLoading: orderLoading } = useOrder(orderId)
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
@@ -193,7 +199,7 @@ export default function OrderItemDetailPage() {
                   {item.style?.type === CUSTOMIZATION_TYPE.ORIGINAL ? (
                     <p className="text-sm text-muted-foreground">Original style</p>
                   ) : (
-                    <div className="text-sm text-muted-foreground space-y-1">
+                    <div className="text-sm text-muted-foreground space-y-2">
                       {typeof item.style?.details === "object" && item.style?.details !== null ? (
                         <>
                           {item.style.details.top && (
@@ -213,12 +219,16 @@ export default function OrderItemDetailPage() {
                               {item.style.details.dupattaShawl}
                             </p>
                           )}
-                          {!item.style.details.top &&
-                            !item.style.details.bottom &&
-                            !item.style.details.dupattaShawl && <p>Custom style</p>}
                         </>
                       ) : (
                         <p>{item.style?.details || "Custom style"}</p>
+                      )}
+                      {item.style?.image && (
+                        <img
+                          src={item.style.image}
+                          alt="Style reference"
+                          className="w-20 h-20 object-cover rounded border mt-2"
+                        />
                       )}
                     </div>
                   )}
@@ -227,32 +237,111 @@ export default function OrderItemDetailPage() {
                 {/* Color */}
                 <div>
                   <h4 className="font-medium flex items-center gap-2 mb-2">
-                    <Palette className="h-4 w-4" />
+                    <Scissors className="h-4 w-4" />
                     Color
                   </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {item.color?.type === CUSTOMIZATION_TYPE.ORIGINAL
-                      ? "Original color"
-                      : item.color?.details || "Custom color"}
-                  </p>
+                  {item.color?.type === CUSTOMIZATION_TYPE.ORIGINAL ? (
+                    <p className="text-sm text-muted-foreground">Original Color</p>
+                  ) : (
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      {typeof item.color?.details === "object" && item.color?.details !== null ? (
+                        <>
+                          {item.color.details.top && (
+                            <p>
+                              <span className="font-medium">Top:</span> {item.color.details.top}
+                            </p>
+                          )}
+                          {item.color.details.bottom && (
+                            <p>
+                              <span className="font-medium">Bottom:</span>{" "}
+                              {item.color.details.bottom}
+                            </p>
+                          )}
+                          {item.color.details.dupattaShawl && (
+                            <p>
+                              <span className="font-medium">Dupatta/Shawl:</span>{" "}
+                              {item.color.details.dupattaShawl}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p>{item.color?.details || "Custom Color"}</p>
+                      )}
+                      {item.color?.image && (
+                        <img
+                          src={item.color.image}
+                          alt="Color reference"
+                          className="w-20 h-20 object-cover rounded border mt-2"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Fabric */}
                 <div>
                   <h4 className="font-medium flex items-center gap-2 mb-2">
-                    <Ruler className="h-4 w-4" />
+                    <Scissors className="h-4 w-4" />
                     Fabric
                   </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {item.fabric?.type === CUSTOMIZATION_TYPE.ORIGINAL
-                      ? "Original fabric"
-                      : item.fabric?.details || "Custom fabric"}
-                  </p>
+                  {item.fabric?.type === CUSTOMIZATION_TYPE.ORIGINAL ? (
+                    <p className="text-sm text-muted-foreground">Original Fabric</p>
+                  ) : (
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      {typeof item.fabric?.details === "object" && item.fabric?.details !== null ? (
+                        <>
+                          {item.fabric.details.top && (
+                            <p>
+                              <span className="font-medium">Top:</span> {item.fabric.details.top}
+                            </p>
+                          )}
+                          {item.fabric.details.bottom && (
+                            <p>
+                              <span className="font-medium">Bottom:</span>{" "}
+                              {item.fabric.details.bottom}
+                            </p>
+                          )}
+                          {item.fabric.details.dupattaShawl && (
+                            <p>
+                              <span className="font-medium">Dupatta/Shawl:</span>{" "}
+                              {item.fabric.details.dupattaShawl}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p>{item.fabric?.details || "Custom fabric"}</p>
+                      )}
+                      {item.fabric?.image && (
+                        <img
+                          src={item.fabric.image}
+                          alt="Fabric reference"
+                          className="w-20 h-20 object-cover rounded border mt-2"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
-
+          {/* Sketch (for custom items with sketch) */}
+          {item.sizeType === SIZE_TYPE.CUSTOM && item.orderForm?.sketchImage && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Design Sketch
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <img
+                  src={item.orderForm.sketchImage}
+                  alt="Design sketch"
+                  className="max-w-xs rounded border"
+                />
+              </CardContent>
+            </Card>
+          )}
           {/* Measurements (for custom items) */}
           {item.sizeType === SIZE_TYPE.CUSTOM && item.measurements && (
             <Card>
@@ -279,6 +368,7 @@ export default function OrderItemDetailPage() {
         </TabsContent>
 
         {/* Order Form Tab */}
+        {/* Order Form Tab */}
         <TabsContent value="form" className="space-y-6">
           <Card>
             <CardHeader>
@@ -290,47 +380,87 @@ export default function OrderItemDetailPage() {
             <CardContent>
               {item.orderFormGenerated ? (
                 <div className="space-y-4">
+                  {/* Current Version Info */}
                   <div className="flex items-center gap-2 text-green-600">
                     <CheckCircle className="h-5 w-5" />
                     <span>
                       Form generated on {new Date(item.orderForm?.generatedAt).toLocaleDateString()}
+                      {item.orderFormVersions?.length > 1 && (
+                        <span className="text-muted-foreground ml-2">
+                          (Version {item.orderFormVersions.length})
+                        </span>
+                      )}
                     </span>
                   </div>
 
-                  {item.status === ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL &&
-                    canApprove && (
-                      <Button onClick={handleApprove} disabled={approveForm.isPending}>
-                        {approveForm.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Approving...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Approve Form
-                          </>
-                        )}
-                      </Button>
-                    )}
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => setShowFormPreview(true)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Form
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate(`/orders/${orderId}/items/${itemId}/form?edit=true`)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Form
+                    </Button>
+                  </div>
 
-                  {item.orderFormApproved && (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle className="h-5 w-5" />
-                      <span>Customer approved</span>
+                  {/* Version History */}
+                  {item.orderFormVersions?.length > 1 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-medium flex items-center gap-2 mb-2">
+                        <History className="h-4 w-4" />
+                        Version History
+                      </h4>
+                      <div className="space-y-2">
+                        {item.orderFormVersions.map((version, index) => (
+                          <div
+                            key={version.versionId}
+                            className="text-sm text-muted-foreground flex items-center gap-2"
+                          >
+                            <span>v{index + 1}</span>
+                            <span>•</span>
+                            <span>{new Date(version.generatedAt).toLocaleString()}</span>
+                            <span>•</span>
+                            <span>by {version.generatedBy}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
+
+                  {/* Approval Button */}
+                  {item.status === ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL &&
+                    canApprove && (
+                      <div className="mt-4 pt-4 border-t">
+                        <Button onClick={handleApprove} disabled={approveForm.isPending}>
+                          {approveForm.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Approving...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Mark as Customer Approved
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-amber-600">
-                    <Clock className="h-5 w-5" />
+                    <AlertCircle className="h-5 w-5" />
                     <span>Order form not yet generated</span>
                   </div>
-
                   {canManageForms && (
                     <Button onClick={() => navigate(`/orders/${orderId}/items/${itemId}/form`)}>
-                      <FileText className="mr-2 h-4 w-4" />
+                      <FileText className="h-4 w-4 mr-2" />
                       Generate Order Form
                     </Button>
                   )}
@@ -374,6 +504,272 @@ export default function OrderItemDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      {/* Form Preview Modal */}
+      {/* Form Preview Modal */}
+      <Dialog open={showFormPreview} onOpenChange={setShowFormPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Form Preview</DialogTitle>
+          </DialogHeader>
+
+          {item.orderForm && (
+            <div className="p-6 bg-white space-y-6">
+              {/* Header */}
+              <div className="text-center border-b pb-4">
+                <h1 className="text-2xl font-bold">ORDER CONFIRMATION FORM</h1>
+                <p className="text-muted-foreground">Order #{item.orderForm.orderNumber}</p>
+              </div>
+
+              {/* Section 1: Basic Information */}
+              <div className="bg-slate-50 rounded-lg p-4">
+                <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                  Basic Information
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-600">Order No:</span>
+                    <p className="font-semibold text-slate-900">{item.orderForm.orderNumber}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">Order Date:</span>
+                    <p className="font-semibold text-slate-900">
+                      {item.orderForm.orderDate
+                        ? new Date(item.orderForm.orderDate).toLocaleDateString()
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">FWD Date:</span>
+                    <p className="font-semibold text-slate-900">
+                      {item.orderForm.fwdDate
+                        ? new Date(item.orderForm.fwdDate).toLocaleDateString()
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">Production Ship Date:</span>
+                    <p className="font-semibold text-slate-900">
+                      {item.orderForm.productionShipDate
+                        ? new Date(item.orderForm.productionShipDate).toLocaleDateString()
+                        : "—"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Client & Team Information */}
+              <div className="bg-slate-50 rounded-lg p-4">
+                <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                  Client & Team Information
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-600">Customer Name:</span>
+                    <p className="font-semibold text-slate-900">{item.orderForm.customerName}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">Destination:</span>
+                    <p className="font-semibold text-slate-900">
+                      {item.orderForm.destination || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-slate-600">Modesty:</span>
+                    <p className="font-semibold text-slate-900">{item.orderForm.modesty || "NO"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Product Information */}
+              <div className="bg-slate-50 rounded-lg p-4">
+                <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                  Product Information
+                </h3>
+                <div className="flex gap-6">
+                  {item.orderForm.productImage ? (
+                    <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden border">
+                      <img
+                        src={item.orderForm.productImage}
+                        alt={item.orderForm.productName}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 flex-shrink-0 rounded-lg bg-slate-200 flex items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-slate-400" />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-4 text-sm flex-1">
+                    <div>
+                      <span className="text-slate-600">Product:</span>
+                      <p className="font-semibold text-slate-900">{item.orderForm.productName}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-600">Size Type:</span>
+                      <p className="font-semibold text-slate-900">{item.orderForm.sizeType}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-600">Size:</span>
+                      <p className="font-semibold text-slate-900">{item.orderForm.size}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-600">Quantity:</span>
+                      <p className="font-semibold text-slate-900">{item.orderForm.quantity || 1}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Customizations with Images */}
+              <div className="bg-slate-50 rounded-lg p-4">
+                <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                  Customizations
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Style */}
+                  <div>
+                    <span className="text-slate-600 text-sm">Style:</span>
+                    <p className="font-semibold capitalize">{item.orderForm.style?.type}</p>
+                    {item.orderForm.style?.details && (
+                      <p className="text-xs text-slate-500 mt-1">{item.orderForm.style.details}</p>
+                    )}
+                    {item.orderForm.style?.image && (
+                      <img
+                        src={item.orderForm.style.image}
+                        alt="Style"
+                        className="w-20 h-20 object-cover rounded mt-2 border"
+                      />
+                    )}
+                  </div>
+                  {/* Color */}
+                  <div>
+                    <span className="text-slate-600 text-sm">Color:</span>
+                    <p className="font-semibold capitalize">{item.orderForm.color?.type}</p>
+                    {item.orderForm.color?.details && (
+                      <p className="text-xs text-slate-500 mt-1">{item.orderForm.color.details}</p>
+                    )}
+                    {item.orderForm.color?.image && (
+                      <img
+                        src={item.orderForm.color.image}
+                        alt="Color"
+                        className="w-20 h-20 object-cover rounded mt-2 border"
+                      />
+                    )}
+                  </div>
+                  {/* Fabric */}
+                  <div>
+                    <span className="text-slate-600 text-sm">Fabric:</span>
+                    <p className="font-semibold capitalize">{item.orderForm.fabric?.type}</p>
+                    {item.orderForm.fabric?.details && (
+                      <p className="text-xs text-slate-500 mt-1">{item.orderForm.fabric.details}</p>
+                    )}
+                    {item.orderForm.fabric?.image && (
+                      <img
+                        src={item.orderForm.fabric.image}
+                        alt="Fabric"
+                        className="w-20 h-20 object-cover rounded mt-2 border"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 5a: Standard Size Measurements */}
+              {item.orderForm.sizeType === "Standard" &&
+                item.orderForm.standardSizeChart &&
+                Object.keys(item.orderForm.standardSizeChart).length > 0 && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                      Standard Size Measurements ({item.orderForm.size})
+                    </h3>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2 text-sm">
+                      {Object.entries(item.orderForm.standardSizeChart).map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-baseline py-1">
+                          <span className="text-slate-600 capitalize">
+                            {key.replace(/_/g, " ")}
+                          </span>
+                          <span className="font-semibold text-slate-900 ml-2">{value}"</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Section 5b: Height-Based Measurements */}
+              {item.orderForm.hasHeightChart &&
+                item.orderForm.heightChart &&
+                Object.keys(item.orderForm.heightChart).length > 0 && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                      Height-Based Measurements
+                    </h3>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2 text-sm">
+                      {Object.entries(item.orderForm.heightChart).map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-baseline py-1">
+                          <span className="text-slate-600 capitalize">
+                            {key.replace(/_/g, " ")}
+                          </span>
+                          <span className="font-semibold text-slate-900 ml-2">{value}"</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Section 5c: Custom Measurements (for custom size orders) */}
+              {item.orderForm.sizeType === "Custom" &&
+                item.orderForm.measurements &&
+                Object.keys(item.orderForm.measurements).length > 0 && (
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                      Custom Measurements
+                    </h3>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2 text-sm">
+                      {Object.entries(item.orderForm.measurements).map(([key, value]) => (
+                        <div key={key} className="flex justify-between items-baseline py-1">
+                          <span className="text-slate-600 capitalize">
+                            {key.replace(/_/g, " ")}
+                          </span>
+                          <span className="font-semibold text-slate-900 ml-2">{value}"</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Section 6: Sketch */}
+              {item.orderForm.sketchImage && (
+                <div className="bg-slate-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                    Design Sketch
+                  </h3>
+                  <img
+                    src={item.orderForm.sketchImage}
+                    alt="Sketch"
+                    className="max-w-xs rounded border"
+                  />
+                </div>
+              )}
+
+              {/* Section 7: Notes */}
+              {item.orderForm.notes && (
+                <div className="bg-amber-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-slate-900 mb-2">Additional Notes</h3>
+                  <p className="text-sm text-slate-700">{item.orderForm.notes}</p>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="border-t pt-4 text-center text-muted-foreground text-sm">
+                <p>Please confirm these details are correct.</p>
+                <p className="text-xs mt-1">
+                  Generated on {new Date(item.orderForm.generatedAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

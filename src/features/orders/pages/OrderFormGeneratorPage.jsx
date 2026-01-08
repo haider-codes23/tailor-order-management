@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { useForm, Controller } from "react-hook-form"
 import { useOrder, useOrderItem, useGenerateOrderForm } from "@/hooks/useOrders"
 import { useProduct } from "@/hooks/useProducts"
@@ -27,6 +27,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowLeft, FileText, Loader2, Printer, Image as ImageIcon } from "lucide-react"
 import { toast } from "sonner"
+import ImageUploader from "../components/ImageUploader"
 
 export default function OrderFormGeneratorPage() {
   const { id: orderId, itemId } = useParams()
@@ -56,13 +57,23 @@ export default function OrderFormGeneratorPage() {
   const hasHeightChart = productCharts?.has_height_chart
   const generateForm = useGenerateOrderForm()
 
+  // Check if we're in edit mode
+  const [searchParams] = useSearchParams()
+  const isEditMode = searchParams.get("edit") === "true"
+
+  // Image upload states
+  const [styleImage, setStyleImage] = useState(null)
+  const [colorImage, setColorImage] = useState(null)
+  const [fabricImage, setFabricImage] = useState(null)
+  const [sketchImage, setSketchImage] = useState(null)
+
   // Fetch product details - only when item is loaded
   const { data: productData } = useProduct(item?.productId, {
     enabled: !!item?.productId,
   })
   const product = productData?.data
 
-  const { control, handleSubmit, watch } = useForm({
+  const { control, handleSubmit, watch, reset } = useForm({
     defaultValues: {
       styleType: CUSTOMIZATION_TYPE.ORIGINAL,
       styleDetails: "",
@@ -74,6 +85,33 @@ export default function OrderFormGeneratorPage() {
       measurements: {},
     },
   })
+
+  // Pre-fill form when in edit mode
+  useEffect(() => {
+    if (isEditMode && item?.orderForm) {
+      const form = item.orderForm
+      // Reset form with existing values
+      reset({
+        styleType: form.style?.type || CUSTOMIZATION_TYPE.ORIGINAL,
+        styleDetails: form.style?.details || "",
+        colorType: form.color?.type || CUSTOMIZATION_TYPE.ORIGINAL,
+        colorDetails: form.color?.details || "",
+        fabricType: form.fabric?.type || CUSTOMIZATION_TYPE.ORIGINAL,
+        fabricDetails: form.fabric?.details || "",
+        notes: form.notes || "",
+        measurements: form.measurements || {},
+      })
+      // Set measurement categories
+      if (form.selectedCategories) {
+        setSelectedCategories(form.selectedCategories)
+      }
+      // Set images
+      if (form.style?.image) setStyleImage(form.style.image)
+      if (form.color?.image) setColorImage(form.color.image)
+      if (form.fabric?.image) setFabricImage(form.fabric.image)
+      if (form.sketchImage) setSketchImage(form.sketchImage)
+    }
+  }, [isEditMode, item, reset])
 
   const isStandardSize = item?.sizeType === SIZE_TYPE.STANDARD
 
@@ -173,24 +211,37 @@ export default function OrderFormGeneratorPage() {
   const onSubmit = async (data) => {
     try {
       const formData = {
-        sizeType: item.sizeType,
-        size: item.size,
+        orderNumber: order?.orderNumber,
+        orderDate: order?.createdAt,
+        fwdDate: order?.fwdDate,
+        productionShipDate: order?.productionShippingDate,
+        customerName: order?.customerName,
+        destination: order?.destination,
+        modesty: order?.modesty,
+        productName: item?.productName || product?.name,
+        sizeType: isStandardSize ? "Standard" : "Custom",
+        size: item?.size,
+        quantity: item?.quantity,
         notes: data.notes,
         generatedBy: user?.name || "System",
-        generatedAt: new Date().toISOString(),
         style: {
           type: data.styleType,
           details: data.styleType === CUSTOMIZATION_TYPE.CUSTOMIZED ? data.styleDetails : null,
+          image: data.styleType === CUSTOMIZATION_TYPE.CUSTOMIZED ? styleImage : null,
         },
         color: {
           type: data.colorType,
           details: data.colorType === CUSTOMIZATION_TYPE.CUSTOMIZED ? data.colorDetails : null,
+          image: data.colorType === CUSTOMIZATION_TYPE.CUSTOMIZED ? colorImage : null,
         },
         fabric: {
           type: data.fabricType,
           details: data.fabricType === CUSTOMIZATION_TYPE.CUSTOMIZED ? data.fabricDetails : null,
+          image: data.fabricType === CUSTOMIZATION_TYPE.CUSTOMIZED ? fabricImage : null,
         },
+        sketchImage: !isStandardSize ? sketchImage : null,
         productImage: productImage,
+        isEditMode: isEditMode,
       }
 
       // Add measurements
@@ -334,6 +385,17 @@ export default function OrderFormGeneratorPage() {
             color: #64748b;
             font-size: 12px;
           }
+          .customization-image {
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-top: 8px;
+          }
+          .sketch-section img {
+            max-width: 300px;
+            border-radius: 4px;
+          }
           @media print {
             body { padding: 0; }
             .section { break-inside: avoid; }
@@ -442,16 +504,19 @@ export default function OrderFormGeneratorPage() {
               <label>Style:</label>
               <p>${generatedFormData?.style?.type || "Original"}</p>
               ${generatedFormData?.style?.details ? `<p style="font-size:11px;color:#64748b;">${generatedFormData.style.details}</p>` : ""}
+              ${generatedFormData?.style?.image ? `<img src="${generatedFormData.style.image}" class="customization-image" alt="Style reference" />` : ""}
             </div>
             <div class="field">
               <label>Color:</label>
               <p>${generatedFormData?.color?.type || "Original"}</p>
               ${generatedFormData?.color?.details ? `<p style="font-size:11px;color:#64748b;">${generatedFormData.color.details}</p>` : ""}
+              ${generatedFormData?.color?.image ? `<img src="${generatedFormData.color.image}" class="customization-image" alt="Color reference" />` : ""}
             </div>
             <div class="field">
               <label>Fabric:</label>
               <p>${generatedFormData?.fabric?.type || "Original"}</p>
               ${generatedFormData?.fabric?.details ? `<p style="font-size:11px;color:#64748b;">${generatedFormData.fabric.details}</p>` : ""}
+              ${generatedFormData?.fabric?.image ? `<img src="${generatedFormData.fabric.image}" class="customization-image" alt="Fabric reference" />` : ""}
             </div>
           </div>
         </div>
@@ -536,6 +601,16 @@ export default function OrderFormGeneratorPage() {
               : ""
           }
         `
+        }
+        ${
+          generatedFormData?.sketchImage
+            ? `
+          <div class="section sketch-section">
+            <div class="section-title">Design Sketch</div>
+            <img src="${generatedFormData.sketchImage}" alt="Design sketch" />
+          </div>
+        `
+            : ""
         }
 
         <div class="section">
@@ -624,7 +699,9 @@ export default function OrderFormGeneratorPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Generate Order Form</h1>
+          <h1 className="text-2xl font-bold">
+            {isEditMode ? "Edit Order Form" : "Generate Order Form"}
+          </h1>
           <p className="text-muted-foreground">
             {item.productName || product?.name} •{" "}
             {isStandardSize ? `Standard Size ${item.size}` : "Custom Size"}
@@ -837,15 +914,25 @@ export default function OrderFormGeneratorPage() {
                 />
               </div>
               {watch("styleType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
-                <div>
-                  <Label>Style Details</Label>
-                  <Controller
-                    name="styleDetails"
-                    control={control}
-                    render={({ field }) => (
-                      <Textarea {...field} placeholder="Describe style changes" />
-                    )}
-                  />
+                <div className="md:col-span-2 space-y-4">
+                  <div>
+                    <Label>Style Details</Label>
+                    <Controller
+                      name="styleDetails"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea {...field} placeholder="Describe style changes" />
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <Label>Style Reference Image</Label>
+                    <ImageUploader
+                      value={styleImage}
+                      onChange={setStyleImage}
+                      label="Upload style reference"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -871,15 +958,25 @@ export default function OrderFormGeneratorPage() {
                 />
               </div>
               {watch("colorType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
-                <div>
-                  <Label>Color Details</Label>
-                  <Controller
-                    name="colorDetails"
-                    control={control}
-                    render={({ field }) => (
-                      <Textarea {...field} placeholder="Describe color changes" />
-                    )}
-                  />
+                <div className="md:col-span-2 space-y-4">
+                  <div>
+                    <Label>Color Details</Label>
+                    <Controller
+                      name="colorDetails"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea {...field} placeholder="Describe color changes" />
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <Label>Color Reference Image</Label>
+                    <ImageUploader
+                      value={colorImage}
+                      onChange={setColorImage}
+                      label="Upload color reference"
+                    />
+                  </div>
                 </div>
               )}
             </div>
@@ -905,20 +1002,50 @@ export default function OrderFormGeneratorPage() {
                 />
               </div>
               {watch("fabricType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
-                <div>
-                  <Label>Fabric Details</Label>
-                  <Controller
-                    name="fabricDetails"
-                    control={control}
-                    render={({ field }) => (
-                      <Textarea {...field} placeholder="Describe fabric changes" />
-                    )}
-                  />
+                <div className="md:col-span-2 space-y-4">
+                  <div>
+                    <Label>Fabric Details</Label>
+                    <Controller
+                      name="fabricDetails"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea {...field} placeholder="Describe fabric changes" />
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <Label>Fabric Reference Image</Label>
+                    <ImageUploader
+                      value={fabricImage}
+                      onChange={setFabricImage}
+                      label="Upload fabric reference"
+                    />
+                  </div>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Sketch Upload - Only for Custom Size */}
+        {!isStandardSize && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Sketch / Design Reference</CardTitle>
+              <CardDescription>
+                Upload a sketch or design reference for the custom order
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ImageUploader
+                value={sketchImage}
+                onChange={setSketchImage}
+                label="Upload sketch or design image"
+                className="max-w-md"
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notes */}
         <Card>
@@ -953,12 +1080,12 @@ export default function OrderFormGeneratorPage() {
             {generateForm.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating...
+                {isEditMode ? "Updating..." : "Generating..."}
               </>
             ) : (
               <>
                 <FileText className="h-4 w-4 mr-2" />
-                Generate Form
+                {isEditMode ? "Update Form" : "Generate Form"}
               </>
             )}
           </Button>
@@ -1111,41 +1238,72 @@ export default function OrderFormGeneratorPage() {
                 Customization Options
               </h3>
               <div className="grid grid-cols-3 gap-6 text-sm">
+                {/* In the preview modal, update customization section */}
                 <div>
                   <span className="text-slate-600">Style:</span>
                   <p className="font-semibold text-slate-900 capitalize">
                     {generatedFormData?.style?.type || "Original"}
                   </p>
-                  {generatedFormData?.style?.type === CUSTOMIZATION_TYPE.CUSTOMIZED &&
-                    generatedFormData?.style?.details && (
-                      <p className="text-slate-600 mt-1 text-xs">
-                        {generatedFormData.style.details}
-                      </p>
-                    )}
+                  {generatedFormData?.style?.type === CUSTOMIZATION_TYPE.CUSTOMIZED && (
+                    <>
+                      {generatedFormData?.style?.details && (
+                        <p className="text-slate-600 mt-1 text-xs">
+                          {generatedFormData.style.details}
+                        </p>
+                      )}
+                      {generatedFormData?.style?.image && (
+                        <img
+                          src={generatedFormData.style.image}
+                          alt="Style reference"
+                          className="mt-2 w-24 h-24 object-cover rounded border"
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
                 <div>
                   <span className="text-slate-600">Color:</span>
                   <p className="font-semibold text-slate-900 capitalize">
                     {generatedFormData?.color?.type || "Original"}
                   </p>
-                  {generatedFormData?.color?.type === CUSTOMIZATION_TYPE.CUSTOMIZED &&
-                    generatedFormData?.color?.details && (
-                      <p className="text-slate-600 mt-1 text-xs">
-                        {generatedFormData.color.details}
-                      </p>
-                    )}
+                  {generatedFormData?.color?.type === CUSTOMIZATION_TYPE.CUSTOMIZED && (
+                    <>
+                      {generatedFormData?.color?.details && (
+                        <p className="text-slate-600 mt-1 text-xs">
+                          {generatedFormData.color.details}
+                        </p>
+                      )}
+                      {generatedFormData?.color?.image && (
+                        <img
+                          src={generatedFormData.color.image}
+                          alt="Color reference"
+                          className="mt-2 w-24 h-24 object-cover rounded border"
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
                 <div>
                   <span className="text-slate-600">Fabric:</span>
                   <p className="font-semibold text-slate-900 capitalize">
                     {generatedFormData?.fabric?.type || "Original"}
                   </p>
-                  {generatedFormData?.fabric?.type === CUSTOMIZATION_TYPE.CUSTOMIZED &&
-                    generatedFormData?.fabric?.details && (
-                      <p className="text-slate-600 mt-1 text-xs">
-                        {generatedFormData.fabric.details}
-                      </p>
-                    )}
+                  {generatedFormData?.fabric?.type === CUSTOMIZATION_TYPE.CUSTOMIZED && (
+                    <>
+                      {generatedFormData?.fabric?.details && (
+                        <p className="text-slate-600 mt-1 text-xs">
+                          {generatedFormData.fabric.details}
+                        </p>
+                      )}
+                      {generatedFormData?.fabric?.image && (
+                        <img
+                          src={generatedFormData.fabric.image}
+                          alt="fabric reference"
+                          className="mt-2 w-24 h-24 object-cover rounded border"
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -1236,6 +1394,19 @@ export default function OrderFormGeneratorPage() {
                   })}
                 </div>
               )}
+            {/* Sketch Section in Preview */}
+            {generatedFormData?.sketchImage && (
+              <div className="bg-slate-50 rounded-lg p-4">
+                <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                  Design Sketch
+                </h3>
+                <img
+                  src={generatedFormData.sketchImage}
+                  alt="Design sketch"
+                  className="max-w-xs rounded border"
+                />
+              </div>
+            )}
 
             {/* Section 6: Shipping Details */}
             <div className="bg-slate-50 rounded-lg p-4">

@@ -367,25 +367,47 @@ export const ordersHandlers = [
     if (itemIndex === -1) {
       return HttpResponse.json({ error: "Order item not found" }, { status: 404 })
     }
+
     const now = new Date().toISOString()
+    const versionId = `form-v-${Date.now()}`
+
+    // Create the new form version
+    const newFormVersion = {
+      versionId,
+      generatedAt: now,
+      generatedBy: data.generatedBy || "System",
+      ...data,
+    }
+
+    // Get existing versions or create empty array
+    const existingVersions = mockOrderItems[itemIndex].orderFormVersions || []
+
+    // If editing, add new version to history
+    const updatedVersions = data.isEditMode
+      ? [...existingVersions, newFormVersion]
+      : [newFormVersion]
+
     mockOrderItems[itemIndex] = {
       ...mockOrderItems[itemIndex],
       style: data.style || mockOrderItems[itemIndex].style,
       color: data.color || mockOrderItems[itemIndex].color,
       fabric: data.fabric || mockOrderItems[itemIndex].fabric,
-      measurementCategories: data.measurementCategories || [],
+      measurementCategories: data.selectedCategories || data.measurementCategories || [],
       measurements: data.measurements || {},
       orderFormGenerated: true,
-      orderForm: { generatedAt: now, generatedBy: data.generatedBy || "System", ...data },
+      orderForm: newFormVersion,
+      orderFormVersions: updatedVersions,
       status: ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL,
       updatedAt: now,
     }
+
     mockOrderItems[itemIndex].timeline.push({
       id: generateTimelineId(),
-      action: "Order form generated",
+      action: data.isEditMode ? "Order form updated (new version)" : "Order form generated",
       user: data.generatedBy || "System",
       timestamp: now,
     })
+
     return HttpResponse.json({ success: true, data: mockOrderItems[itemIndex] })
   }),
 ]
