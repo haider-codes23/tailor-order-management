@@ -351,7 +351,16 @@ export const ordersHandlers = [
   }),
 
   http.post(`${BASE_URL}/order-items/:id/approve-form`, async ({ params, request }) => {
-    const data = await request.json()
+    // Safely parse JSON body (may be empty)
+    let data = {}
+    try {
+      const text = await request.text()
+      if (text) {
+        data = JSON.parse(text)
+      }
+    } catch {
+      // No body sent, use empty object
+    }
     const itemIndex = mockOrderItems.findIndex((i) => i.id === params.id)
     if (itemIndex === -1) {
       return HttpResponse.json({ error: "Order item not found" }, { status: 404 })
