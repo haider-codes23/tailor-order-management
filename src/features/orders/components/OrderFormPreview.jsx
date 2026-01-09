@@ -27,11 +27,6 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
 
   return (
     <div ref={ref} className="bg-white p-8 max-w-3xl mx-auto text-sm print:text-xs">
-      {/* Add this right after the opening <div ref={ref}> to debug */}
-      <pre className="text-xs bg-yellow-100 p-2 mb-4">
-        includedItems: {JSON.stringify(item?.includedItems)}
-        selectedAddOns: {JSON.stringify(item?.selectedAddOns)}
-      </pre>
       {/* Header */}
       <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-slate-900">ORDER CONFIRMATION FORM</h1>
