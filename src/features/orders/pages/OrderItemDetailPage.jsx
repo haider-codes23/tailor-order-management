@@ -681,6 +681,49 @@ export default function OrderItemDetailPage() {
                 </div>
               </div>
 
+              {/* Section 4: What's Included */}
+              {(item.includedItems?.length > 0 || item.selectedAddOns?.length > 0) && (
+                <div className="bg-slate-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                    What's Included
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-slate-600 text-sm">Included Items:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.includedItems?.map((inc, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full capitalize"
+                          >
+                            {inc.piece}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-slate-600 text-sm">Add-ons:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {item.selectedAddOns?.length > 0 ? (
+                          item.selectedAddOns.map((addon, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-amber-100 text-amber-800 text-xs rounded-full capitalize"
+                            >
+                              {addon.piece}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">None</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Section 5: Customizations with Images */}
+
               {/* Section 4: Customizations with Images */}
               <div className="bg-slate-50 rounded-lg p-4">
                 <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
