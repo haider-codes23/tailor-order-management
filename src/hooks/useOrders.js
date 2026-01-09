@@ -235,10 +235,20 @@ export const useApproveOrderForm = () => {
 
   return useMutation({
     mutationFn: (itemId) => approveOrderForm(itemId),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(data.id) })
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.orderId) })
+    onSuccess: (data, itemId) => {
+      // Use itemId directly from mutation variables (2nd parameter)
+      queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(itemId) })
+
+      // Get orderId from response - try both structures
+      const orderId = data?.data?.orderId || data?.orderId
+      if (orderId) {
+        queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) })
+      }
+
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+
+      // Force refetch using the itemId we know is correct
+      queryClient.refetchQueries({ queryKey: orderItemKeys.detail(itemId) })
     },
   })
 }
