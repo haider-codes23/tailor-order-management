@@ -36,6 +36,11 @@ import OrderFormGeneratorPage from "@/features/orders/pages/OrderFormGeneratorPa
 import CreateOrderPage from "@/features/orders/pages/CreateOrderPage"
 import EditOrderPage from "@/features/orders/pages/EditOrderPage"
 
+// Fabrication pages
+import FabricationOrdersListPage from "@/features/fabrication/pages/FabricationOrdersListPage"
+import FabricationOrderDetailPage from "@/features/fabrication/pages/FabricationOrderDetailPage"
+import FabricationItemDetailPage from "@/features/fabrication/pages/FabricationItemDetailPage"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -188,6 +193,34 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute requiredPermissions={["products.edit"]}>
                 <ProductFormPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== FABRICATION ROUTES ==================== */}
+        <Route path="/fabrication">
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={["fabrication.view"]}>
+                <FabricationOrdersListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="orders/:orderId"
+            element={
+              <ProtectedRoute requiredPermissions={["fabrication.view"]}>
+                <FabricationOrderDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="orders/:orderId/items/:itemId"
+            element={
+              <ProtectedRoute requiredPermissions={["fabrication.view", "fabrication.create_bom"]}>
+                <FabricationItemDetailPage />
               </ProtectedRoute>
             }
           />
