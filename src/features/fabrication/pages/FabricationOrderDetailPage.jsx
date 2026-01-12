@@ -28,7 +28,21 @@ export default function FabricationOrderDetailPage() {
 
   const { data: orderData, isLoading, isError, error } = useFabricationOrder(orderId)
 
-  const order = orderData?.data
+  // DEBUG - Add these console logs
+console.log("=== FABRICATION DEBUG ===")
+console.log("isLoading:", isLoading)
+console.log("isError:", isError)
+console.log("error:", error)
+console.log("ordersData (raw):", orderData)
+console.log("ordersData?.data:", orderData?.data)
+console.log("typeof ordersData:", typeof orderData)
+console.log("=========================")
+
+const orders = orderData?.data || []
+console.log("orders (final array):", orders)
+console.log("orders.length:", orders.length)
+
+  // const order = Array.isArray(orderData) ? orderData : (orderData?.data || [])
 
   const formatDate = (dateString) => {
     if (!dateString) return "—"
