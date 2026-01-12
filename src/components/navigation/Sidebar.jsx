@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Ruler,
   Box,
+  Scissors,
 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
@@ -59,6 +60,14 @@ const navItems = [
     requiredPermissions: ["inventory.view"],
     iconColor: "text-red-600",
     iconBgColor: "bg-red-100",
+  },
+  {
+    name: "Fabrication",
+    href: "/fabrication",
+    icon: Scissors,
+    requiredPermissions: ["fabrication.view"],
+    iconColor: "text-purple-600",
+    iconBgColor: "bg-purple-100",
   },
   {
     name: "Production",
@@ -127,7 +136,7 @@ export default function Sidebar() {
     <>
       {/* Desktop Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-slate-200 pt-5 pb-4 overflow-y-auto">
+        <div className="flex flex-col flex-grow bg-slate-200 border-r border-slate-200 pt-5 pb-4 overflow-y-auto">
           {/* Logo/Brand */}
           <div className="flex items-center flex-shrink-0 px-4 mb-5">
             <h1 className="text-md font-bold text-slate-900">
@@ -165,8 +174,8 @@ export default function Sidebar() {
                     </div>
                     {item.name}
                     {active && (
-                    <div className="ml-auto w-2 h-2 rounded-full bg-accent animate-bounce" />
-                  )}
+                      <div className="ml-auto w-2 h-2 rounded-full bg-accent animate-bounce" />
+                    )}
                   </Link>
                 )
               })
