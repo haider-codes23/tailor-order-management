@@ -29,6 +29,7 @@ import {
   History,
   AlertCircle,
   Image as ImageIcon,
+  ClipboardCheck,
 } from "lucide-react"
 import { toast } from "sonner"
 import { hasPermission } from "@/lib/rbac"
@@ -39,6 +40,7 @@ export default function OrderItemDetailPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("details")
   const [showFormPreview, setShowFormPreview] = useState(false)
+  const [showCustomBOMModal, setShowCustomBOMModal] = useState(false)
 
   const { data: orderData, isLoading: orderLoading } = useOrder(orderId)
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
@@ -63,6 +65,11 @@ export default function OrderItemDetailPage() {
     } catch (error) {
       toast.error("Failed to approve form")
     }
+  }
+
+  const handleRunInventoryCheck = () => {
+    // TODO: Implement in Phase 11C
+    toast.info("Inventory check will be implemented in the next phase")
   }
 
   if (orderLoading || itemLoading) {
@@ -239,6 +246,102 @@ export default function OrderItemDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Status-Specific Messages */}
+          {item.status === ORDER_ITEM_STATUS.FABRICATION_BESPOKE && (
+            <Card className="border-purple-200 bg-purple-50">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-purple-100 p-2">
+                    <Scissors className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-purple-900">Fabrication in Progress</h3>
+                    <p className="text-sm text-purple-700 mt-1">
+                      This order item has been forwarded to the Fabrication (Bespoke) department for
+                      custom BOM creation.
+                    </p>
+                    <p className="text-sm text-purple-600 mt-2">
+                      Custom measurements are being used to calculate the required materials for
+                      production. Status will update to "Inventory Check" once the custom BOM has
+                      been created.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Show success message when custom BOM was created (item is custom AND in INVENTORY_CHECK) */}
+          {item.sizeType === SIZE_TYPE.CUSTOM &&
+            item.status === ORDER_ITEM_STATUS.INVENTORY_CHECK &&
+            item.customBOM && (
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-green-100 p-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-green-900">
+                        Custom BOM Created Successfully
+                      </h3>
+                      <p className="text-sm text-green-700 mt-1">
+                        The Fabrication department has created the custom BOM for this order item.
+                        Material requirements are now ready to be checked.
+                      </p>
+                      <div className="text-sm text-green-600 mt-2">
+                        <span>Created by: {item.customBOM.createdBy}</span>
+                        <span className="mx-2">•</span>
+                        <span>
+                          {new Date(item.customBOM.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => setShowCustomBOMModal(true)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Custom BOM
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+          {/* Inventory Check section - show for items in INVENTORY_CHECK status */}
+          {item.status === ORDER_ITEM_STATUS.INVENTORY_CHECK && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-full bg-blue-100 p-2">
+                      <Package className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">Inventory Check</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Verify material availability for production
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={handleRunInventoryCheck}>
+                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                    Run Inventory Check
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Customizations */}
           <Card>
@@ -721,8 +824,6 @@ export default function OrderItemDetailPage() {
                   </div>
                 </div>
               )}
-
-              {/* Section 5: Customizations with Images */}
 
               {/* Section 4: Customizations with Images */}
               <div className="bg-slate-50 rounded-lg p-4">
