@@ -5,6 +5,7 @@ import { inventoryHandlers } from "./handlers/inventoryHandlers"
 import { productsHandlers } from "./handlers/productsHandlers"
 import { usersHandlers } from "./handlers/usersHandlers"
 import { ordersHandlers } from "./handlers/ordersHandlers"
+import { fabricationHandlers } from "./handlers/fabricationHandlers"
 // Combine all handlers as we add more features
 // For now, we only have auth handlers
 const handlers = [
@@ -14,6 +15,7 @@ const handlers = [
   ...productsHandlers,
   ...usersHandlers,
   ...ordersHandlers,
+  ...fabricationHandlers,
   // Future handlers will be added here:
   // ...orderHandlers,
   // ...inventoryHandlers,

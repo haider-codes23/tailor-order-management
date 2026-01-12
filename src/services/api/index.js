@@ -20,6 +20,7 @@
  */
 
 export { measurementChartsApi } from "./measurementChartsApi"
+export { fabricationApi } from "./fabricationApi"
 
 // Future API exports will be added here as we build more features:
 // export { productsApi } from "./productsApi"
