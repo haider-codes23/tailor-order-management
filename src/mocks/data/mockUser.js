@@ -19,6 +19,7 @@ export const USER_ROLES = {
   WORKER: "WORKER",
   QA: "QA",
   PURCHASER: "PURCHASER",
+  FABRICATION: "FABRICATION",
   DISPATCH: "DISPATCH",
   CUSTOM: "CUSTOM",
 }
@@ -26,18 +27,20 @@ export const USER_ROLES = {
 export const ROLE_LABELS = {
   ADMIN: "Administrator",
   SALES: "Sales Representative",
+  FABRICATION_BESPOKE: "Custom BOM Creator",
   PRODUCTION_HEAD: "Production Head",
   PACKET_CREATOR: "Packet Creator",
   WORKER: "Production Worker",
   QA: "Quality Assurance",
   PURCHASER: "Purchaser",
   DISPATCH: "Dispatch Manager",
+  FABRICATION: "Fabrication (Bespoke)",
   CUSTOM: "Custom Role",
 }
 
 /**
  * Mock Users with Custom Permissions
- * 
+ *
  * NOTE: Passwords are included for authentication.
  * In production, these would be hashed.
  */
@@ -64,7 +67,7 @@ export const mockUsers = [
       "inventory.delete",
       "inventory.stock_in",
       "inventory.stock_out",
-      // Products & BOM
+      // Products & BOMhttps://docs.google.com/spreadsheets/d/1jr4dSwP4UM97H0q6BRL1XSbj-5S-gTthBooGTN0gdfw/edit?usp=sharing
       "products.view",
       "products.create",
       "products.edit",
@@ -97,6 +100,9 @@ export const mockUsers = [
       "dispatch.manage",
       // Reports
       "reports.view",
+      "fabrication.view",
+      "fabrication.create_bom",
+      "fabrication.edit_bom",
     ],
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -178,13 +184,7 @@ export const mockUsers = [
     role: USER_ROLES.QA,
     phone: "+92 300 6234567",
     is_active: true,
-    permissions: [
-      "orders.view",
-      "qa.view",
-      "qa.approve",
-      "qa.request_rework",
-      "products.view",
-    ],
+    permissions: ["orders.view", "qa.view", "qa.approve", "qa.request_rework", "products.view"],
     created_at: "2024-03-01T00:00:00Z",
     updated_at: "2024-03-01T00:00:00Z",
   },
@@ -299,6 +299,24 @@ export const mockUsers = [
     created_at: "2024-04-15T00:00:00Z",
     updated_at: "2024-04-15T00:00:00Z",
   },
+  {
+    id: 13,
+    name: "Ahmad Fabrication",
+    email: "fabrication@tailor.com",
+    password: "fabric123",
+    role: USER_ROLES.FABRICATION,
+    phone: "+92 300 1334567",
+    is_active: true,
+    permissions: [
+      "fabrication.view",
+      "fabrication.create_bom",
+      "fabrication.edit_bom",
+      "inventory.view",
+      "products.view",
+    ],
+    created_at: "2024-04-20T00:00:00Z",
+    updated_at: "2024-04-20T00:00:00Z",
+  },
 ]
 
 // ==================== HELPER FUNCTIONS ====================
@@ -355,7 +373,7 @@ export function validateCredentials(email, password) {
 
 /**
  * Generate a mock JWT token (for authentication)
- * 
+ *
  * In a real system, this would be a cryptographically signed token.
  * For our mock, we just create a string that looks like a JWT.
  */
@@ -375,7 +393,7 @@ export function generateMockToken(userId) {
 
 /**
  * Sanitize user data for sending to frontend
- * 
+ *
  * We never send passwords to the frontend.
  * This removes sensitive fields before returning user data.
  */
