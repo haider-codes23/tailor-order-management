@@ -5,8 +5,8 @@
  * Permissions are grouped by feature/module for better organization.
  */
 
-// import { USER_ROLES } from "../mocks/data/mockUsers"
 import { USER_ROLES } from "@/mocks/data/mockUser"
+
 /**
  * All available permissions grouped by category
  */
@@ -69,6 +69,25 @@ export const PERMISSION_GROUPS = {
     },
   },
 
+  FABRICATION: {
+    label: "Fabrication (Bespoke)",
+    description: "Create custom BOMs for custom size orders",
+    permissions: {
+      "fabrication.view": "View fabrication queue",
+      "fabrication.create_bom": "Create custom BOMs",
+      "fabrication.edit_bom": "Edit custom BOMs",
+    },
+  },
+
+  PROCUREMENT: {
+    label: "Procurement of Inventory Items",
+    description: "Fulfill Procurement Demands",
+    permissions: {
+      "procurement.view": "Procurement view",
+      "procurement.manage": "Procurement manage",
+    },
+  },
+
   PRODUCTION: {
     label: "Production Workflow",
     description: "Manage production tasks and workflows",
@@ -77,15 +96,6 @@ export const PERMISSION_GROUPS = {
       "production.manage": "Manage production workflow",
       "production.assign_tasks": "Assign tasks to workers",
       "production.approve_packets": "Approve packets",
-    },
-  },
-
-  PROCUREMENT: {
-    label: "Procurement",
-    description: "Manage procurement demands and purchasing",
-    permissions: {
-      "procurement.view": "View procurement demands",
-      "procurement.manage": "Manage procurement",
     },
   },
 
@@ -166,6 +176,17 @@ export const ROLE_TEMPLATES = {
     ],
   },
 
+  [USER_ROLES.FABRICATION]: {
+    label: "Fabrication (Bespoke)",
+    permissions: [
+      "fabrication.view",
+      "fabrication.create_bom",
+      "fabrication.edit_bom",
+      "inventory.view",
+      "products.view",
+    ],
+  },
+
   [USER_ROLES.PRODUCTION_HEAD]: {
     label: "Production Head",
     permissions: [
@@ -191,13 +212,7 @@ export const ROLE_TEMPLATES = {
 
   [USER_ROLES.QA]: {
     label: "Quality Assurance",
-    permissions: [
-      "orders.view",
-      "qa.view",
-      "qa.approve",
-      "qa.request_rework",
-      "products.view",
-    ],
+    permissions: ["orders.view", "qa.view", "qa.approve", "qa.request_rework", "products.view"],
   },
 
   [USER_ROLES.PURCHASER]: {
