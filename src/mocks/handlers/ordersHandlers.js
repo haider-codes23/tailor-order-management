@@ -14,7 +14,8 @@ import {
   calculateRemainingAmount,
   getOrderStatusSummary,
 } from "../data/mockOrders"
-import { ORDER_ITEM_STATUS, ORDER_SOURCE } from "@/constants/orderConstants"
+import { ORDER_ITEM_STATUS, ORDER_SOURCE, PAYMENT_STATUS, SIZE_TYPE, CUSTOMIZATION_TYPE } from "@/constants/orderConstants"
+
 
 const BASE_URL = "/api"
 
@@ -351,6 +352,8 @@ export const ordersHandlers = [
   }),
 
   http.post(`${BASE_URL}/order-items/:id/approve-form`, async ({ params, request }) => {
+    const { id } = params
+
     // Safely parse JSON body (may be empty)
     let data = {}
     try {
@@ -361,21 +364,57 @@ export const ordersHandlers = [
     } catch {
       // No body sent, use empty object
     }
-    const itemIndex = mockOrderItems.findIndex((i) => i.id === params.id)
+
+    const itemIndex = mockOrderItems.findIndex((item) => item.id === id)
     if (itemIndex === -1) {
       return HttpResponse.json({ error: "Order item not found" }, { status: 404 })
     }
+
+    const item = mockOrderItems[itemIndex]
     const now = new Date().toISOString()
+
+    // Mark form as approved
     mockOrderItems[itemIndex].orderFormApproved = true
-    mockOrderItems[itemIndex].status = ORDER_ITEM_STATUS.INVENTORY_CHECK
     mockOrderItems[itemIndex].updatedAt = now
+
+    // Determine next status based on size type
+    let nextStatus
+    let timelineAction
+
+    if (item.sizeType === SIZE_TYPE.CUSTOM) {
+      // Custom size items go to FABRICATION_BESPOKE for custom BOM creation
+      nextStatus = ORDER_ITEM_STATUS.FABRICATION_BESPOKE
+      timelineAction = "Customer approved form - Forwarded to Fabrication for custom BOM"
+    } else {
+      // Standard size items go directly to INVENTORY_CHECK
+      nextStatus = ORDER_ITEM_STATUS.INVENTORY_CHECK
+      timelineAction = "Customer approved form - Ready for inventory check"
+    }
+
+    mockOrderItems[itemIndex].status = nextStatus
+
+    // Add timeline entry
     mockOrderItems[itemIndex].timeline.push({
-      id: generateTimelineId(),
-      action: "Customer approved order form",
+      id: `log-${Date.now()}`,
+      action: timelineAction,
       user: data.approvedBy || "System",
       timestamp: now,
     })
-    return HttpResponse.json({ success: true, data: mockOrderItems[itemIndex] })
+
+    // Update parent order status to match (use the "furthest behind" item status)
+    const order = mockOrders.find((o) => o.id === item.orderId)
+    if (order) {
+      const orderItems = mockOrderItems.filter((i) => i.orderId === order.id)
+      // Simple approach: use this item's status for now
+      // In a real app, you'd compute the "minimum" status across all items
+      order.status = nextStatus
+      order.updatedAt = now
+    }
+
+    return HttpResponse.json({
+      success: true,
+      data: mockOrderItems[itemIndex],
+    })
   }),
 
   http.post(`${BASE_URL}/order-items/:id/generate-form`, async ({ params, request }) => {
