@@ -7,6 +7,7 @@
 export const ORDER_ITEM_STATUS = {
   RECEIVED: "RECEIVED",
   AWAITING_CUSTOMER_FORM_APPROVAL: "AWAITING_CUSTOMER_FORM_APPROVAL",
+  FABRICATION_BESPOKE: "FABRICATION_BESPOKE", // NEW - Custom size items need custom BOM
   INVENTORY_CHECK: "INVENTORY_CHECK",
   AWAITING_MATERIAL: "AWAITING_MATERIAL",
   CREATE_PACKET: "CREATE_PACKET",
@@ -26,6 +27,7 @@ export const ORDER_ITEM_STATUS = {
 export const ORDER_ITEM_STATUS_CONFIG = {
   RECEIVED: { label: "Received", color: "bg-blue-100 text-blue-800" },
   AWAITING_CUSTOMER_FORM_APPROVAL: { label: "Awaiting Customer Approval", color: "bg-yellow-100 text-yellow-800" },
+  FABRICATION_BESPOKE: { label: "Fabrication (Bespoke)", color: "purple", description: "Custom BOM creation in progress" },
   INVENTORY_CHECK: { label: "Inventory Check", color: "bg-purple-100 text-purple-800" },
   AWAITING_MATERIAL: { label: "Awaiting Material", color: "bg-orange-100 text-orange-800" },
   CREATE_PACKET: { label: "Create Packet", color: "bg-indigo-100 text-indigo-800" },
