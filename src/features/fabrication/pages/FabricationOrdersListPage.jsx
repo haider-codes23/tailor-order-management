@@ -26,7 +26,8 @@ export default function FabricationOrdersListPage() {
 
   const { data: ordersData, isLoading, isError, error } = useFabricationOrders()
 
-  const orders = ordersData?.data || []
+  const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.data || [])
+
 
   // Filter orders based on search
   const filteredOrders = orders.filter((order) => {
