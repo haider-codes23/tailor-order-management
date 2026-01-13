@@ -21,6 +21,7 @@ import {
   approveOrderForm,
   updateOrderItemStatus,
 } from "@/services/api/ordersApi"
+import { fabricationKeys } from "./useFabrication"
 
 // Query keys
 export const orderKeys = {
@@ -212,21 +213,38 @@ export const useAddTimelineEntry = () => {
 /**
  * Hook to generate order form for item
  */
+/**
+ * Hook to generate order form for item
+ */
 export const useGenerateOrderForm = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ itemId, data }) => generateOrderForm(itemId, data),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(data.id) })
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.orderId) })
+    onSuccess: (data, variables) => {
+      const itemId = variables.itemId
+      const orderId = data?.data?.orderId || data?.orderId
+
+      // Invalidate and force refetch order item
+      queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(itemId) })
+      queryClient.refetchQueries({ queryKey: orderItemKeys.detail(itemId), type: 'active' })
+
+      if (orderId) {
+        // Invalidate and force refetch order detail
+        queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) })
+        queryClient.refetchQueries({ queryKey: orderKeys.detail(orderId), type: 'active' })
+      }
+
+      // Invalidate and force refetch order lists
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
-      // Force refetch the order item to get updated data immediately
-      queryClient.refetchQueries({ queryKey: orderItemKeys.detail(data.data.id) })
+      queryClient.refetchQueries({ queryKey: orderKeys.lists(), type: 'active' })
     },
   })
 }
 
+/**
+ * Hook to approve order form
+ */
 /**
  * Hook to approve order form
  */
@@ -236,19 +254,26 @@ export const useApproveOrderForm = () => {
   return useMutation({
     mutationFn: (itemId) => approveOrderForm(itemId),
     onSuccess: (data, itemId) => {
-      // Use itemId directly from mutation variables (2nd parameter)
-      queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(itemId) })
-
-      // Get orderId from response - try both structures
       const orderId = data?.data?.orderId || data?.orderId
+
+      // Invalidate and force refetch order item
+      queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(itemId) })
+      queryClient.refetchQueries({ queryKey: orderItemKeys.detail(itemId), type: 'active' })
+
       if (orderId) {
+        // Invalidate and force refetch order detail
         queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) })
+        queryClient.refetchQueries({ queryKey: orderKeys.detail(orderId), type: 'active' })
       }
 
+      // Invalidate and force refetch order lists
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+      queryClient.refetchQueries({ queryKey: orderKeys.lists(), type: 'active' })
 
-      // Force refetch using the itemId we know is correct
-      queryClient.refetchQueries({ queryKey: orderItemKeys.detail(itemId) })
+      // CRITICAL: Invalidate and force refetch ALL fabrication queries
+      // This ensures the Fabrication Queue updates immediately when a custom item is approved
+      queryClient.invalidateQueries({ queryKey: fabricationKeys.all })
+      queryClient.refetchQueries({ queryKey: fabricationKeys.all, type: 'all' })
     },
   })
 }
