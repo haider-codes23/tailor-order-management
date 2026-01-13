@@ -33,6 +33,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { hasPermission } from "@/lib/rbac"
+import CustomBOMViewModal from "../components/CustomBOMViewModal"
 
 export default function OrderItemDetailPage() {
   const { id: orderId, itemId } = useParams()
@@ -975,6 +976,12 @@ export default function OrderItemDetailPage() {
           )}
         </DialogContent>
       </Dialog>
+      {/* Custom BOM View Modal */}
+      <CustomBOMViewModal
+        open={showCustomBOMModal}
+        onOpenChange={setShowCustomBOMModal}
+        customBOM={item?.customBOM}
+      />
     </div>
   )
 }
