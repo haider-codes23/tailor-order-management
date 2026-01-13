@@ -20,8 +20,10 @@ export default function FabricationItemDetailPage() {
 
   const { data: fabricationData, isLoading, isError, error } = useFabricationItem(orderId, itemId)
 
-  const order = fabricationData?.data?.order
-  const item = fabricationData?.data?.item
+  // Handle both wrapped {success, data} and unwrapped response formats
+  const rawData = fabricationData?.data || fabricationData
+  const order = rawData?.order
+  const item = rawData?.item
 
   // Handle BOM submitted - navigate back to order detail
   const handleBOMSubmitted = () => {
