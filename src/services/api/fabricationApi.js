@@ -5,7 +5,7 @@
 
 import { httpClient } from "@/services/http/httpClient"
 
-const BASE_URL = "/api/fabrication"
+const BASE_URL = "/fabrication"
 
 /**
  * Get all orders that have items needing custom BOM (FABRICATION_BESPOKE status)
