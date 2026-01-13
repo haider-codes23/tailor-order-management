@@ -59,11 +59,18 @@ export default function CustomBOMItemModal({
   })
 
   // Fetch inventory items
-  const { data: inventoryData, isLoading: inventoryLoading } = useInventoryItems()
+  const { data: inventoryResponse, isLoading: inventoryLoading } = useInventoryItems()
 
   // Filter inventory to only BOM-allowed categories
-  const bomInventoryItems =
-    inventoryData?.filter((item) => BOM_ALLOWED_CATEGORIES.includes(item.category)) || []
+  // Handle both wrapped {success, data} and unwrapped array response formats
+  const inventoryItems = Array.isArray(inventoryResponse)
+    ? inventoryResponse
+    : inventoryResponse?.data || []
+
+  // Filter inventory items to only BOM-allowed categories
+  const bomInventoryItems = inventoryItems.filter((item) =>
+    BOM_ALLOWED_CATEGORIES.includes(item.category)
+  )
 
   // Watch selected inventory item to auto-fill unit
   const selectedInventoryId = watch("inventory_item_id")
