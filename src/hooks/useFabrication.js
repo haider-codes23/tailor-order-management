@@ -44,7 +44,9 @@ export const useFabricationOrders = () => {
   return useQuery({
     queryKey: fabricationKeys.orders(),
     queryFn: getFabricationOrders,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 0, // 30 seconds
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: true,
   })
 }
 
