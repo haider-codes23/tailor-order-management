@@ -210,7 +210,7 @@ export default function CustomBOMEditor({ item, onBOMSubmitted }) {
             {/* Info Alert */}
             <Alert>
               <Info className="h-4 w-4" />
-              <AlertDescription>
+              <AlertDescription className="flex no-wrap gap-1">
                 BOM items can only reference <strong>FABRIC</strong>, <strong>RAW_MATERIAL</strong>,{" "}
                 <strong>MULTI_HEAD</strong>, and <strong>ADDA_MATERIAL</strong> inventory
                 categories.
