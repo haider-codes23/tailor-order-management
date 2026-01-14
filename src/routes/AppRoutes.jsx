@@ -41,6 +41,8 @@ import FabricationOrdersListPage from "@/features/fabrication/pages/FabricationO
 import FabricationOrderDetailPage from "@/features/fabrication/pages/FabricationOrderDetailPage"
 import FabricationItemDetailPage from "@/features/fabrication/pages/FabricationItemDetailPage"
 
+import ProcurementDashboardPage from "../features/procurement/pages/ProcurementDashBoard"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -161,6 +163,8 @@ export default function AppRoutes() {
             }
           />
         </Route>
+
+        <Route path="/procurement" element={<ProcurementDashboardPage />} />
 
         {/* ==================== PRODUCTS ROUTES ==================== */}
         <Route path="/products">
