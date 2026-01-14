@@ -46,6 +46,14 @@ const navItems = [
     iconBgColor: "bg-emerald-100",
   },
   {
+    name: "Procurement",
+    href: "/procurement",
+    icon: ShoppingCart, // import from lucide-react
+    requiredPermissions: ["procurement.view"],
+    iconColor: "text-red-600",
+    iconBgColor: "bg-red-100",
+  },
+  {
     name: "Products",
     href: "/products",
     icon: Box,
