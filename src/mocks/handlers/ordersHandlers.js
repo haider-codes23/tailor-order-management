@@ -14,8 +14,21 @@ import {
   calculateRemainingAmount,
   getOrderStatusSummary,
 } from "../data/mockOrders"
-import { ORDER_ITEM_STATUS, ORDER_SOURCE, PAYMENT_STATUS, SIZE_TYPE, CUSTOMIZATION_TYPE } from "@/constants/orderConstants"
+import {
+  ORDER_ITEM_STATUS,
+  ORDER_SOURCE,
+  PAYMENT_STATUS,
+  SIZE_TYPE,
+  CUSTOMIZATION_TYPE,
+} from "@/constants/orderConstants"
+import { mockProducts, getActiveBOM, getBOMItems } from "../data/mockProducts"
 
+import { mockInventoryItems } from "../data/mockInventory"
+import {
+  mockProcurementDemands,
+  generateProcurementDemandId,
+  deleteProcurementDemandsByOrderItem,
+} from "../data/mockProcurementDemands"
 
 const BASE_URL = "/api"
 
@@ -472,6 +485,227 @@ export const ordersHandlers = [
         ...mockOrderItems[itemIndex],
         id: mockOrderItems[itemIndex].id,
         orderId: mockOrderItems[itemIndex].orderId,
+      },
+    })
+  }),
+
+  http.post(`${BASE_URL}/order-items/:id/inventory-check`, async ({ params, request }) => {
+    const { id } = params
+
+    let data = {}
+    try {
+      const text = await request.text()
+      if (text) data = JSON.parse(text)
+    } catch {
+      // No body
+    }
+
+    const itemIndex = mockOrderItems.findIndex((item) => item.id === id)
+    if (itemIndex === -1) {
+      return HttpResponse.json({ error: "Order item not found" }, { status: 404 })
+    }
+
+    const item = mockOrderItems[itemIndex]
+    const now = new Date().toISOString()
+
+    // Only allow inventory check for items in INVENTORY_CHECK status
+    if (item.status !== ORDER_ITEM_STATUS.INVENTORY_CHECK) {
+      return HttpResponse.json({ error: "Item must be in INVENTORY_CHECK status" }, { status: 400 })
+    }
+
+    // Get relevant pieces (includedItems + selectedAddOns)
+    const relevantPieces = []
+    if (item.includedItems) {
+      item.includedItems.forEach((inc) => relevantPieces.push(inc.piece.toLowerCase()))
+    }
+    if (item.selectedAddOns) {
+      item.selectedAddOns.forEach((addon) => relevantPieces.push(addon.piece.toLowerCase()))
+    }
+
+    console.log("[Inventory Check] Order Item:", item.id)
+    console.log("[Inventory Check] Product ID:", item.productId)
+    console.log("[Inventory Check] Size:", item.size)
+    console.log("[Inventory Check] Relevant Pieces:", relevantPieces)
+
+    let bomItems = []
+
+    if (item.sizeType === SIZE_TYPE.CUSTOM && item.customBOM) {
+      // Custom size - use custom BOM
+      console.log("[Inventory Check] Using Custom BOM")
+      bomItems = item.customBOM.items || []
+      // Filter to only relevant pieces
+      bomItems = bomItems.filter((bomItem) => {
+        const piece = (bomItem.piece || "").toLowerCase()
+        return relevantPieces.includes(piece)
+      })
+    } else {
+      // Standard size - get product BOM using the helper functions
+      console.log("[Inventory Check] Looking for Standard BOM")
+      
+      // Use the helper function from mockProducts.js
+      const activeBOM = getActiveBOM(item.productId, item.size)
+      console.log("[Inventory Check] Active BOM found:", activeBOM?.id)
+
+      if (activeBOM) {
+        // Get BOM items using the helper function
+        const allBOMItems = getBOMItems(activeBOM.id)
+        console.log("[Inventory Check] All BOM Items:", allBOMItems.length)
+
+        // Filter to only relevant pieces and map to our expected format
+        bomItems = allBOMItems
+          .filter((bomItem) => {
+            const piece = (bomItem.piece || "").toLowerCase()
+            return relevantPieces.includes(piece)
+          })
+          .map((bomItem) => {
+            // Look up the inventory item to get name and SKU
+            const inventoryItem = mockInventoryItems.find(
+              (inv) => inv.id === parseInt(bomItem.inventory_item_id) || 
+                       inv.id.toString() === bomItem.inventory_item_id
+            )
+            
+            return {
+              inventory_item_id: bomItem.inventory_item_id,
+              inventory_item_name: inventoryItem?.name || `Item ${bomItem.inventory_item_id}`,
+              inventory_item_sku: inventoryItem?.sku || "",
+              quantity: bomItem.quantity_per_unit,
+              unit: bomItem.unit || inventoryItem?.unit || "Unit",
+              piece: bomItem.piece,
+            }
+          })
+
+        console.log("[Inventory Check] Filtered BOM Items:", bomItems.length)
+      } else {
+        console.log("[Inventory Check] No active BOM found for product:", item.productId, "size:", item.size)
+      }
+    }
+
+    // Consolidate requirements by inventory item
+    const requirementsMap = new Map()
+    bomItems.forEach((bomItem) => {
+      const invId = bomItem.inventory_item_id || bomItem.inventoryItemId
+      if (!invId) return
+
+      const qty = parseFloat(bomItem.quantity || bomItem.quantity_per_unit) || 0
+      const existing = requirementsMap.get(invId)
+
+      if (existing) {
+        existing.requiredQty += qty * (item.quantity || 1)
+      } else {
+        requirementsMap.set(invId, {
+          inventoryItemId: invId,
+          inventoryItemName: bomItem.inventory_item_name || bomItem.inventoryItemName || bomItem.name,
+          inventoryItemSku: bomItem.inventory_item_sku || bomItem.inventoryItemSku || bomItem.sku,
+          requiredQty: qty * (item.quantity || 1),
+          unit: bomItem.unit || "Unit",
+          piece: bomItem.piece || "General",
+        })
+      }
+    })
+
+    console.log("[Inventory Check] Requirements Map size:", requirementsMap.size)
+
+    // Check against inventory
+    const materialRequirements = []
+    const shortages = []
+
+    requirementsMap.forEach((req) => {
+      const inventoryItem = mockInventoryItems.find(
+        (inv) => inv.id === parseInt(req.inventoryItemId) || 
+                 inv.id.toString() === req.inventoryItemId ||
+                 inv.sku === req.inventoryItemSku
+      )
+      const availableQty = inventoryItem?.remaining_stock || 0
+      const shortageQty = Math.max(0, req.requiredQty - availableQty)
+      const status = availableQty >= req.requiredQty ? "SUFFICIENT" : "SHORTAGE"
+
+      console.log(`[Inventory Check] Material: ${req.inventoryItemName}, Required: ${req.requiredQty}, Available: ${availableQty}, Status: ${status}`)
+
+      const requirement = {
+        ...req,
+        availableQty,
+        shortageQty,
+        status,
+      }
+      materialRequirements.push(requirement)
+
+      if (status === "SHORTAGE") {
+        shortages.push(requirement)
+      }
+    })
+
+    // Clear any existing procurement demands for this item
+    const existingDemandIndices = []
+    mockProcurementDemands.forEach((pd, index) => {
+      if (pd.orderItemId === id) {
+        existingDemandIndices.push(index)
+      }
+    })
+    // Remove in reverse order to maintain indices
+    for (let i = existingDemandIndices.length - 1; i >= 0; i--) {
+      mockProcurementDemands.splice(existingDemandIndices[i], 1)
+    }
+
+    // Determine next status and create procurement demands if needed
+    let nextStatus
+    let timelineAction
+
+    if (shortages.length === 0) {
+      // All materials available
+      nextStatus = ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
+      timelineAction = "Inventory check passed - Ready for production"
+    } else {
+      // Materials short - create procurement demands
+      nextStatus = ORDER_ITEM_STATUS.AWAITING_MATERIAL
+      timelineAction = `Inventory check found ${shortages.length} material shortage(s) - Awaiting material`
+
+      // Create procurement demands for each shortage
+      shortages.forEach((shortage) => {
+        const demand = {
+          id: generateProcurementDemandId(),
+          orderId: item.orderId,
+          orderItemId: id,
+          inventoryItemId: shortage.inventoryItemId,
+          inventoryItemName: shortage.inventoryItemName,
+          inventoryItemSku: shortage.inventoryItemSku,
+          requiredQty: shortage.requiredQty,
+          availableQty: shortage.availableQty,
+          shortageQty: shortage.shortageQty,
+          unit: shortage.unit,
+          status: "OPEN",
+          createdAt: now,
+          updatedAt: now,
+          notes: "",
+        }
+        mockProcurementDemands.push(demand)
+      })
+    }
+
+    console.log("[Inventory Check] Next Status:", nextStatus)
+    console.log("[Inventory Check] Shortages:", shortages.length)
+
+    // Update order item
+    mockOrderItems[itemIndex].status = nextStatus
+    mockOrderItems[itemIndex].materialRequirements = materialRequirements
+    mockOrderItems[itemIndex].lastInventoryCheck = now
+    mockOrderItems[itemIndex].updatedAt = now
+
+    // Add timeline entry
+    mockOrderItems[itemIndex].timeline.push({
+      id: `log-${Date.now()}`,
+      action: timelineAction,
+      user: data.checkedBy || "System",
+      timestamp: now,
+    })
+
+    return HttpResponse.json({
+      success: true,
+      data: {
+        item: mockOrderItems[itemIndex],
+        materialRequirements,
+        shortages,
+        nextStatus,
+        procurementDemandsCreated: shortages.length,
       },
     })
   }),
