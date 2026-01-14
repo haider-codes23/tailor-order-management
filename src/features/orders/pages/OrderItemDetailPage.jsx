@@ -34,6 +34,7 @@ import {
 import { toast } from "sonner"
 import { hasPermission } from "@/lib/rbac"
 import CustomBOMViewModal from "../components/CustomBOMViewModal"
+import { useRunInventoryCheck } from "../../../hooks/useProcurement"
 
 export default function OrderItemDetailPage() {
   const { id: orderId, itemId } = useParams()
@@ -43,9 +44,13 @@ export default function OrderItemDetailPage() {
   const [showFormPreview, setShowFormPreview] = useState(false)
   const [showCustomBOMModal, setShowCustomBOMModal] = useState(false)
 
+  const [showInventoryResults, setShowInventoryResults] = useState(false)
+  const [inventoryResults, setInventoryResults] = useState(null)
+
   const { data: orderData, isLoading: orderLoading } = useOrder(orderId)
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
   const approveForm = useApproveOrderForm()
+  const runInventoryCheck = useRunInventoryCheck()
 
   const order = orderData
   const item = itemData?.data
@@ -68,9 +73,26 @@ export default function OrderItemDetailPage() {
     }
   }
 
-  const handleRunInventoryCheck = () => {
-    // TODO: Implement in Phase 11C
-    toast.info("Inventory check will be implemented in the next phase")
+  const handleRunInventoryCheck = async () => {
+    try {
+      const response = await runInventoryCheck.mutateAsync({
+        orderItemId: itemId,
+        data: { checkedBy: user?.name || "System" },
+      })
+
+      const result = response?.data || response
+      setInventoryResults(result)
+      setShowInventoryResults(true)
+
+      if (result.shortages && result.shortages.length > 0) {
+        toast.warning(`Found ${result.shortages.length} material shortage(s)`)
+      } else {
+        toast.success("All materials available! Ready for production.")
+      }
+    } catch (error) {
+      toast.error("Failed to run inventory check")
+      console.error("Inventory check error:", error)
+    }
   }
 
   if (orderLoading || itemLoading) {
@@ -323,7 +345,7 @@ export default function OrderItemDetailPage() {
           {item.status === ORDER_ITEM_STATUS.INVENTORY_CHECK && (
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="rounded-full bg-blue-100 p-2">
                       <Package className="h-5 w-5 text-blue-600" />
@@ -335,10 +357,123 @@ export default function OrderItemDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <Button onClick={handleRunInventoryCheck}>
-                    <ClipboardCheck className="h-4 w-4 mr-2" />
-                    Run Inventory Check
+                  <Button onClick={handleRunInventoryCheck} disabled={runInventoryCheck.isPending}>
+                    {runInventoryCheck.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Checking...
+                      </>
+                    ) : (
+                      <>
+                        <ClipboardCheck className="h-4 w-4 mr-2" />
+                        Run Inventory Check
+                      </>
+                    )}
                   </Button>
+                </div>
+
+                {/* Show last check results if available */}
+                {item.lastInventoryCheck && (
+                  <p className="text-xs text-muted-foreground">
+                    Last checked: {new Date(item.lastInventoryCheck).toLocaleString()}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Material Requirements Display (after inventory check) */}
+          {item.materialRequirements && item.materialRequirements.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Material Requirements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-2 font-medium">Material</th>
+                        <th className="text-left py-2 font-medium">SKU</th>
+                        <th className="text-right py-2 font-medium">Required</th>
+                        <th className="text-right py-2 font-medium">Available</th>
+                        <th className="text-right py-2 font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {item.materialRequirements.map((req, idx) => (
+                        <tr key={idx} className="border-b last:border-0">
+                          <td className="py-2">{req.inventoryItemName}</td>
+                          <td className="py-2 text-muted-foreground">{req.inventoryItemSku}</td>
+                          <td className="py-2 text-right">
+                            {req.requiredQty} {req.unit}
+                          </td>
+                          <td className="py-2 text-right">
+                            {req.availableQty} {req.unit}
+                          </td>
+                          <td className="py-2 text-right">
+                            {req.status === "SUFFICIENT" ? (
+                              <Badge className="bg-green-100 text-green-800">OK</Badge>
+                            ) : (
+                              <Badge className="bg-red-100 text-red-800">
+                                Short: {req.shortageQty} {req.unit}
+                              </Badge>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Awaiting Material Status Card */}
+          {item.status === ORDER_ITEM_STATUS.AWAITING_MATERIAL && (
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-amber-100 p-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-900">Awaiting Material</h3>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Some materials are not available in sufficient quantity. Procurement demands
+                      have been created.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => navigate("/procurement")}
+                    >
+                      View Procurement Demands
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Ready for Production Card */}
+          {item.status === ORDER_ITEM_STATUS.READY_FOR_PRODUCTION && (
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-green-100 p-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-green-900">Ready for Production</h3>
+                    <p className="text-sm text-green-700 mt-1">
+                      All materials are available. This item is ready to be moved to production.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
