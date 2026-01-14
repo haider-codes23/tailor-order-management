@@ -1911,7 +1911,42 @@ export const mockBOMs = generateBOMs()
 /**
  * Generate BOM items grouped by piece type
  */
+/**
+ * Generate BOM items grouped by piece type
+ * Uses REAL inventory item IDs from mockInventoryItems
+ */
 function generateBOMItems() {
+  // Import real inventory items - we need to reference them
+  // Note: This creates a circular dependency issue, so we'll define valid IDs here
+  // These IDs should match the IDs in mockInventory.js for FABRIC, RAW_MATERIAL, MULTI_HEAD, ADDA_MATERIAL
+  const validInventoryIds = [
+    1, // Tissue Silk - FABRIC
+    2, // Kimkhab Fabric - FABRIC
+    3, // Chiffon - FABRIC
+    4, // Cotton Silk - FABRIC
+    5, // Net Fabric - FABRIC
+    6, // P Raw Silk - FABRIC
+    7, // Raw Silk Butti - FABRIC
+    8, // Tensel Organza - RAW_MATERIAL
+    9, // Durka - RAW_MATERIAL
+    10, // Champagne Betkhi Durka - RAW_MATERIAL
+    11, // Badam Lace - RAW_MATERIAL
+    12, // Lace - Golden - RAW_MATERIAL
+    13, // Lace - Silver - RAW_MATERIAL
+    14, // Pearl Durka - RAW_MATERIAL
+    15, // Champagne Badaam - ADA_MATERIAL
+    16, // Behti - ADA_MATERIAL
+    17, // Betkhi Moti - ADA_MATERIAL
+    18, // Bajra Moti - ADA_MATERIAL
+    24, // Antique Sitara Phoo - ADA_MATERIAL
+    25, // Multi-head Border - MULTI_HEAD
+    26, // Multi-head Ghera Border - MULTI_HEAD
+    27, // Multi-head Neckline - MULTI_HEAD
+    28, // Multi-head Sleeve - MULTI_HEAD
+    29, // M.H Organza Embroidered - MULTI_HEAD
+    38, // Badam Lace (if different ID) - RAW_MATERIAL
+  ]
+
   const items = []
   let itemId = 1
 
@@ -1941,13 +1976,17 @@ function generateBOMItems() {
       const materialsPerPiece = piece === "pouch" ? 1 : pieceIdx % 2 === 0 ? 3 : 2
 
       for (let i = 0; i < materialsPerPiece; i++) {
+        // Use REAL inventory IDs by cycling through the valid IDs array
+        const inventoryIndex = (pieceIdx * 3 + i) % validInventoryIds.length
+        const realInventoryId = validInventoryIds[inventoryIndex]
+
         items.push({
           id: `bom_item_${itemId++}`,
           bom_id: bom.id,
-          inventory_item_id: `inv_${((pieceIdx * 3 + i) % 12) + 1}`,
+          inventory_item_id: realInventoryId, // Use numeric ID, not string!
           quantity_per_unit: parseFloat((2.0 + scale * 0.3 + i * 0.5).toFixed(2)),
-          unit: i === 0 ? "METER" : i === 1 ? "GRAM" : "PIECE",
-          piece: piece, // Link to piece type
+          unit: null, // Will be derived from inventory item
+          piece: piece,
           sequence_order: i + 1,
           notes: `Material ${i + 1} for ${piece} - Size ${bom.size}`,
         })

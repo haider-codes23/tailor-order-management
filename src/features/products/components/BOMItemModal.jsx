@@ -25,13 +25,33 @@ import {
 import { Loader2 } from "lucide-react"
 
 // Allowed inventory categories for BOMs
-const BOM_ALLOWED_CATEGORIES = ["FABRIC", "RAW_MATERIAL", "MULTI_HEAD", "ADDA_MATERIAL"]
-
-// Common units for materials
-const UNITS = ["Meter", "Yard", "Kg", "Gram", "Piece", "Set"]
+const BOM_ALLOWED_CATEGORIES = ["FABRIC", "RAW_MATERIAL", "MULTI_HEAD", "ADA_MATERIAL"]
 
 // Garment pieces
-const GARMENT_PIECES = ["Shirt", "Pants/Trouser", "Kaftan", "Jacket", "Gown", "Pashwas", "Saree", "Peti Coat", "Blouse", "Sherwani", "Kurta", "Farshi Sharara", "Gharara", "Lehnga","Waistcoat", "Dupatta", "Unstitched Suit", "Dupatta", "Veil", "Pouch", "Shawl", "Hijab", "Shoes"]
+const GARMENT_PIECES = [
+  "Shirt",
+  "Pants/Trouser",
+  "Kaftan",
+  "Jacket",
+  "Gown",
+  "Pashwas",
+  "Saree",
+  "Peti Coat",
+  "Blouse",
+  "Sherwani",
+  "Kurta",
+  "Farshi Sharara",
+  "Gharara",
+  "Lehnga",
+  "Waistcoat",
+  "Dupatta",
+  "Unstitched Suit",
+  "Veil",
+  "Pouch",
+  "Shawl",
+  "Hijab",
+  "Shoes",
+]
 
 export default function BOMItemModal({
   isOpen,
@@ -49,6 +69,8 @@ export default function BOMItemModal({
     handleSubmit,
     reset,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -63,9 +85,35 @@ export default function BOMItemModal({
   const { data: inventoryResponse, isLoading: inventoryLoading } = useInventoryItems({
     // We'll filter on frontend since backend might not support category filtering
   })
+  console.log("inventory items: ", inventoryResponse)
 
   const createBOMItemMutation = useCreateBOMItem()
   const updateBOMItemMutation = useUpdateBOMItem()
+
+  // Handle both wrapped {success, data} and unwrapped array response formats
+  const inventoryItems = Array.isArray(inventoryResponse)
+    ? inventoryResponse
+    : inventoryResponse?.data || []
+
+  // Filter inventory items to only BOM-allowed categories
+  const bomInventoryItems = inventoryItems.filter((item) =>
+    BOM_ALLOWED_CATEGORIES.includes(item.category)
+  )
+
+  // Watch selected inventory item to auto-fill unit
+  const selectedInventoryId = watch("inventory_item_id")
+
+  // Auto-fill unit when material is selected
+  useEffect(() => {
+    if (selectedInventoryId && bomInventoryItems.length > 0) {
+      const selectedItem = bomInventoryItems.find(
+        (item) => item.id.toString() === selectedInventoryId
+      )
+      if (selectedItem) {
+        setValue("unit", selectedItem.unit || "Piece")
+      }
+    }
+  }, [selectedInventoryId, bomInventoryItems, setValue])
 
   // Populate form when editing
   useEffect(() => {
@@ -87,11 +135,16 @@ export default function BOMItemModal({
   }, [itemToEdit, reset])
 
   const onSubmit = async (data) => {
+    // Find the selected inventory item to get its details
+    const selectedItem = bomInventoryItems.find(
+      (item) => item.id.toString() === data.inventory_item_id
+    )
+
     try {
       const itemData = {
         inventory_item_id: parseInt(data.inventory_item_id),
         quantity_per_unit: parseFloat(data.quantity_per_unit),
-        unit: data.unit,
+        unit: data.unit || selectedItem?.unit || "Piece", // Use inventory item's unit
         piece: piece, // Use piece from props, not from form
         notes: data.notes || null,
       }
@@ -102,14 +155,14 @@ export default function BOMItemModal({
           itemId: itemToEdit.id,
           updates: itemData,
           productId,
-          size
+          size,
         })
       } else {
         await createBOMItemMutation.mutateAsync({
           bomId,
           itemData,
           productId,
-          size
+          size,
         })
       }
 
@@ -124,11 +177,6 @@ export default function BOMItemModal({
     reset()
     onClose()
   }
-
-  // Filter inventory items to only BOM-allowed categories
-  const bomInventoryItems = inventoryResponse?.data?.filter((item) =>
-    BOM_ALLOWED_CATEGORIES.includes(item.category)
-  )
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -183,7 +231,7 @@ export default function BOMItemModal({
             {errors.inventory_item_id && (
               <p className="text-sm text-red-500">{errors.inventory_item_id.message}</p>
             )}
-            <p className="text-sm text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Only FABRIC, RAW_MATERIAL, MULTI_HEAD, and ADDA_MATERIAL items shown
             </p>
           </div>
@@ -210,55 +258,27 @@ export default function BOMItemModal({
               )}
             </div>
 
-            {/* Unit */}
+            {/* Unit - Read-only, auto-filled from material */}
             <div className="space-y-2">
-              <Label htmlFor="unit">
-                Unit <span className="text-red-500">*</span>
-              </Label>
-              <Controller
-                name="unit"
-                control={control}
-                rules={{ required: "Unit is required" }}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select unit..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {UNITS.map((unit) => (
-                        <SelectItem key={unit} value={unit}>
-                          {unit}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+              <Label htmlFor="unit">Unit</Label>
+              <Input
+                id="unit"
+                placeholder="Auto-filled from material"
+                {...register("unit")}
+                readOnly
+                className="bg-slate-50"
               />
-              {errors.unit && <p className="text-sm text-red-500">{errors.unit.message}</p>}
+              <p className="text-xs text-muted-foreground">Auto-filled from material</p>
             </div>
           </div>
 
-          {/* Garment Piece */}
+          {/* Garment Piece - Display only, comes from props */}
           <div className="space-y-2">
-            <Label htmlFor="garment_piece">Garment Piece</Label>
-            <Controller
-              name="garment_piece"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select garment piece..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GARMENT_PIECES.map((piece) => (
-                      <SelectItem key={piece} value={piece}>
-                        {piece}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
+            <Label>Garment Piece</Label>
+            <Input value={getPieceLabel(piece)} readOnly className="bg-slate-50" />
+            <p className="text-xs text-muted-foreground">
+              This item will be added to the {getPieceLabel(piece)} section
+            </p>
           </div>
 
           {/* Notes */}
@@ -281,13 +301,16 @@ export default function BOMItemModal({
               type="submit"
               disabled={createBOMItemMutation.isPending || updateBOMItemMutation.isPending}
             >
-              {createBOMItemMutation.isPending || updateBOMItemMutation.isPending
-                ? isEditMode
-                  ? "Saving..."
-                  : "Adding..."
-                : isEditMode
-                  ? "Save Changes"
-                  : "Add Item"}
+              {createBOMItemMutation.isPending || updateBOMItemMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {isEditMode ? "Updating..." : "Adding..."}
+                </>
+              ) : isEditMode ? (
+                "Update Item"
+              ) : (
+                "Add Item"
+              )}
             </Button>
           </DialogFooter>
         </form>

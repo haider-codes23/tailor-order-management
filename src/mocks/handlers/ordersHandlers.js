@@ -541,7 +541,7 @@ export const ordersHandlers = [
     } else {
       // Standard size - get product BOM using the helper functions
       console.log("[Inventory Check] Looking for Standard BOM")
-      
+
       // Use the helper function from mockProducts.js
       const activeBOM = getActiveBOM(item.productId, item.size)
       console.log("[Inventory Check] Active BOM found:", activeBOM?.id)
@@ -560,10 +560,11 @@ export const ordersHandlers = [
           .map((bomItem) => {
             // Look up the inventory item to get name and SKU
             const inventoryItem = mockInventoryItems.find(
-              (inv) => inv.id === parseInt(bomItem.inventory_item_id) || 
-                       inv.id.toString() === bomItem.inventory_item_id
+              (inv) =>
+                inv.id === parseInt(bomItem.inventory_item_id) ||
+                inv.id.toString() === bomItem.inventory_item_id
             )
-            
+
             return {
               inventory_item_id: bomItem.inventory_item_id,
               inventory_item_name: inventoryItem?.name || `Item ${bomItem.inventory_item_id}`,
@@ -576,7 +577,12 @@ export const ordersHandlers = [
 
         console.log("[Inventory Check] Filtered BOM Items:", bomItems.length)
       } else {
-        console.log("[Inventory Check] No active BOM found for product:", item.productId, "size:", item.size)
+        console.log(
+          "[Inventory Check] No active BOM found for product:",
+          item.productId,
+          "size:",
+          item.size
+        )
       }
     }
 
@@ -594,7 +600,8 @@ export const ordersHandlers = [
       } else {
         requirementsMap.set(invId, {
           inventoryItemId: invId,
-          inventoryItemName: bomItem.inventory_item_name || bomItem.inventoryItemName || bomItem.name,
+          inventoryItemName:
+            bomItem.inventory_item_name || bomItem.inventoryItemName || bomItem.name,
           inventoryItemSku: bomItem.inventory_item_sku || bomItem.inventoryItemSku || bomItem.sku,
           requiredQty: qty * (item.quantity || 1),
           unit: bomItem.unit || "Unit",
@@ -606,23 +613,38 @@ export const ordersHandlers = [
     console.log("[Inventory Check] Requirements Map size:", requirementsMap.size)
 
     // Check against inventory
+    // Check against inventory
     const materialRequirements = []
     const shortages = []
 
     requirementsMap.forEach((req) => {
+      // Handle both string and numeric IDs
+      const inventoryId =
+        typeof req.inventoryItemId === "string"
+          ? parseInt(req.inventoryItemId)
+          : req.inventoryItemId
+
       const inventoryItem = mockInventoryItems.find(
-        (inv) => inv.id === parseInt(req.inventoryItemId) || 
-                 inv.id.toString() === req.inventoryItemId ||
-                 inv.sku === req.inventoryItemSku
+        (inv) =>
+          inv.id === inventoryId ||
+          inv.id === req.inventoryItemId ||
+          inv.sku === req.inventoryItemSku
       )
+
       const availableQty = inventoryItem?.remaining_stock || 0
       const shortageQty = Math.max(0, req.requiredQty - availableQty)
       const status = availableQty >= req.requiredQty ? "SUFFICIENT" : "SHORTAGE"
 
-      console.log(`[Inventory Check] Material: ${req.inventoryItemName}, Required: ${req.requiredQty}, Available: ${availableQty}, Status: ${status}`)
+      console.log(
+        `[Inventory Check] Material: ${inventoryItem?.name || req.inventoryItemId}, Required: ${req.requiredQty}, Available: ${availableQty}, Status: ${status}`
+      )
 
       const requirement = {
         ...req,
+        // Update with actual inventory item details
+        inventoryItemName: inventoryItem?.name || `Unknown Item ${req.inventoryItemId}`,
+        inventoryItemSku: inventoryItem?.sku || req.inventoryItemSku || "",
+        unit: inventoryItem?.unit || req.unit || "Unit",
         availableQty,
         shortageQty,
         status,

@@ -12,6 +12,9 @@ import {
   getNextVersionNumber,
 } from "../data/mockProducts"
 
+// Import mockInventoryItems to enrich the BOM items
+const { mockInventoryItems } = await import("../data/mockInventory")
+
 // ==================== PRODUCTS HANDLERS ====================
 
 export const productsHandlers = [
@@ -198,6 +201,18 @@ export const productsHandlers = [
 
       const product = mockProducts[productIndex]
 
+      // Ensure base structure exists
+      if (!product.measurement_charts) {
+        product.measurement_charts = {
+          has_size_chart: false,
+          has_height_chart: false,
+          enabled_size_fields: [],
+          enabled_height_fields: [],
+          size_chart: null,
+          height_chart: null,
+        }
+      }
+
       // Initialize with template (placeholder values of 0)
       const defaultSizeRows = [
         {
@@ -334,26 +349,32 @@ export const productsHandlers = [
         "sleeve_back_length",
       ]
 
-      product.measurement_charts = {
-        has_size_chart: body.initialize_size_chart !== false,
-        has_height_chart: body.initialize_height_chart === true,
-        enabled_size_fields: body.enabled_size_fields || defaultEnabledSizeFields,
-        enabled_height_fields: body.enabled_height_fields || defaultEnabledHeightFields,
-        size_chart:
-          body.initialize_size_chart !== false
-            ? {
-                rows: defaultSizeRows,
-                updated_at: new Date().toISOString(),
-              }
-            : null,
-        height_chart:
-          body.initialize_height_chart === true
-            ? {
-                rows: defaultHeightRows,
-                updated_at: new Date().toISOString(),
-              }
-            : null,
+      // Initialize SIZE chart only if requested
+      if (body.initialize_size_chart === true) {
+        product.measurement_charts.has_size_chart = true
+        product.measurement_charts.size_chart ??= {
+          rows: defaultSizeRows,
+          updated_at: new Date().toISOString(),
+        }
+        product.measurement_charts.enabled_size_fields =
+          body.enabled_size_fields ||
+          product.measurement_charts.enabled_size_fields ||
+          defaultEnabledSizeFields
       }
+
+      // Initialize HEIGHT chart only if requested
+      if (body.initialize_height_chart === true) {
+        product.measurement_charts.has_height_chart = true
+        product.measurement_charts.height_chart ??= {
+          rows: defaultHeightRows,
+          updated_at: new Date().toISOString(),
+        }
+        product.measurement_charts.enabled_height_fields =
+          body.enabled_height_fields ||
+          product.measurement_charts.enabled_height_fields ||
+          defaultEnabledHeightFields
+      }
+
       product.updated_at = new Date().toISOString()
 
       return HttpResponse.json({
@@ -950,13 +971,36 @@ export const productsHandlers = [
     const { bomId } = params
     const items = getBOMItems(bomId)
 
+    // Enrich each BOM item with inventory details
+    const enrichedItems = items.map((item) => {
+      const inventoryItem = mockInventoryItems.find(
+        (inv) =>
+          inv.id === item.inventory_item_id ||
+          inv.id === parseInt(item.inventory_item_id) ||
+          inv.id.toString() === item.inventory_item_id?.toString()
+      )
+
+      return {
+        ...item,
+        // Add inventory details
+        inventory_item_name: inventoryItem?.name || `Unknown Item ${item.inventory_item_id}`,
+        inventory_item_sku: inventoryItem?.sku || "",
+        inventory_item_category: inventoryItem?.category || "",
+        // Use inventory item's unit if BOM item doesn't specify
+        unit: item.unit || inventoryItem?.unit || "Unit",
+        // Add remaining stock for reference
+        available_stock: inventoryItem?.remaining_stock || 0,
+      }
+    })
+
     return HttpResponse.json({
       success: true,
-      data: items,
-      total: items.length,
+      data: enrichedItems,
+      total: enrichedItems.length,
     })
   }),
 
+  // POST /boms/:bomId/items - Add item to BOM
   // POST /boms/:bomId/items - Add item to BOM
   http.post(`${appConfig.apiBaseUrl}/boms/:bomId/items`, async ({ params, request }) => {
     await new Promise((resolve) => setTimeout(resolve, 400))
@@ -969,12 +1013,41 @@ export const productsHandlers = [
       return HttpResponse.json({ success: false, error: "BOM not found" }, { status: 404 })
     }
 
-    // Validation
-    if (!body.inventory_item_id || !body.quantity_per_unit || !body.unit || !body.piece) {
+    // Validation - only inventory_item_id, quantity_per_unit, and piece are required
+    // Unit will be derived from the inventory item
+    if (!body.inventory_item_id || !body.quantity_per_unit || !body.piece) {
       return HttpResponse.json(
         {
           success: false,
-          error: "inventory_item_id, quantity_per_unit, unit, and piece are required",
+          error: "inventory_item_id, quantity_per_unit, and piece are required",
+        },
+        { status: 400 }
+      )
+    }
+
+    const inventoryItem = mockInventoryItems.find(
+      (inv) =>
+        inv.id === parseInt(body.inventory_item_id) ||
+        inv.id.toString() === body.inventory_item_id?.toString()
+    )
+
+    if (!inventoryItem) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: `Inventory item with ID ${body.inventory_item_id} not found`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate category - only allow FABRIC, RAW_MATERIAL, MULTI_HEAD, ADDA_MATERIAL
+    const allowedCategories = ["FABRIC", "RAW_MATERIAL", "MULTI_HEAD", "ADA_MATERIAL"]
+    if (!allowedCategories.includes(inventoryItem.category)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: `Cannot add ${inventoryItem.category} items to BOM. Only FABRIC, RAW_MATERIAL, MULTI_HEAD, and ADDA_MATERIAL are allowed.`,
         },
         { status: 400 }
       )
@@ -983,20 +1056,27 @@ export const productsHandlers = [
     const newItem = {
       id: `bom_item_${Date.now()}`,
       bom_id: bomId,
-      inventory_item_id: body.inventory_item_id.toString(),
+      inventory_item_id: parseInt(body.inventory_item_id), // Store as number
       quantity_per_unit: parseFloat(body.quantity_per_unit),
-      unit: body.unit,
-      piece: body.piece, // Required now
+      unit: inventoryItem.unit, // Use the inventory item's unit!
+      piece: body.piece,
       sequence_order: body.sequence_order || 1,
       notes: body.notes || "",
     }
 
     mockBOMItems.push(newItem)
 
+    // Return enriched item
     return HttpResponse.json(
       {
         success: true,
-        data: newItem,
+        data: {
+          ...newItem,
+          inventory_item_name: inventoryItem.name,
+          inventory_item_sku: inventoryItem.sku,
+          inventory_item_category: inventoryItem.category,
+          available_stock: inventoryItem.remaining_stock,
+        },
         message: "BOM item added successfully",
       },
       { status: 201 }
