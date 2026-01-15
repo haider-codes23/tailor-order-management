@@ -1,0 +1,724 @@
+/**
+ * Packet Handlers - MSW handlers for Phase 12 Packet Workflow
+ *
+ * Endpoints:
+ * - GET    /api/packets                         - List all packets (with filters)
+ * - GET    /api/packets/my-tasks                - Get packets assigned to current user
+ * - GET    /api/packets/check-queue             - Get packets awaiting check
+ * - GET    /api/order-items/:id/packet          - Get packet for an order item
+ * - POST   /api/order-items/:id/packet/assign   - Assign packet to fabrication team
+ * - POST   /api/order-items/:id/packet/start    - Start picking materials
+ * - POST   /api/order-items/:id/packet/pick-item - Mark an item as picked
+ * - POST   /api/order-items/:id/packet/complete - Mark packet as complete
+ * - POST   /api/order-items/:id/packet/approve  - Approve packet (production head)
+ * - POST   /api/order-items/:id/packet/reject   - Reject packet (production head)
+ */
+
+import { http, HttpResponse } from "msw"
+import {
+  mockPackets,
+  getPacketByOrderItemId,
+  createPacketFromRequirements,
+  generatePacketId,
+} from "../data/mockPackets"
+import { mockOrderItems } from "../data/mockOrders"
+import { mockInventoryItems } from "../data/mockInventory"
+import { mockUsers } from "../data/mockUser"
+import { ORDER_ITEM_STATUS, PACKET_STATUS } from "../../constants/orderConstants"
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Build inventory items map for enriching packet pick list
+ */
+const buildInventoryMap = () => {
+  const map = {}
+  mockInventoryItems.forEach((item) => {
+    map[item.id] = item
+  })
+  return map
+}
+
+/**
+ * Find user by ID
+ */
+const findUser = (userId) => {
+  return mockUsers.find((u) => u.id === userId || u.id === parseInt(userId))
+}
+
+/**
+ * Add timeline entry to packet
+ */
+const addPacketTimeline = (packet, action, user, details = "") => {
+  packet.timeline.push({
+    id: `timeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    action,
+    user: user || "System",
+    timestamp: new Date().toISOString(),
+    details,
+  })
+}
+
+// ============================================================================
+// HANDLERS
+// ============================================================================
+
+/**
+ * GET /api/packets
+ * List all packets with optional filters
+ */
+const getPackets = http.get("/api/packets", async ({ request }) => {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const url = new URL(request.url)
+  const status = url.searchParams.get("status")
+  const assignedTo = url.searchParams.get("assignedTo")
+
+  let packets = [...mockPackets]
+
+  if (status) {
+    packets = packets.filter((p) => p.status === status)
+  }
+
+  if (assignedTo) {
+    packets = packets.filter(
+      (p) => p.assignedTo === assignedTo || p.assignedTo === parseInt(assignedTo)
+    )
+  }
+
+  // Sort by creation date, newest first
+  packets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  return HttpResponse.json({
+    success: true,
+    data: packets,
+    meta: {
+      total: packets.length,
+    },
+  })
+})
+
+/**
+ * GET /api/packets/my-tasks
+ * Get packets assigned to current user (fabrication team)
+ */
+const getMyPacketTasks = http.get("/api/packets/my-tasks", async ({ request }) => {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const url = new URL(request.url)
+  const userId = url.searchParams.get("userId")
+  const status = url.searchParams.get("status")
+
+  let packets = mockPackets.filter(
+    (p) => p.assignedTo === userId || p.assignedTo === parseInt(userId)
+  )
+
+  if (status) {
+    packets = packets.filter((p) => p.status === status)
+  }
+
+  // Enrich with order item details
+  const enrichedPackets = packets.map((packet) => {
+    const orderItem = mockOrderItems.find((oi) => oi.id === packet.orderItemId)
+    return {
+      ...packet,
+      orderItemDetails: orderItem
+        ? {
+            productName: orderItem.productName,
+            productSku: orderItem.productSku,
+            size: orderItem.size,
+            quantity: orderItem.quantity,
+          }
+        : null,
+    }
+  })
+
+  // Sort by assignment date, oldest first (FIFO)
+  enrichedPackets.sort((a, b) => new Date(a.assignedAt) - new Date(b.assignedAt))
+
+  return HttpResponse.json({
+    success: true,
+    data: enrichedPackets,
+    meta: {
+      total: enrichedPackets.length,
+      pending: enrichedPackets.filter((p) => p.status === PACKET_STATUS.ASSIGNED).length,
+      inProgress: enrichedPackets.filter((p) => p.status === PACKET_STATUS.IN_PROGRESS).length,
+      completed: enrichedPackets.filter((p) => p.status === PACKET_STATUS.COMPLETED).length,
+    },
+  })
+})
+
+/**
+ * GET /api/packets/check-queue
+ * Get packets awaiting check (for production head)
+ */
+const getPacketCheckQueue = http.get("/api/packets/check-queue", async () => {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  // Get packets that are completed and awaiting verification
+  const packets = mockPackets.filter((p) => p.status === PACKET_STATUS.COMPLETED)
+
+  // Enrich with order item details
+  const enrichedPackets = packets.map((packet) => {
+    const orderItem = mockOrderItems.find((oi) => oi.id === packet.orderItemId)
+    return {
+      ...packet,
+      orderItemDetails: orderItem
+        ? {
+            productName: orderItem.productName,
+            productSku: orderItem.productSku,
+            productImage: orderItem.productImage,
+            size: orderItem.size,
+            quantity: orderItem.quantity,
+            orderId: orderItem.orderId,
+          }
+        : null,
+    }
+  })
+
+  // Sort by completion date, oldest first (FIFO)
+  enrichedPackets.sort((a, b) => new Date(a.completedAt) - new Date(b.completedAt))
+
+  return HttpResponse.json({
+    success: true,
+    data: enrichedPackets,
+    meta: {
+      total: enrichedPackets.length,
+    },
+  })
+})
+
+/**
+ * GET /api/order-items/:id/packet
+ * Get packet details for an order item
+ */
+const getOrderItemPacket = http.get("/api/order-items/:id/packet", async ({ params }) => {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const { id } = params
+  const packet = getPacketByOrderItemId(id)
+
+  if (!packet) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: "Not found",
+        message: `No packet found for order item ${id}`,
+      },
+      { status: 404 }
+    )
+  }
+
+  // Get order item details
+  const orderItem = mockOrderItems.find((oi) => oi.id === id)
+
+  return HttpResponse.json({
+    success: true,
+    data: {
+      ...packet,
+      orderItemDetails: orderItem
+        ? {
+            productName: orderItem.productName,
+            productSku: orderItem.productSku,
+            size: orderItem.size,
+            quantity: orderItem.quantity,
+            orderId: orderItem.orderId,
+          }
+        : null,
+    },
+  })
+})
+
+/**
+ * POST /api/order-items/:id/packet/assign
+ * Assign packet to a fabrication team member
+ */
+const assignPacket = http.post(
+  "/api/order-items/:id/packet/assign",
+  async ({ params, request }) => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    const { id } = params
+    const data = await request.json()
+    const { assignToUserId, assignedByUserId } = data
+
+    // Find or create packet
+    let packet = getPacketByOrderItemId(id)
+
+    if (!packet) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Not found",
+          message: `No packet found for order item ${id}. Packet should be created when entering CREATE_PACKET status.`,
+        },
+        { status: 404 }
+      )
+    }
+
+    // Get user details
+    const assignee = findUser(assignToUserId)
+    const assigner = findUser(assignedByUserId)
+
+    if (!assignee) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "User not found",
+          message: `User ${assignToUserId} not found`,
+        },
+        { status: 400 }
+      )
+    }
+
+    const now = new Date().toISOString()
+
+    // Update packet
+    packet.assignedTo = assignToUserId
+    packet.assignedToName = assignee.name
+    packet.assignedBy = assignedByUserId
+    packet.assignedByName = assigner?.name || "Unknown"
+    packet.assignedAt = now
+    packet.status = PACKET_STATUS.ASSIGNED
+    packet.updatedAt = now
+
+    addPacketTimeline(
+      packet,
+      "Packet assigned",
+      assigner?.name || "Production Head",
+      `Assigned to ${assignee.name}`
+    )
+
+    // Update order item status if needed
+    const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
+    if (orderItemIndex !== -1) {
+      mockOrderItems[orderItemIndex].updatedAt = now
+    }
+
+    return HttpResponse.json({
+      success: true,
+      data: packet,
+      message: `Packet assigned to ${assignee.name}`,
+    })
+  }
+)
+
+/**
+ * POST /api/order-items/:id/packet/start
+ * Fabrication team starts picking materials
+ */
+const startPacket = http.post("/api/order-items/:id/packet/start", async ({ params, request }) => {
+  await new Promise((resolve) => setTimeout(resolve, 300))
+
+  const { id } = params
+  const data = await request.json()
+  const { userId } = data
+
+  const packet = getPacketByOrderItemId(id)
+
+  if (!packet) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: "Not found",
+        message: `No packet found for order item ${id}`,
+      },
+      { status: 404 }
+    )
+  }
+
+  if (packet.status !== PACKET_STATUS.ASSIGNED) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: "Invalid status",
+        message: `Cannot start packet in ${packet.status} status. Must be ASSIGNED.`,
+      },
+      { status: 400 }
+    )
+  }
+
+  const user = findUser(userId)
+  const now = new Date().toISOString()
+
+  packet.status = PACKET_STATUS.IN_PROGRESS
+  packet.startedAt = now
+  packet.updatedAt = now
+
+  addPacketTimeline(
+    packet,
+    "Packet started",
+    user?.name || "Fabrication Team",
+    "Started gathering materials"
+  )
+
+  return HttpResponse.json({
+    success: true,
+    data: packet,
+    message: "Packet picking started",
+  })
+})
+
+/**
+ * POST /api/order-items/:id/packet/pick-item
+ * Mark a pick list item as picked
+ */
+const pickItem = http.post("/api/order-items/:id/packet/pick-item", async ({ params, request }) => {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const { id } = params
+  const data = await request.json()
+  const { pickItemId, pickedQty, userId, notes } = data
+
+  const packet = getPacketByOrderItemId(id)
+
+  if (!packet) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: "Not found",
+        message: `No packet found for order item ${id}`,
+      },
+      { status: 404 }
+    )
+  }
+
+  const pickItemIndex = packet.pickList.findIndex((item) => item.id === pickItemId)
+
+  if (pickItemIndex === -1) {
+    return HttpResponse.json(
+      {
+        success: false,
+        error: "Item not found",
+        message: `Pick list item ${pickItemId} not found`,
+      },
+      { status: 404 }
+    )
+  }
+
+  const user = findUser(userId)
+  const now = new Date().toISOString()
+  const pickItem = packet.pickList[pickItemIndex]
+
+  // Update pick item
+  pickItem.isPicked = true
+  pickItem.pickedQty = pickedQty || pickItem.requiredQty
+  pickItem.pickedAt = now
+  pickItem.notes = notes || ""
+
+  // Update picked count
+  packet.pickedItems = packet.pickList.filter((item) => item.isPicked).length
+  packet.updatedAt = now
+
+  addPacketTimeline(
+    packet,
+    "Item picked",
+    user?.name || "Fabrication Team",
+    `Picked: ${pickItem.inventoryItemName} - ${pickItem.pickedQty} ${pickItem.unit} from rack ${pickItem.rackLocation}`
+  )
+
+  return HttpResponse.json({
+    success: true,
+    data: packet,
+    message: `${pickItem.inventoryItemName} marked as picked`,
+  })
+})
+
+/**
+ * POST /api/order-items/:id/packet/complete
+ * Mark packet as complete (all materials gathered)
+ */
+const completePacket = http.post(
+  "/api/order-items/:id/packet/complete",
+  async ({ params, request }) => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    const { id } = params
+    const data = await request.json()
+    const { userId, notes } = data
+
+    const packet = getPacketByOrderItemId(id)
+
+    if (!packet) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Not found",
+          message: `No packet found for order item ${id}`,
+        },
+        { status: 404 }
+      )
+    }
+
+    if (packet.status !== PACKET_STATUS.IN_PROGRESS) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Invalid status",
+          message: `Cannot complete packet in ${packet.status} status. Must be IN_PROGRESS.`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Check if all items are picked
+    const unPickedItems = packet.pickList.filter((item) => !item.isPicked)
+    if (unPickedItems.length > 0) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Incomplete",
+          message: `${unPickedItems.length} items not yet picked. Please pick all items before completing.`,
+          data: { unPickedItems },
+        },
+        { status: 400 }
+      )
+    }
+
+    const user = findUser(userId)
+    const now = new Date().toISOString()
+
+    packet.status = PACKET_STATUS.COMPLETED
+    packet.completedAt = now
+    packet.notes = notes || packet.notes
+    packet.updatedAt = now
+
+    // Update order item status to PACKET_CHECK
+    const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
+    if (orderItemIndex !== -1) {
+      mockOrderItems[orderItemIndex].status = ORDER_ITEM_STATUS.PACKET_CHECK
+      mockOrderItems[orderItemIndex].updatedAt = now
+      mockOrderItems[orderItemIndex].timeline.push({
+        id: `log-${Date.now()}`,
+        action: "Packet completed - awaiting verification",
+        user: user?.name || "Fabrication Team",
+        timestamp: now,
+      })
+    }
+
+    addPacketTimeline(
+      packet,
+      "Packet completed",
+      user?.name || "Fabrication Team",
+      `All ${packet.totalItems} materials gathered. Ready for verification.`
+    )
+
+    return HttpResponse.json({
+      success: true,
+      data: packet,
+      message: "Packet marked as complete. Awaiting Production Head verification.",
+    })
+  }
+)
+
+/**
+ * POST /api/order-items/:id/packet/approve
+ * Production head approves the packet
+ */
+const approvePacket = http.post(
+  "/api/order-items/:id/packet/approve",
+  async ({ params, request }) => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    const { id } = params
+    const data = await request.json()
+    const { userId, isReadyStock, notes } = data
+
+    const packet = getPacketByOrderItemId(id)
+
+    if (!packet) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Not found",
+          message: `No packet found for order item ${id}`,
+        },
+        { status: 404 }
+      )
+    }
+
+    if (packet.status !== PACKET_STATUS.COMPLETED) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Invalid status",
+          message: `Cannot approve packet in ${packet.status} status. Must be COMPLETED.`,
+        },
+        { status: 400 }
+      )
+    }
+
+    const user = findUser(userId)
+    const now = new Date().toISOString()
+
+    packet.status = PACKET_STATUS.APPROVED
+    packet.checkedBy = userId
+    packet.checkedByName = user?.name || "Production Head"
+    packet.checkedAt = now
+    packet.checkResult = "APPROVED"
+    packet.notes = notes || packet.notes
+    packet.updatedAt = now
+
+    // Determine next status based on whether it's ready stock or needs production
+    // If ready stock -> QUALITY_ASSURANCE (QA takes photos/videos)
+    // If needs production -> READY_FOR_PRODUCTION
+    let nextStatus
+    let timelineMessage
+
+    if (isReadyStock) {
+      nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
+      timelineMessage = "Packet approved - Moving to Quality Assurance for client photos/videos"
+    } else {
+      nextStatus = ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
+      timelineMessage = "Packet approved - Ready for production"
+    }
+
+    // Update order item status
+    const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
+    if (orderItemIndex !== -1) {
+      mockOrderItems[orderItemIndex].status = nextStatus
+      mockOrderItems[orderItemIndex].updatedAt = now
+      mockOrderItems[orderItemIndex].timeline.push({
+        id: `log-${Date.now()}`,
+        action: timelineMessage,
+        user: user?.name || "Production Head",
+        timestamp: now,
+      })
+    }
+
+    addPacketTimeline(
+      packet,
+      "Packet approved",
+      user?.name || "Production Head",
+      `Verified and approved. Next: ${nextStatus}`
+    )
+
+    return HttpResponse.json({
+      success: true,
+      data: {
+        packet,
+        nextStatus,
+      },
+      message: `Packet approved. Moving to ${nextStatus}`,
+    })
+  }
+)
+
+/**
+ * POST /api/order-items/:id/packet/reject
+ * Production head rejects the packet
+ */
+const rejectPacket = http.post(
+  "/api/order-items/:id/packet/reject",
+  async ({ params, request }) => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    const { id } = params
+    const data = await request.json()
+    const { userId, reasonCode, reason, notes } = data
+
+    if (!reasonCode || !reason) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Validation failed",
+          message: "Rejection reason is required",
+        },
+        { status: 400 }
+      )
+    }
+
+    const packet = getPacketByOrderItemId(id)
+
+    if (!packet) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Not found",
+          message: `No packet found for order item ${id}`,
+        },
+        { status: 404 }
+      )
+    }
+
+    if (packet.status !== PACKET_STATUS.COMPLETED) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: "Invalid status",
+          message: `Cannot reject packet in ${packet.status} status. Must be COMPLETED.`,
+        },
+        { status: 400 }
+      )
+    }
+
+    const user = findUser(userId)
+    const now = new Date().toISOString()
+
+    // Reset packet for rework
+    packet.status = PACKET_STATUS.ASSIGNED // Back to assigned state
+    packet.checkedBy = userId
+    packet.checkedByName = user?.name || "Production Head"
+    packet.checkedAt = now
+    packet.checkResult = "REJECTED"
+    packet.rejectionReason = reason
+    packet.rejectionReasonCode = reasonCode
+    packet.rejectionNotes = notes || ""
+    packet.completedAt = null // Clear completion
+    packet.updatedAt = now
+
+    // Reset pick list items for re-verification
+    packet.pickList.forEach((item) => {
+      item.isPicked = false
+      item.pickedQty = 0
+      item.pickedAt = null
+      item.notes = ""
+    })
+    packet.pickedItems = 0
+
+    // Update order item back to CREATE_PACKET
+    const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
+    if (orderItemIndex !== -1) {
+      mockOrderItems[orderItemIndex].status = ORDER_ITEM_STATUS.CREATE_PACKET
+      mockOrderItems[orderItemIndex].updatedAt = now
+      mockOrderItems[orderItemIndex].timeline.push({
+        id: `log-${Date.now()}`,
+        action: `Packet rejected - ${reason}`,
+        user: user?.name || "Production Head",
+        timestamp: now,
+      })
+    }
+
+    addPacketTimeline(
+      packet,
+      "Packet rejected",
+      user?.name || "Production Head",
+      `Reason: ${reason}${notes ? `. Notes: ${notes}` : ""}`
+    )
+
+    return HttpResponse.json({
+      success: true,
+      data: packet,
+      message: `Packet rejected. Sent back to ${packet.assignedToName} for correction.`,
+    })
+  }
+)
+
+// ============================================================================
+// EXPORT
+// ============================================================================
+
+export const packetHandlers = [
+  getPackets,
+  getMyPacketTasks,
+  getPacketCheckQueue,
+  getOrderItemPacket,
+  assignPacket,
+  startPacket,
+  pickItem,
+  completePacket,
+  approvePacket,
+  rejectPacket,
+]
