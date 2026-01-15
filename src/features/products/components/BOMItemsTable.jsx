@@ -180,7 +180,16 @@ export default function BOMItemsTable({ bomId, productId, size, pieces = [] }) {
                           {pieceItems.map((item) => (
                             <TableRow key={item.id}>
                               <TableCell className="font-medium">
-                                Item {item.inventory_item_id}
+                                <div>
+                                  <p className="font-medium">
+                                    {item.inventory_item_name || `Item ${item.inventory_item_id}`}
+                                  </p>
+                                  {item.inventory_item_sku && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {item.inventory_item_sku}
+                                    </p>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 {item.quantity_per_unit} {item.unit}
@@ -205,7 +214,7 @@ export default function BOMItemsTable({ bomId, productId, size, pieces = [] }) {
                                     size="sm"
                                     onClick={() => setItemToDelete(item)}
                                   >
-                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                    <Trash2 className="h-4 w-4 text-red-500" />
                                   </Button>
                                 </div>
                               </TableCell>
