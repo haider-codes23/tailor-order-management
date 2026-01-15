@@ -43,6 +43,9 @@ import FabricationItemDetailPage from "@/features/fabrication/pages/FabricationI
 
 import ProcurementDashboardPage from "../features/procurement/pages/ProcurementDashBoard"
 
+import PacketCreatorQueuePage from "@/features/packet/pages/PacketCreatorQueuePage"
+import PacketCheckQueuePage from "@/features/packet/pages/PacketCheckQueuePage"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -225,6 +228,26 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute requiredPermissions={["fabrication.view", "fabrication.create_bom"]}>
                 <FabricationItemDetailPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== PACKET ROUTES (Phase 12) ==================== */}
+        <Route path="/packet">
+          <Route
+            path="my-tasks"
+            element={
+              <ProtectedRoute requiredPermissions={["fabrication.view"]}>
+                <PacketCreatorQueuePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="check-queue"
+            element={
+              <ProtectedRoute requiredPermissions={["production.approve_packets"]}>
+                <PacketCheckQueuePage />
               </ProtectedRoute>
             }
           />
