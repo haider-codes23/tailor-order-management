@@ -12,6 +12,7 @@ export const ORDER_ITEM_STATUS = {
   AWAITING_MATERIAL: "AWAITING_MATERIAL",
   CREATE_PACKET: "CREATE_PACKET",
   PACKET_CHECK: "PACKET_CHECK",
+  QUALITY_ASSURANCE: "QUALITY_ASSURANCE", // NEW - QA takes photos/videos before client approval
   READY_FOR_PRODUCTION: "READY_FOR_PRODUCTION",
   IN_PRODUCTION: "IN_PRODUCTION",
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
@@ -26,22 +27,77 @@ export const ORDER_ITEM_STATUS = {
 // Human-readable status labels with colors
 export const ORDER_ITEM_STATUS_CONFIG = {
   RECEIVED: { label: "Received", color: "bg-blue-100 text-blue-800" },
-  AWAITING_CUSTOMER_FORM_APPROVAL: { label: "Awaiting Customer Approval", color: "bg-yellow-100 text-yellow-800" },
-  FABRICATION_BESPOKE: { label: "Fabrication (Bespoke)", color: "bg-purple-200", description: "Custom BOM creation in progress" },
+  AWAITING_CUSTOMER_FORM_APPROVAL: {
+    label: "Awaiting Customer Approval",
+    color: "bg-yellow-100 text-yellow-800",
+  },
+  FABRICATION_BESPOKE: {
+    label: "Fabrication (Bespoke)",
+    color: "bg-purple-200",
+    description: "Custom BOM creation in progress",
+  },
   INVENTORY_CHECK: { label: "Inventory Check", color: "bg-purple-100 text-purple-800" },
   AWAITING_MATERIAL: { label: "Awaiting Material", color: "bg-orange-100 text-orange-800" },
   CREATE_PACKET: { label: "Create Packet", color: "bg-indigo-100 text-indigo-800" },
   PACKET_CHECK: { label: "Packet Check", color: "bg-cyan-100 text-cyan-800" },
+  QUALITY_ASSURANCE: {
+    label: "Quality Assurance",
+    color: "bg-violet-100 text-violet-800",
+    description: "QA review - photos/videos for client",
+  }, // NEW
   READY_FOR_PRODUCTION: { label: "Ready for Production", color: "bg-teal-100 text-teal-800" },
   IN_PRODUCTION: { label: "In Production", color: "bg-amber-100 text-amber-800" },
   PRODUCTION_COMPLETED: { label: "Production Completed", color: "bg-lime-100 text-lime-800" },
-  AWAITING_CLIENT_APPROVAL: { label: "Awaiting Client Approval", color: "bg-pink-100 text-pink-800" },
+  AWAITING_CLIENT_APPROVAL: {
+    label: "Awaiting Client Approval",
+    color: "bg-pink-100 text-pink-800",
+  },
   CLIENT_APPROVED: { label: "Client Approved", color: "bg-emerald-100 text-emerald-800" },
   DISPATCHED: { label: "Dispatched", color: "bg-sky-100 text-sky-800" },
   COMPLETED: { label: "Completed", color: "bg-green-100 text-green-800" },
   REWORK_REQUIRED: { label: "Rework Required", color: "bg-red-100 text-red-800" },
   CANCELLED: { label: "Cancelled", color: "bg-gray-100 text-gray-800" },
 }
+
+// ============================================================================
+// PACKET WORKFLOW CONSTANTS (NEW - Phase 12)
+// ============================================================================
+
+/**
+ * Packet Status - Internal status of a packet within CREATE_PACKET phase
+ * A packet goes through these stages as the fabrication team gathers materials
+ */
+export const PACKET_STATUS = {
+  PENDING: "PENDING", // Created but not yet assigned
+  ASSIGNED: "ASSIGNED", // Assigned to fabrication team member
+  IN_PROGRESS: "IN_PROGRESS", // Fabrication team is gathering materials
+  COMPLETED: "COMPLETED", // All materials gathered, ready for check
+  APPROVED: "APPROVED", // Production head approved the packet
+  REJECTED: "REJECTED", // Production head rejected - needs rework
+}
+
+export const PACKET_STATUS_CONFIG = {
+  PENDING: { label: "Pending Assignment", color: "bg-gray-100 text-gray-800", icon: "Clock" },
+  ASSIGNED: { label: "Assigned", color: "bg-blue-100 text-blue-800", icon: "UserCheck" },
+  IN_PROGRESS: { label: "In Progress", color: "bg-amber-100 text-amber-800", icon: "Package" },
+  COMPLETED: { label: "Awaiting Check", color: "bg-cyan-100 text-cyan-800", icon: "CheckSquare" },
+  APPROVED: { label: "Approved", color: "bg-green-100 text-green-800", icon: "CheckCircle" },
+  REJECTED: { label: "Rejected", color: "bg-red-100 text-red-800", icon: "XCircle" },
+}
+
+/**
+ * Standard rejection reasons for packet check
+ * Production head selects one when rejecting a packet
+ */
+export const PACKET_REJECTION_REASONS = [
+  { code: "WRONG_MATERIALS", label: "Wrong materials gathered" },
+  { code: "INCORRECT_QTY", label: "Incorrect quantities" },
+  { code: "DAMAGED_MATERIALS", label: "Damaged materials found" },
+  { code: "MISSING_ITEMS", label: "Missing items in packet" },
+  { code: "QUALITY_ISSUE", label: "Material quality issues" },
+  { code: "WRONG_COLOR", label: "Wrong color/shade" },
+  { code: "OTHER", label: "Other (specify in notes)" },
+]
 
 // Order source - where the order came from
 export const ORDER_SOURCE = {
