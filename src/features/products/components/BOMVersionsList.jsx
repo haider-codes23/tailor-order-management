@@ -31,7 +31,7 @@ import CreateBOMModal from "./CreateBOMModal"
 const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL"]
 
 export default function BOMVersionsList({ productId }) {
-  const [selectedSize, setSelectedSize] = useState("M")
+  const [selectedSize, setSelectedSize] = useState("ALL")
   const [expandedBOMId, setExpandedBOMId] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [bomToActivate, setBomToActivate] = useState(null)
