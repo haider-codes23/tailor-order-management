@@ -9,6 +9,9 @@ import {
   SIZE_TYPE,
   CUSTOMIZATION_TYPE,
 } from "@/constants/orderConstants"
+import PacketTab from "@/features/packet/components/PacketTab"
+
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -150,6 +153,13 @@ export default function OrderItemDetailPage() {
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="form">Order Form</TabsTrigger>
+          {/* Packet Tab - only show for relevant statuses */}
+          {(item?.status === ORDER_ITEM_STATUS.CREATE_PACKET ||
+            item?.status === ORDER_ITEM_STATUS.PACKET_CHECK ||
+            item?.status === ORDER_ITEM_STATUS.QUALITY_ASSURANCE ||
+            item?.status === ORDER_ITEM_STATUS.READY_FOR_PRODUCTION) && (
+            <TabsTrigger value="packet">Packet</TabsTrigger>
+          )}
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
         </TabsList>
 
@@ -770,6 +780,11 @@ export default function OrderItemDetailPage() {
           </Card>
         </TabsContent>
 
+        {/* Packet Tab - Phase 12 */}
+        <TabsContent value="packet" className="space-y-6">
+          <PacketTab orderItem={item} />
+        </TabsContent>
+
         {/* Timeline Tab */}
         <TabsContent value="timeline" className="space-y-6">
           <Card>
@@ -803,6 +818,7 @@ export default function OrderItemDetailPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        {/* Packet Tab - Phase 12 */}
       </Tabs>
       {/* Form Preview Modal */}
       {/* Form Preview Modal */}
