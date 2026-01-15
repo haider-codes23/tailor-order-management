@@ -12,6 +12,7 @@ import {
   Ruler,
   Box,
   Scissors,
+  ClipboardCheck
 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
@@ -76,6 +77,25 @@ const navItems = [
     requiredPermissions: ["fabrication.view"],
     iconColor: "text-purple-600",
     iconBgColor: "bg-purple-100",
+  },
+  // For Fabrication team members:
+  {
+    name: "My Packet Tasks",
+    href: "/packet/my-tasks",
+    icon: Package,
+    requiredPermissions: ["fabrication.view"],
+    iconColor: "text-lime-400",
+    iconBgColor: "bg-lime-100",
+  },
+
+  // For Production Head:
+  {
+    name: "Packet Verification",
+    href: "/packet/check-queue",
+    icon: ClipboardCheck,
+    requiredPermissions: ["production.approve_packets"],
+    iconColor: "text-cyan-600",
+    iconBgColor: "bg-cyan-300",
   },
   {
     name: "Production",
