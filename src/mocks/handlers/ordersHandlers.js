@@ -23,7 +23,8 @@ import {
 } from "@/constants/orderConstants"
 import { mockProducts, getActiveBOM, getBOMItems } from "../data/mockProducts"
 
-import { mockInventoryItems } from "../data/mockInventory"
+import { mockInventoryItems, mockStockMovements } from "../data/mockInventory"
+
 import {
   mockProcurementDemands,
   generateProcurementDemandId,
@@ -671,11 +672,64 @@ export const ordersHandlers = [
     // Determine next status and create procurement demands if needed
     let nextStatus
     let timelineAction
+    const stockDeductions = [] // Track what we deducted
 
     if (shortages.length === 0) {
-      // All materials available
+      // All materials available - DEDUCT STOCK
       nextStatus = ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
-      timelineAction = "Inventory check passed - Ready for production"
+      timelineAction = "Inventory check passed - Materials reserved for production"
+
+      // Deduct stock from inventory and create movement records
+      materialRequirements.forEach((req) => {
+        const inventoryId =
+          typeof req.inventoryItemId === "string"
+            ? parseInt(req.inventoryItemId)
+            : req.inventoryItemId
+
+        const inventoryItem = mockInventoryItems.find(
+          (inv) =>
+            inv.id === inventoryId ||
+            inv.id === req.inventoryItemId ||
+            inv.sku === req.inventoryItemSku
+        )
+
+        if (inventoryItem) {
+          // Deduct the required quantity from remaining_stock
+          const previousStock = inventoryItem.remaining_stock
+          inventoryItem.remaining_stock = Math.max(0, inventoryItem.remaining_stock - req.requiredQty)
+          inventoryItem.updated_at = now
+
+          console.log(`[Stock Deduction] ${inventoryItem.name}: ${previousStock} -> ${inventoryItem.remaining_stock} (deducted ${req.requiredQty})`)
+
+          // Create a stock movement record
+          const movement = {
+            id: mockStockMovements.length + 1,
+            inventory_item_id: inventoryItem.id,
+            variant_id: null,
+            movement_type: "STOCK_OUT",
+            quantity: req.requiredQty,
+            remaining_stock_after: inventoryItem.remaining_stock,
+            transaction_date: now,
+            reference_number: `ORDER-${item.orderId}-ITEM-${id}`,
+            notes: `Material reserved for order item ${id} - ${req.piece || "General"}`,
+            performed_by_user_id: 1,
+            created_at: now,
+          }
+
+          mockStockMovements.push(movement)
+
+          stockDeductions.push({
+            inventoryItemId: inventoryItem.id,
+            inventoryItemName: inventoryItem.name,
+            deductedQty: req.requiredQty,
+            previousStock,
+            newStock: inventoryItem.remaining_stock,
+            movementId: movement.id,
+          })
+        }
+      })
+
+      console.log(`[Inventory Check] Deducted stock for ${stockDeductions.length} materials`)
     } else {
       // Materials short - create procurement demands
       nextStatus = ORDER_ITEM_STATUS.AWAITING_MATERIAL
@@ -705,12 +759,14 @@ export const ordersHandlers = [
 
     console.log("[Inventory Check] Next Status:", nextStatus)
     console.log("[Inventory Check] Shortages:", shortages.length)
+    console.log("[Inventory Check] Stock Deductions:", stockDeductions.length)
 
     // Update order item
     mockOrderItems[itemIndex].status = nextStatus
     mockOrderItems[itemIndex].materialRequirements = materialRequirements
     mockOrderItems[itemIndex].lastInventoryCheck = now
     mockOrderItems[itemIndex].updatedAt = now
+    mockOrderItems[itemIndex].stockDeductions = stockDeductions // Store deduction records
 
     // Add timeline entry
     mockOrderItems[itemIndex].timeline.push({
@@ -728,6 +784,7 @@ export const ordersHandlers = [
         shortages,
         nextStatus,
         procurementDemandsCreated: shortages.length,
+        stockDeductions, // Include deductions in response
       },
     })
   }),
