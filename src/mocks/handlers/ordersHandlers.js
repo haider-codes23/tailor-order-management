@@ -24,6 +24,7 @@ import {
 import { mockProducts, getActiveBOM, getBOMItems } from "../data/mockProducts"
 
 import { mockInventoryItems, mockStockMovements } from "../data/mockInventory"
+import { mockPackets, createPacketFromRequirements } from "../data/mockPackets"
 
 import {
   mockProcurementDemands,
@@ -676,8 +677,8 @@ export const ordersHandlers = [
 
     if (shortages.length === 0) {
       // All materials available - DEDUCT STOCK
-      nextStatus = ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
-      timelineAction = "Inventory check passed - Materials reserved for production"
+      nextStatus = ORDER_ITEM_STATUS.CREATE_PACKET // Changed from READY_FOR_PRODUCTION
+      timelineAction = "Inventory check passed - Materials reserved. Packet creation required."
 
       // Deduct stock from inventory and create movement records
       materialRequirements.forEach((req) => {
@@ -696,10 +697,15 @@ export const ordersHandlers = [
         if (inventoryItem) {
           // Deduct the required quantity from remaining_stock
           const previousStock = inventoryItem.remaining_stock
-          inventoryItem.remaining_stock = Math.max(0, inventoryItem.remaining_stock - req.requiredQty)
+          inventoryItem.remaining_stock = Math.max(
+            0,
+            inventoryItem.remaining_stock - req.requiredQty
+          )
           inventoryItem.updated_at = now
 
-          console.log(`[Stock Deduction] ${inventoryItem.name}: ${previousStock} -> ${inventoryItem.remaining_stock} (deducted ${req.requiredQty})`)
+          console.log(
+            `[Stock Deduction] ${inventoryItem.name}: ${previousStock} -> ${inventoryItem.remaining_stock} (deducted ${req.requiredQty})`
+          )
 
           // Create a stock movement record
           const movement = {
@@ -730,6 +736,25 @@ export const ordersHandlers = [
       })
 
       console.log(`[Inventory Check] Deducted stock for ${stockDeductions.length} materials`)
+
+      // =====================================================================
+      // PHASE 12: AUTO-CREATE PACKET
+      // =====================================================================
+      const inventoryItemsMap = {}
+      mockInventoryItems.forEach((inv) => {
+        inventoryItemsMap[inv.id] = inv
+      })
+
+      const packet = createPacketFromRequirements(
+        id,
+        item.orderId,
+        materialRequirements,
+        inventoryItemsMap
+      )
+      mockPackets.push(packet)
+      mockOrderItems[itemIndex].packetId = packet.id
+
+      console.log(`[Inventory Check] Created packet ${packet.id}`)
     } else {
       // Materials short - create procurement demands
       nextStatus = ORDER_ITEM_STATUS.AWAITING_MATERIAL
@@ -776,6 +801,9 @@ export const ordersHandlers = [
       timestamp: now,
     })
 
+    // Find created packet for response
+    const createdPacket = mockPackets.find((p) => p.orderItemId === id)
+
     return HttpResponse.json({
       success: true,
       data: {
@@ -785,6 +813,8 @@ export const ordersHandlers = [
         nextStatus,
         procurementDemandsCreated: shortages.length,
         stockDeductions, // Include deductions in response
+        packet: createdPacket || null,
+        packetCreated: !!createdPacket,
       },
     })
   }),
