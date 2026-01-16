@@ -1,3 +1,12 @@
+/**
+ * useAuth.jsx - UPDATED VERSION
+ * 
+ * FIX: Changed logout to NOT use window.location.href
+ * Instead, the redirect is handled by the component that calls logout
+ * 
+ * This prevents hard page refresh which was clearing MSW in-memory data
+ */
+
 import { createContext, useContext, useState, useEffect } from "react"
 import { setAuthToken, setStoredUser, getStoredUser, clearAuth } from "@/services/http/httpClient"
 
@@ -42,16 +51,17 @@ export function AuthProvider({ children }) {
 
   /**
    * Logout function
+   * 
+   * CHANGED: No longer does window.location.href redirect
+   * The redirect should be handled by the component calling logout
+   * using React Router's navigate() to avoid hard page refresh
    */
   const logout = () => {
     clearAuth()
     setUser(null)
     setIsAuthenticated(false)
-
-    // Redirect to login
-    if (typeof window !== "undefined") {
-      window.location.href = "/login"
-    }
+    // REMOVED: window.location.href = "/login"
+    // Redirect is now handled by the calling component
   }
 
   /**
