@@ -14,6 +14,12 @@ import { getMeasurementCategoryById } from "@/constants/measurementCategories"
 import { FileText, User, Users, Package, Palette, Ruler, Image as ImageIcon } from "lucide-react"
 
 export default function OrderFormViewFabrication({ order, item }) {
+  // Early return if order or item is not available
+  if (!order || !item) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">Order form data not available</div>
+    )
+  }
   const formatDate = (dateString) => {
     if (!dateString) return "—"
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -42,21 +48,30 @@ export default function OrderFormViewFabrication({ order, item }) {
   }
 
   // Group measurements by category
+  // Group measurements by category
   const groupedMeasurements = {}
   if (item.measurementCategories && item.measurements) {
     item.measurementCategories.forEach((categoryId) => {
       const category = getMeasurementCategoryById(categoryId)
-      if (category) {
+      if (category && category.groups) {
         groupedMeasurements[categoryId] = {
           name: category.name,
           measurements: {},
         }
-        // Get measurements for this category
-        category.measurements.forEach((m) => {
-          if (item.measurements[m.id] !== undefined && item.measurements[m.id] !== "") {
+
+        // Flatten all measurements from all groups
+        const allMeasurements = category.groups.flatMap((g) => g.measurements || [])
+
+        // Get measurements for this category - check both prefixed and non-prefixed keys
+        allMeasurements.forEach((m) => {
+          // Try prefixed key first (e.g., "kaftan_shoulder"), then non-prefixed (e.g., "shoulder")
+          const prefixedKey = `${categoryId}_${m.id}`
+          const value = item.measurements[prefixedKey] ?? item.measurements[m.id]
+
+          if (value !== undefined && value !== "") {
             groupedMeasurements[categoryId].measurements[m.id] = {
               label: m.label,
-              value: item.measurements[m.id],
+              value: value,
               unit: m.unit,
             }
           }

@@ -169,7 +169,7 @@ export default function FabricationItemDetailPage() {
       )}
 
       {/* Main Content - Order Form View */}
-      <OrderFormViewFabrication order={order} item={item} />
+      {order && item && <OrderFormViewFabrication order={order} item={item} />}
 
       <Separator className="my-8" />
 
