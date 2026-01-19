@@ -7,9 +7,12 @@ import {
   deleteProcurementDemand,
   fetchProcurementStats,
   runInventoryCheck,
+  rerunSectionInventoryCheck,
 } from "../services/api/procurementApi"
 
 import { orderKeys, orderItemKeys } from "./useOrders"
+
+import { toast } from "sonner"
 
 // Query keys
 export const procurementKeys = {
@@ -100,6 +103,51 @@ export const useRunInventoryCheck = () => {
       // Invalidate and force refetch procurement queries
       queryClient.invalidateQueries({ queryKey: procurementKeys.all })
       queryClient.refetchQueries({ queryKey: procurementKeys.all, type: "active" })
+    },
+  })
+}
+
+// Re-run inventory check for sections in AWAITING_MATERIAL status
+export const useRerunSectionInventoryCheck = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ orderItemId, data }) => rerunSectionInventoryCheck(orderItemId, data),
+    onSuccess: (response, variables) => {
+      const itemId = variables.orderItemId
+      const orderId = response?.data?.item?.orderId || response?.item?.orderId
+
+      // Invalidate and force refetch order item
+      queryClient.invalidateQueries({ queryKey: orderItemKeys.detail(itemId) })
+      queryClient.refetchQueries({ queryKey: orderItemKeys.detail(itemId), type: "active" })
+
+      if (orderId) {
+        // Invalidate and force refetch order detail
+        queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) })
+        queryClient.refetchQueries({ queryKey: orderKeys.detail(orderId), type: "active" })
+      }
+
+      // Invalidate and force refetch order lists
+      queryClient.invalidateQueries({ queryKey: orderKeys.lists() })
+      queryClient.refetchQueries({ queryKey: orderKeys.lists(), type: "active" })
+
+      // Invalidate and force refetch procurement queries
+      queryClient.invalidateQueries({ queryKey: procurementKeys.all })
+      queryClient.refetchQueries({ queryKey: procurementKeys.all, type: "active" })
+
+      // Invalidate packet queries
+      queryClient.invalidateQueries({ queryKey: ["packet"] })
+      queryClient.refetchQueries({ queryKey: ["packet"], type: "active" })
+
+      const result = response?.data || response
+      if (result?.passedSections?.length > 0) {
+        toast.success(`Inventory check passed for: ${result.passedSections.join(", ")}`)
+      } else {
+        toast.info("No sections passed inventory check yet")
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || "Failed to re-run section inventory check")
     },
   })
 }
