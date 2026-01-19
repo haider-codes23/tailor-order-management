@@ -41,17 +41,48 @@ import {
 import { toast } from "sonner"
 import { hasPermission } from "@/lib/rbac"
 import CustomBOMViewModal from "../components/CustomBOMViewModal"
-import { useRunInventoryCheck } from "../../../hooks/useProcurement"
+import {
+  useRunInventoryCheck,
+  useRerunSectionInventoryCheck,
+  useProcurementDemands,
+} from "../../../hooks/useProcurement"
 
 /**
  * SectionInventoryResults Component
  * Displays inventory check results grouped by section (included items/add-ons)
- * with pass/fail indicators for each section
+ * with pass/fail indicators, procurement status, and re-run capability
  */
-function SectionInventoryResults({ sectionStatuses }) {
+function SectionInventoryResults({
+  sectionStatuses,
+  orderItemId,
+  procurementDemands = [],
+  onRerunCheck,
+}) {
   if (!sectionStatuses || Object.keys(sectionStatuses).length === 0) {
     return null
   }
+
+  // Group procurement demands by section
+  const demandsBySection = {}
+  procurementDemands.forEach((pd) => {
+    const section = pd.affectedSection?.toLowerCase() || "unknown"
+    if (!demandsBySection[section]) demandsBySection[section] = []
+    demandsBySection[section].push(pd)
+  })
+
+  // Check if any section in AWAITING_MATERIAL has all demands fulfilled
+  const sectionsReadyForRecheck = []
+  Object.entries(sectionStatuses).forEach(([sectionName, sectionData]) => {
+    if (sectionData.status === SECTION_STATUS.AWAITING_MATERIAL) {
+      const sectionDemands = demandsBySection[sectionName.toLowerCase()] || []
+      const allFulfilled =
+        sectionDemands.length > 0 &&
+        sectionDemands.every((pd) => pd.status === "RECEIVED" || pd.status === "CANCELLED")
+      if (allFulfilled) {
+        sectionsReadyForRecheck.push(sectionName)
+      }
+    }
+  })
 
   return (
     <Card>
@@ -64,6 +95,11 @@ function SectionInventoryResults({ sectionStatuses }) {
       <CardContent className="space-y-4">
         {Object.entries(sectionStatuses).map(([sectionName, sectionData]) => {
           const statusConfig = SECTION_STATUS_CONFIG[sectionData.status] || {}
+          const isAwaiting = sectionData.status === SECTION_STATUS.AWAITING_MATERIAL
+          const sectionDemands = demandsBySection[sectionName.toLowerCase()] || []
+          const allDemandsFulfilled =
+            sectionDemands.length > 0 &&
+            sectionDemands.every((pd) => pd.status === "RECEIVED" || pd.status === "CANCELLED")
           const passed =
             sectionData.status === SECTION_STATUS.INVENTORY_PASSED ||
             sectionData.status === SECTION_STATUS.CREATE_PACKET ||
@@ -86,6 +122,59 @@ function SectionInventoryResults({ sectionStatuses }) {
                   {statusConfig.label || sectionData.status}
                 </Badge>
               </div>
+
+              {/* Procurement Status Banner for AWAITING_MATERIAL sections */}
+              {isAwaiting && sectionDemands.length > 0 && (
+                <div
+                  className={`mb-3 p-3 rounded-lg ${
+                    allDemandsFulfilled
+                      ? "bg-green-50 border border-green-200"
+                      : "bg-amber-50 border border-amber-200"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {allDemandsFulfilled ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Clock className="h-4 w-4 text-amber-600" />
+                      )}
+                      <span
+                        className={`text-sm font-medium ${
+                          allDemandsFulfilled ? "text-green-800" : "text-amber-800"
+                        }`}
+                      >
+                        {allDemandsFulfilled
+                          ? "All procurement demands fulfilled!"
+                          : `${sectionDemands.filter((d) => d.status !== "RECEIVED").length} demand(s) pending`}
+                      </span>
+                    </div>
+                    {allDemandsFulfilled && (
+                      <Badge className="bg-green-100 text-green-800">Ready for Recheck</Badge>
+                    )}
+                  </div>
+                  {/* Show demand details */}
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {sectionDemands.map((pd) => (
+                      <div key={pd.id} className="flex items-center gap-2">
+                        <span>{pd.inventoryItemName}:</span>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            pd.status === "RECEIVED"
+                              ? "bg-green-50 text-green-700"
+                              : pd.status === "ORDERED"
+                                ? "bg-blue-50 text-blue-700"
+                                : "bg-gray-50 text-gray-700"
+                          }`}
+                        >
+                          {pd.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Materials Table */}
               {sectionData.inventoryCheckResult?.materials &&
@@ -138,6 +227,24 @@ function SectionInventoryResults({ sectionStatuses }) {
             </div>
           )
         })}
+
+        {/* Re-run Inventory Check Button */}
+        {sectionsReadyForRecheck.length > 0 && onRerunCheck && (
+          <div className="pt-4 border-t">
+            <Alert className="border-green-200 bg-green-50 mb-4">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertTitle className="text-green-900">Procurement Complete</AlertTitle>
+              <AlertDescription className="text-green-700">
+                Sections ready for inventory recheck:{" "}
+                <strong>{sectionsReadyForRecheck.join(", ")}</strong>
+              </AlertDescription>
+            </Alert>
+            <Button onClick={onRerunCheck} className="w-full">
+              <ClipboardCheck className="h-4 w-4 mr-2" />
+              Re-run Inventory Check for {sectionsReadyForRecheck.join(", ")}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -158,6 +265,11 @@ export default function OrderItemDetailPage() {
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
   const approveForm = useApproveOrderForm()
   const runInventoryCheck = useRunInventoryCheck()
+  const { data: procurementDemandsData } = useProcurementDemands({ orderItemId: itemId })
+  const procurementDemands = procurementDemandsData?.data || []
+
+  // Re-run section inventory check
+  const rerunSectionCheck = useRerunSectionInventoryCheck()
 
   const order = orderData
   const item = itemData?.data
@@ -199,6 +311,23 @@ export default function OrderItemDetailPage() {
     } catch (error) {
       toast.error("Failed to run inventory check")
       console.error("Inventory check error:", error)
+    }
+  }
+
+  const handleRerunSectionInventoryCheck = async () => {
+    try {
+      const response = await rerunSectionCheck.mutateAsync({
+        orderItemId: itemId,
+        data: { checkedBy: user?.name || "System" },
+      })
+
+      const result = response?.data || response
+      if (result.passedSections?.length > 0) {
+        toast.success(`Inventory check passed for: ${result.passedSections.join(", ")}`)
+      }
+    } catch (error) {
+      toast.error("Failed to re-run section inventory check")
+      console.error("Rerun section inventory check error:", error)
     }
   }
 
@@ -503,7 +632,12 @@ export default function OrderItemDetailPage() {
           {/* NEW: Section-Level Inventory Results (for partial workflow) */}
           {/* ============================================================ */}
           {item.sectionStatuses && Object.keys(item.sectionStatuses).length > 0 && (
-            <SectionInventoryResults sectionStatuses={item.sectionStatuses} />
+            <SectionInventoryResults
+              sectionStatuses={item.sectionStatuses}
+              orderItemId={itemId}
+              procurementDemands={procurementDemands}
+              onRerunCheck={handleRerunSectionInventoryCheck}
+            />
           )}
 
           {/* Partial Workflow Status Banner */}
