@@ -3,6 +3,27 @@
  * Stores material shortages that need to be procured
  */
 
+/**
+ * Procurement Demand Structure:
+ * {
+ *   id: string,
+ *   orderId: string,
+ *   orderItemId: string,
+ *   inventoryItemId: number,
+ *   inventoryItemName: string,
+ *   inventoryItemSku: string,
+ *   requiredQty: number,
+ *   availableQty: number,
+ *   shortageQty: number,
+ *   unit: string,
+ *   affectedSection: string,  // NEW - Which section this shortage affects (e.g., "Dupatta")
+ *   status: "OPEN" | "ORDERED" | "RECEIVED" | "CANCELLED",
+ *   createdAt: string,
+ *   updatedAt: string,
+ *   notes: string,
+ * }
+ */
+
 export let mockProcurementDemands = []
 
 // Helper functions
