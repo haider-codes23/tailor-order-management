@@ -97,6 +97,12 @@ export const createPacketFromRequirements = (
     orderId,
     status: PACKET_STATUS.PENDING,
 
+    // NEW: Partial packet tracking
+    isPartial: false,
+    packetRound: 1,
+    sectionsIncluded: [], // Will be populated for partial packets
+    sectionsPending: [], // Sections still awaiting material
+
     // Assignment info
     assignedTo: null, // User ID of fabrication team member
     assignedToName: null, // Display name
@@ -140,6 +146,147 @@ export const createPacketFromRequirements = (
     createdAt: now,
     updatedAt: now,
   }
+
+  return packet
+}
+
+/**
+ * Create a PARTIAL packet from requirements (only for sections that passed inventory check)
+ * Used when some sections pass but others fail
+ */
+export const createPartialPacketFromRequirements = (
+  orderItemId,
+  orderId,
+  materialRequirements,
+  inventoryItemsMap = {},
+  passedSections = [],
+  pendingSections = []
+) => {
+  const now = new Date().toISOString()
+
+  const pickList = materialRequirements.map((req, index) => {
+    const inventoryItem = inventoryItemsMap[req.inventoryItemId] || {}
+    return {
+      id: `pick-${orderItemId}-${index + 1}`,
+      inventoryItemId: req.inventoryItemId,
+      inventoryItemName: inventoryItem.name || req.inventoryItemName || `Item ${req.inventoryItemId}`,
+      inventoryItemSku: inventoryItem.sku || req.inventoryItemSku || "",
+      inventoryItemCategory: inventoryItem.category || req.category || "",
+      requiredQty: req.requiredQty,
+      unit: inventoryItem.unit || req.unit || "Unit",
+      rackLocation: inventoryItem.rack_location || "TBD",
+      piece: req.piece || "General",
+      isPicked: false,
+      pickedQty: 0,
+      pickedAt: null,
+      notes: "",
+    }
+  })
+
+  const packet = {
+    id: generatePacketId(),
+    orderItemId,
+    orderId,
+    status: PACKET_STATUS.PENDING,
+
+    // Partial packet tracking
+    isPartial: true,
+    packetRound: 1,
+    sectionsIncluded: passedSections,
+    sectionsPending: pendingSections,
+
+    // Assignment info
+    assignedTo: null,
+    assignedToName: null,
+    assignedBy: null,
+    assignedByName: null,
+    assignedAt: null,
+
+    // Progress tracking
+    startedAt: null,
+    completedAt: null,
+
+    // Verification info
+    checkedBy: null,
+    checkedByName: null,
+    checkedAt: null,
+    checkResult: null,
+    rejectionReason: null,
+    rejectionReasonCode: null,
+    rejectionNotes: null,
+
+    pickList,
+    totalItems: pickList.length,
+    pickedItems: 0,
+
+    notes: "",
+    timeline: [
+      {
+        id: `timeline-${Date.now()}`,
+        action: `Partial packet created for sections: ${passedSections.join(", ")}`,
+        user: "System",
+        timestamp: now,
+        details: `Pending sections: ${pendingSections.join(", ")}`,
+      },
+    ],
+
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  return packet
+}
+
+/**
+ * Add materials to existing packet (for subsequent partial packet rounds)
+ */
+export const addMaterialsToExistingPacket = (
+  packet,
+  newMaterialRequirements,
+  inventoryItemsMap,
+  newSections
+) => {
+  if (!packet) return null
+
+  const now = new Date().toISOString()
+  const startIndex = packet.pickList.length
+
+  const newPickItems = newMaterialRequirements.map((req, index) => {
+    const inventoryItem = inventoryItemsMap[req.inventoryItemId] || {}
+    return {
+      id: `pick-${packet.orderItemId}-${startIndex + index + 1}`,
+      inventoryItemId: req.inventoryItemId,
+      inventoryItemName: inventoryItem.name || req.inventoryItemName,
+      inventoryItemSku: inventoryItem.sku || req.inventoryItemSku || "",
+      inventoryItemCategory: inventoryItem.category || "",
+      requiredQty: req.requiredQty,
+      unit: inventoryItem.unit || req.unit || "Unit",
+      rackLocation: inventoryItem.rack_location || "TBD",
+      piece: req.piece || "General",
+      isPicked: false,
+      pickedQty: 0,
+      pickedAt: null,
+      notes: "",
+      addedInRound: packet.packetRound + 1,
+    }
+  })
+
+  packet.pickList.push(...newPickItems)
+  packet.sectionsIncluded.push(...newSections)
+  packet.sectionsPending = packet.sectionsPending.filter(
+    (s) => !newSections.map((n) => n.toLowerCase()).includes(s.toLowerCase())
+  )
+  packet.packetRound += 1
+  packet.totalItems = packet.pickList.length
+  packet.status = PACKET_STATUS.PENDING // Reset for new materials
+  packet.updatedAt = now
+
+  packet.timeline.push({
+    id: `timeline-${Date.now()}`,
+    action: `Added materials for sections: ${newSections.join(", ")} (Round ${packet.packetRound})`,
+    user: "System",
+    timestamp: now,
+  })
 
   return packet
 }
