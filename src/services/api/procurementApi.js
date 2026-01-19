@@ -29,3 +29,8 @@ export const fetchProcurementStats = () => {
 export const runInventoryCheck = (orderItemId, data = {}) => {
   return httpClient.post(`/order-items/${orderItemId}/inventory-check`, data)
 }
+
+// Re-run inventory check for sections in AWAITING_MATERIAL status
+export const rerunSectionInventoryCheck = (orderItemId, data = {}) => {
+  return httpClient.post(`/order-items/${orderItemId}/rerun-section-inventory-check`, data)
+}
