@@ -11,10 +11,13 @@ export const ORDER_ITEM_STATUS = {
   INVENTORY_CHECK: "INVENTORY_CHECK",
   AWAITING_MATERIAL: "AWAITING_MATERIAL",
   CREATE_PACKET: "CREATE_PACKET",
+  PARTIAL_CREATE_PACKET: "PARTIAL_CREATE_PACKET", // NEW
   PACKET_CHECK: "PACKET_CHECK",
+  PARTIAL_PACKET_CHECK: "PARTIAL_PACKET_CHECK", // NEW
   QUALITY_ASSURANCE: "QUALITY_ASSURANCE", // NEW - QA takes photos/videos before client approval
   READY_FOR_PRODUCTION: "READY_FOR_PRODUCTION",
   IN_PRODUCTION: "IN_PRODUCTION",
+  PARTIAL_IN_PRODUCTION: "PARTIAL_IN_PRODUCTION", // NEW
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
   AWAITING_CLIENT_APPROVAL: "AWAITING_CLIENT_APPROVAL",
   CLIENT_APPROVED: "CLIENT_APPROVED",
@@ -39,7 +42,17 @@ export const ORDER_ITEM_STATUS_CONFIG = {
   INVENTORY_CHECK: { label: "Inventory Check", color: "bg-purple-100 text-purple-800" },
   AWAITING_MATERIAL: { label: "Awaiting Material", color: "bg-orange-100 text-orange-800" },
   CREATE_PACKET: { label: "Create Packet", color: "bg-indigo-100 text-indigo-800" },
+  PARTIAL_CREATE_PACKET: {
+    label: "Partial Packet Creation",
+    color: "bg-indigo-200 text-indigo-900",
+    description: "Some sections ready for packet, others awaiting material",
+  },
   PACKET_CHECK: { label: "Packet Check", color: "bg-cyan-100 text-cyan-800" },
+  PARTIAL_PACKET_CHECK: {
+    label: "Partial Packet Check",
+    color: "bg-cyan-200 text-cyan-900",
+    description: "Verifying partial packet while some sections await material",
+  },
   QUALITY_ASSURANCE: {
     label: "Quality Assurance",
     color: "bg-violet-100 text-violet-800",
@@ -47,6 +60,11 @@ export const ORDER_ITEM_STATUS_CONFIG = {
   }, // NEW
   READY_FOR_PRODUCTION: { label: "Ready for Production", color: "bg-teal-100 text-teal-800" },
   IN_PRODUCTION: { label: "In Production", color: "bg-amber-100 text-amber-800" },
+  PARTIAL_IN_PRODUCTION: {
+    label: "Partial Production",
+    color: "bg-amber-200 text-amber-900",
+    description: "Some sections in production, others pending",
+  },
   PRODUCTION_COMPLETED: { label: "Production Completed", color: "bg-lime-100 text-lime-800" },
   AWAITING_CLIENT_APPROVAL: {
     label: "Awaiting Client Approval",
@@ -83,6 +101,88 @@ export const PACKET_STATUS_CONFIG = {
   COMPLETED: { label: "Awaiting Check", color: "bg-cyan-100 text-cyan-800", icon: "CheckSquare" },
   APPROVED: { label: "Approved", color: "bg-green-100 text-green-800", icon: "CheckCircle" },
   REJECTED: { label: "Rejected", color: "bg-red-100 text-red-800", icon: "XCircle" },
+}
+
+/**
+ * Section Status - Status for each included item/add-on within an order item
+ * Each section (Shirt, Farshi, Dupatta, etc.) has its own independent status
+ */
+export const SECTION_STATUS = {
+  PENDING_INVENTORY_CHECK: "PENDING_INVENTORY_CHECK",
+  INVENTORY_PASSED: "INVENTORY_PASSED",
+  AWAITING_MATERIAL: "AWAITING_MATERIAL",
+  CREATE_PACKET: "CREATE_PACKET",
+  PACKET_CREATED: "PACKET_CREATED",
+  PACKET_VERIFIED: "PACKET_VERIFIED",
+  READY_FOR_PRODUCTION: "READY_FOR_PRODUCTION",
+  IN_PRODUCTION: "IN_PRODUCTION",
+  PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
+  QA_PENDING: "QA_PENDING",
+  QA_APPROVED: "QA_APPROVED",
+  COMPLETED: "COMPLETED",
+}
+
+export const SECTION_STATUS_CONFIG = {
+  PENDING_INVENTORY_CHECK: {
+    label: "Pending Check",
+    color: "bg-gray-100 text-gray-800",
+    icon: "Clock",
+  },
+  INVENTORY_PASSED: {
+    label: "Inventory OK",
+    color: "bg-green-100 text-green-800",
+    icon: "CheckCircle",
+  },
+  AWAITING_MATERIAL: {
+    label: "Awaiting Material",
+    color: "bg-orange-100 text-orange-800",
+    icon: "AlertCircle",
+  },
+  CREATE_PACKET: {
+    label: "Ready for Packet",
+    color: "bg-indigo-100 text-indigo-800",
+    icon: "Package",
+  },
+  PACKET_CREATED: {
+    label: "Packet Created",
+    color: "bg-cyan-100 text-cyan-800",
+    icon: "PackageCheck",
+  },
+  PACKET_VERIFIED: {
+    label: "Packet Verified",
+    color: "bg-teal-100 text-teal-800",
+    icon: "ShieldCheck",
+  },
+  READY_FOR_PRODUCTION: {
+    label: "Ready for Production",
+    color: "bg-blue-100 text-blue-800",
+    icon: "Factory",
+  },
+  IN_PRODUCTION: {
+    label: "In Production",
+    color: "bg-amber-100 text-amber-800",
+    icon: "Cog",
+  },
+  PRODUCTION_COMPLETED: {
+    label: "Production Done",
+    color: "bg-lime-100 text-lime-800",
+    icon: "CheckSquare",
+  },
+  QA_PENDING: {
+    label: "QA Pending",
+    color: "bg-violet-100 text-violet-800",
+    icon: "Camera",
+  },
+  QA_APPROVED: {
+    label: "QA Approved",
+    color: "bg-emerald-100 text-emerald-800",
+    icon: "Award",
+  },
+  COMPLETED: {
+    label: "Completed",
+    color: "bg-green-100 text-green-800",
+    icon: "Check",
+  },
 }
 
 /**
