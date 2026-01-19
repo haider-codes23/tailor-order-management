@@ -841,4 +841,358 @@ export const ordersHandlers = [
       message: timelineAction,
     })
   }),
+
+  /**
+   * POST /api/order-items/:id/rerun-section-inventory-check
+   * Re-run inventory check for sections that are in AWAITING_MATERIAL status
+   *
+   * This is called after procurement demands have been fulfilled to check
+   * if the remaining sections can now proceed.
+   */
+  http.post(
+    `${BASE_URL}/order-items/:id/rerun-section-inventory-check`,
+    async ({ params, request }) => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+
+      const { id } = params
+      let data = {}
+      try {
+        const text = await request.text()
+        if (text) data = JSON.parse(text)
+      } catch {
+        // No body
+      }
+
+      const itemIndex = mockOrderItems.findIndex((item) => item.id === id)
+      if (itemIndex === -1) {
+        return HttpResponse.json({ error: "Order item not found" }, { status: 404 })
+      }
+
+      const item = mockOrderItems[itemIndex]
+      const now = new Date().toISOString()
+
+      // Only allow for items that have sectionStatuses and are in a partial workflow state
+      if (!item.sectionStatuses) {
+        return HttpResponse.json(
+          { error: "No section statuses found. Run initial inventory check first." },
+          { status: 400 }
+        )
+      }
+
+      // Find sections that are in AWAITING_MATERIAL status
+      const sectionsToRecheck = []
+      Object.entries(item.sectionStatuses).forEach(([sectionName, sectionData]) => {
+        if (sectionData.status === SECTION_STATUS.AWAITING_MATERIAL) {
+          sectionsToRecheck.push(sectionName)
+        }
+      })
+
+      if (sectionsToRecheck.length === 0) {
+        return HttpResponse.json(
+          { error: "No sections in AWAITING_MATERIAL status to recheck." },
+          { status: 400 }
+        )
+      }
+
+      console.log("[Rerun Section Inventory Check] Sections to recheck:", sectionsToRecheck)
+
+      // Check procurement demands status for these sections
+      const demandsForItem = mockProcurementDemands.filter((pd) => pd.orderItemId === id)
+      const pendingDemands = demandsForItem.filter(
+        (pd) => pd.status !== "RECEIVED" && pd.status !== "CANCELLED"
+      )
+
+      // Group pending demands by section
+      const pendingBySection = {}
+      pendingDemands.forEach((pd) => {
+        const section = pd.affectedSection?.toLowerCase() || "unknown"
+        if (!pendingBySection[section]) pendingBySection[section] = []
+        pendingBySection[section].push(pd)
+      })
+
+      // Get BOM items (from standard BOM or custom BOM)
+      let allBOMItems = []
+      if (item.sizeType === SIZE_TYPE.CUSTOM && item.customBOM) {
+        allBOMItems = item.customBOM.items || []
+      } else {
+        const activeBOM = getActiveBOM(item.productId, item.size)
+        if (activeBOM) {
+          allBOMItems = getBOMItems(activeBOM.id).map((bomItem) => {
+            const inventoryItem = mockInventoryItems.find(
+              (inv) =>
+                inv.id === parseInt(bomItem.inventory_item_id) ||
+                inv.id.toString() === bomItem.inventory_item_id
+            )
+            return {
+              inventory_item_id: bomItem.inventory_item_id,
+              inventory_item_name: inventoryItem?.name || `Item ${bomItem.inventory_item_id}`,
+              inventory_item_sku: inventoryItem?.sku || "",
+              quantity: bomItem.quantity_per_unit,
+              unit: bomItem.unit || inventoryItem?.unit || "Unit",
+              piece: bomItem.piece,
+            }
+          })
+        }
+      }
+
+      // Process each section that needs rechecking
+      const sectionResults = []
+      const passedSections = []
+      const stillFailedSections = []
+      const newMaterialRequirements = []
+      const stockDeductions = []
+
+      for (const sectionName of sectionsToRecheck) {
+        const sectionPiece = sectionName.toLowerCase()
+
+        // Check if there are still pending procurement demands for this section
+        if (pendingBySection[sectionPiece] && pendingBySection[sectionPiece].length > 0) {
+          // Still has unfulfilled demands - skip this section
+          stillFailedSections.push(sectionName)
+          sectionResults.push({
+            piece: sectionName,
+            passed: false,
+            reason: `Still has ${pendingBySection[sectionPiece].length} unfulfilled procurement demand(s)`,
+            pendingDemands: pendingBySection[sectionPiece],
+          })
+          continue
+        }
+
+        // Filter BOM items for this section
+        const sectionBOMItems = allBOMItems.filter(
+          (bom) => (bom.piece || "").toLowerCase() === sectionPiece
+        )
+
+        // Calculate requirements for this section
+        const sectionRequirements = []
+        const sectionShortages = []
+
+        sectionBOMItems.forEach((bomItem) => {
+          const inventoryId =
+            typeof bomItem.inventory_item_id === "string"
+              ? parseInt(bomItem.inventory_item_id)
+              : bomItem.inventory_item_id
+
+          const inventoryItem = mockInventoryItems.find(
+            (inv) => inv.id === inventoryId || inv.id === bomItem.inventory_item_id
+          )
+
+          const requiredQty =
+            (parseFloat(bomItem.quantity) || parseFloat(bomItem.quantity_per_unit) || 0) *
+            (item.quantity || 1)
+          const availableQty = inventoryItem?.remaining_stock || 0
+          const shortageQty = Math.max(0, requiredQty - availableQty)
+          const status = availableQty >= requiredQty ? "SUFFICIENT" : "SHORTAGE"
+
+          const requirement = {
+            inventoryItemId: inventoryId,
+            inventoryItemName: inventoryItem?.name || bomItem.inventory_item_name,
+            inventoryItemSku: inventoryItem?.sku || bomItem.inventory_item_sku,
+            requiredQty,
+            availableQty,
+            shortageQty,
+            unit: inventoryItem?.unit || bomItem.unit || "Unit",
+            piece: sectionName,
+            status,
+          }
+
+          sectionRequirements.push(requirement)
+
+          if (status === "SHORTAGE") {
+            sectionShortages.push(requirement)
+          }
+        })
+
+        // Determine section result
+        const sectionPassed = sectionShortages.length === 0 && sectionRequirements.length > 0
+
+        if (sectionPassed) {
+          passedSections.push(sectionName)
+          newMaterialRequirements.push(...sectionRequirements)
+
+          // Update section status
+          mockOrderItems[itemIndex].sectionStatuses[sectionPiece] = {
+            ...mockOrderItems[itemIndex].sectionStatuses[sectionPiece],
+            status: SECTION_STATUS.INVENTORY_PASSED,
+            inventoryCheckResult: {
+              passed: true,
+              checkedAt: now,
+              materials: sectionRequirements,
+              shortages: [],
+            },
+            packetPickList: sectionRequirements,
+            updatedAt: now,
+          }
+
+          // Deduct stock for passed sections
+          sectionRequirements.forEach((req) => {
+            const inventoryItem = mockInventoryItems.find((inv) => inv.id === req.inventoryItemId)
+            if (inventoryItem) {
+              const previousStock = inventoryItem.remaining_stock
+              inventoryItem.remaining_stock -= req.requiredQty
+
+              // Create stock movement record
+              const movement = {
+                id: `mov-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                inventoryItemId: req.inventoryItemId,
+                type: "ISSUE_TO_ORDER",
+                quantity: -req.requiredQty,
+                referenceType: "ORDER_ITEM",
+                referenceId: id,
+                notes: `Reserved for order item ${id}, section: ${sectionName} (rerun)`,
+                createdAt: now,
+              }
+              mockStockMovements.push(movement)
+
+              stockDeductions.push({
+                inventoryItemId: req.inventoryItemId,
+                inventoryItemName: inventoryItem.name,
+                deductedQty: req.requiredQty,
+                previousStock,
+                newStock: inventoryItem.remaining_stock,
+                piece: sectionName,
+                movementId: movement.id,
+              })
+            }
+          })
+
+          // Clear procurement demands for this section (mark as used)
+          demandsForItem
+            .filter((pd) => pd.affectedSection?.toLowerCase() === sectionPiece)
+            .forEach((pd) => {
+              const pdIndex = mockProcurementDemands.findIndex((d) => d.id === pd.id)
+              if (pdIndex !== -1) {
+                mockProcurementDemands[pdIndex].status = "FULFILLED"
+                mockProcurementDemands[pdIndex].updatedAt = now
+              }
+            })
+
+          sectionResults.push({
+            piece: sectionName,
+            passed: true,
+            requirements: sectionRequirements,
+          })
+        } else {
+          stillFailedSections.push(sectionName)
+
+          // Update section status with new check results
+          mockOrderItems[itemIndex].sectionStatuses[sectionPiece] = {
+            ...mockOrderItems[itemIndex].sectionStatuses[sectionPiece],
+            status: SECTION_STATUS.AWAITING_MATERIAL,
+            inventoryCheckResult: {
+              passed: false,
+              checkedAt: now,
+              materials: sectionRequirements,
+              shortages: sectionShortages,
+            },
+            updatedAt: now,
+          }
+
+          sectionResults.push({
+            piece: sectionName,
+            passed: false,
+            requirements: sectionRequirements,
+            shortages: sectionShortages,
+          })
+        }
+      }
+
+      // Build inventory items map
+      const inventoryItemsMap = {}
+      mockInventoryItems.forEach((inv) => {
+        inventoryItemsMap[inv.id] = inv
+      })
+
+      // If sections passed, add materials to existing packet
+      let updatedPacket = null
+      if (passedSections.length > 0 && item.packetId) {
+        const packet = mockPackets.find((p) => p.id === item.packetId)
+        if (packet) {
+          updatedPacket = addMaterialsToExistingPacket(
+            packet,
+            newMaterialRequirements,
+            inventoryItemsMap,
+            passedSections
+          )
+        }
+      }
+
+      // Determine new order item status
+      let newStatus = item.status
+      let timelineAction = ""
+
+      // Count sections by status
+      const allSectionStatuses = Object.values(mockOrderItems[itemIndex].sectionStatuses)
+      const awaitingSections = allSectionStatuses.filter(
+        (s) => s.status === SECTION_STATUS.AWAITING_MATERIAL
+      )
+      const readySections = allSectionStatuses.filter(
+        (s) =>
+          s.status === SECTION_STATUS.INVENTORY_PASSED ||
+          s.status === SECTION_STATUS.PACKET_CREATED ||
+          s.status === SECTION_STATUS.PACKET_VERIFIED ||
+          s.status === SECTION_STATUS.READY_FOR_PRODUCTION ||
+          s.status === SECTION_STATUS.IN_PRODUCTION
+      )
+
+      if (awaitingSections.length === 0 && passedSections.length > 0) {
+        // All sections are now ready - determine appropriate status
+        // If packet exists and was updated, it needs to go through packet flow again
+        if (updatedPacket) {
+          newStatus = ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET // Or CREATE_PACKET if all ready
+          timelineAction = `All sections now have materials. Packet updated with ${passedSections.join(", ")}. Ready for packet completion.`
+        }
+      } else if (passedSections.length > 0) {
+        // Some sections passed, some still awaiting
+        timelineAction = `Rerun inventory check: ${passedSections.join(", ")} passed. ${stillFailedSections.join(", ")} still awaiting material.`
+      } else {
+        timelineAction = `Rerun inventory check: No sections passed. ${stillFailedSections.join(", ")} still awaiting material.`
+      }
+
+      // Update order item
+      mockOrderItems[itemIndex].lastInventoryCheck = now
+      mockOrderItems[itemIndex].updatedAt = now
+
+      if (timelineAction) {
+        mockOrderItems[itemIndex].timeline.push({
+          id: `log-${Date.now()}`,
+          action: timelineAction,
+          user: data.checkedBy || "System",
+          timestamp: now,
+        })
+      }
+
+      // Update materialRequirements to include new ones
+      if (newMaterialRequirements.length > 0) {
+        mockOrderItems[itemIndex].materialRequirements = [
+          ...(mockOrderItems[itemIndex].materialRequirements || []),
+          ...newMaterialRequirements,
+        ]
+      }
+
+      console.log("[Rerun Section Inventory Check] Results:", {
+        passedSections,
+        stillFailedSections,
+        newStatus,
+        packetUpdated: !!updatedPacket,
+      })
+
+      return HttpResponse.json({
+        success: true,
+        data: {
+          item: mockOrderItems[itemIndex],
+          sectionResults,
+          passedSections,
+          stillFailedSections,
+          newMaterialRequirements,
+          stockDeductions,
+          packet: updatedPacket,
+        },
+        message:
+          passedSections.length > 0
+            ? `Inventory check passed for: ${passedSections.join(", ")}`
+            : "No sections passed inventory check",
+      })
+    }
+  ),
 ]
