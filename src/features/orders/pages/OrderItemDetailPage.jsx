@@ -8,15 +8,17 @@ import {
   ORDER_ITEM_STATUS_CONFIG,
   SIZE_TYPE,
   CUSTOMIZATION_TYPE,
+  SECTION_STATUS,
+  SECTION_STATUS_CONFIG,
 } from "@/constants/orderConstants"
 import PacketTab from "@/features/packet/components/PacketTab"
-
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   ArrowLeft,
   FileText,
@@ -33,11 +35,113 @@ import {
   AlertCircle,
   Image as ImageIcon,
   ClipboardCheck,
+  Layers,
+  XCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 import { hasPermission } from "@/lib/rbac"
 import CustomBOMViewModal from "../components/CustomBOMViewModal"
 import { useRunInventoryCheck } from "../../../hooks/useProcurement"
+
+/**
+ * SectionInventoryResults Component
+ * Displays inventory check results grouped by section (included items/add-ons)
+ * with pass/fail indicators for each section
+ */
+function SectionInventoryResults({ sectionStatuses }) {
+  if (!sectionStatuses || Object.keys(sectionStatuses).length === 0) {
+    return null
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Layers className="h-5 w-5" />
+          Inventory Check by Section
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {Object.entries(sectionStatuses).map(([sectionName, sectionData]) => {
+          const statusConfig = SECTION_STATUS_CONFIG[sectionData.status] || {}
+          const passed =
+            sectionData.status === SECTION_STATUS.INVENTORY_PASSED ||
+            sectionData.status === SECTION_STATUS.CREATE_PACKET ||
+            sectionData.status === SECTION_STATUS.PACKET_CREATED ||
+            sectionData.status === SECTION_STATUS.PACKET_VERIFIED
+
+          return (
+            <div key={sectionName} className="border rounded-lg p-4">
+              {/* Section Header */}
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium capitalize flex items-center gap-2">
+                  {sectionName}
+                  {passed ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                  )}
+                </h4>
+                <Badge className={statusConfig.color || "bg-gray-100 text-gray-800"}>
+                  {statusConfig.label || sectionData.status}
+                </Badge>
+              </div>
+
+              {/* Materials Table */}
+              {sectionData.inventoryCheckResult?.materials &&
+                sectionData.inventoryCheckResult.materials.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-xs text-muted-foreground">
+                          <th className="text-left py-1 pr-2">Material</th>
+                          <th className="text-right py-1 px-2">Required</th>
+                          <th className="text-right py-1 px-2">Available</th>
+                          <th className="text-right py-1 pl-2">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sectionData.inventoryCheckResult.materials.map((mat, idx) => (
+                          <tr key={idx} className="border-b last:border-0">
+                            <td className="py-1.5 pr-2">
+                              <span className="font-medium">{mat.inventoryItemName}</span>
+                              {mat.inventoryItemSku && (
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({mat.inventoryItemSku})
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-1.5 px-2 text-right">
+                              {mat.requiredQty} {mat.unit}
+                            </td>
+                            <td className="py-1.5 px-2 text-right">
+                              {mat.availableQty} {mat.unit}
+                            </td>
+                            <td className="py-1.5 pl-2 text-right">
+                              {mat.status === "SUFFICIENT" ? (
+                                <span className="inline-flex items-center text-green-600">
+                                  <CheckCircle className="h-3.5 w-3.5" />
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center text-red-600 gap-1">
+                                  <XCircle className="h-3.5 w-3.5" />
+                                  <span className="text-xs">-{mat.shortageQty}</span>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+            </div>
+          )
+        })}
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function OrderItemDetailPage() {
   const { id: orderId, itemId } = useParams()
@@ -153,11 +257,14 @@ export default function OrderItemDetailPage() {
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="form">Order Form</TabsTrigger>
-          {/* Packet Tab - only show for relevant statuses */}
+          {/* Packet Tab - only show for relevant statuses (including PARTIAL) */}
           {(item?.status === ORDER_ITEM_STATUS.CREATE_PACKET ||
+            item?.status === ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET ||
             item?.status === ORDER_ITEM_STATUS.PACKET_CHECK ||
+            item?.status === ORDER_ITEM_STATUS.PARTIAL_PACKET_CHECK ||
             item?.status === ORDER_ITEM_STATUS.QUALITY_ASSURANCE ||
-            item?.status === ORDER_ITEM_STATUS.READY_FOR_PRODUCTION) && (
+            item?.status === ORDER_ITEM_STATUS.READY_FOR_PRODUCTION ||
+            item?.status === ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION) && (
             <TabsTrigger value="packet">Packet</TabsTrigger>
           )}
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -392,6 +499,27 @@ export default function OrderItemDetailPage() {
             </Card>
           )}
 
+          {/* ============================================================ */}
+          {/* NEW: Section-Level Inventory Results (for partial workflow) */}
+          {/* ============================================================ */}
+          {item.sectionStatuses && Object.keys(item.sectionStatuses).length > 0 && (
+            <SectionInventoryResults sectionStatuses={item.sectionStatuses} />
+          )}
+
+          {/* Partial Workflow Status Banner */}
+          {(item.status === ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET ||
+            item.status === ORDER_ITEM_STATUS.PARTIAL_PACKET_CHECK ||
+            item.status === ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION) && (
+            <Alert className="border-amber-200 bg-amber-50">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-900">Partial Workflow Active</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                Some sections are progressing while others await materials. Check section statuses
+                above for details.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Material Requirements Display (after inventory check) */}
           {item.materialRequirements && item.materialRequirements.length > 0 && (
             <Card>
@@ -463,6 +591,34 @@ export default function OrderItemDetailPage() {
                       onClick={() => navigate("/procurement")}
                     >
                       View Procurement Demands
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Partial Create Packet Status Card */}
+          {item.status === ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET && (
+            <Card className="border-indigo-200 bg-indigo-50">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-full bg-indigo-100 p-2">
+                    <Package className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-indigo-900">Partial Packet Ready</h3>
+                    <p className="text-sm text-indigo-700 mt-1">
+                      Some sections have materials available. A partial packet has been created for
+                      the available sections. Other sections are awaiting materials.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => setActiveTab("packet")}
+                    >
+                      View Packet
                     </Button>
                   </div>
                 </div>
