@@ -198,6 +198,7 @@ export default function ProcurementDashboardPage() {
                     <TableHead>Material</TableHead>
                     <TableHead>SKU</TableHead>
                     <TableHead>Order</TableHead>
+                    <TableHead>Section</TableHead>
                     <TableHead className="text-right">Required</TableHead>
                     <TableHead className="text-right">Available</TableHead>
                     <TableHead className="text-right">Shortage</TableHead>
@@ -213,6 +214,15 @@ export default function ProcurementDashboardPage() {
                         <TableCell className="font-medium">{demand.inventoryItemName}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {demand.inventoryItemSku}
+                        </TableCell>
+                        <TableCell>
+                          {demand.affectedSection ? (
+                            <Badge variant="outline" className="capitalize">
+                              {demand.affectedSection}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Button
