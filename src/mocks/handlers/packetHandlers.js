@@ -20,11 +20,13 @@ import {
   getPacketByOrderItemId,
   createPacketFromRequirements,
   generatePacketId,
+  createPartialPacketFromRequirements, // NEW
+  addMaterialsToExistingPacket,
 } from "../data/mockPackets"
 import { mockOrderItems } from "../data/mockOrders"
 import { mockInventoryItems } from "../data/mockInventory"
 import { mockUsers } from "../data/mockUser"
-import { ORDER_ITEM_STATUS, PACKET_STATUS } from "../../constants/orderConstants"
+import { ORDER_ITEM_STATUS, PACKET_STATUS, SECTION_STATUS } from "../../constants/orderConstants"
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -564,15 +566,41 @@ const approvePacket = http.post(
     // Determine next status based on whether it's ready stock or needs production
     // If ready stock -> QUALITY_ASSURANCE (QA takes photos/videos)
     // If needs production -> READY_FOR_PRODUCTION
+    // Determine next status based on packet type and ready stock status
     let nextStatus
     let timelineMessage
 
-    if (isReadyStock) {
-      nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
-      timelineMessage = "Packet approved - Moving to Quality Assurance for client photos/videos"
+    // Check if this is a partial packet with sections still pending
+    if (packet.isPartial && packet.sectionsPending && packet.sectionsPending.length > 0) {
+      // Partial packet - some sections still awaiting material
+      // Update section statuses for the approved sections
+      const orderItem = mockOrderItems.find((oi) => oi.id === id)
+      if (orderItem && orderItem.sectionStatuses) {
+        packet.sectionsIncluded.forEach((section) => {
+          const sectionKey = section.toLowerCase()
+          if (orderItem.sectionStatuses[sectionKey]) {
+            orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.PACKET_VERIFIED
+            orderItem.sectionStatuses[sectionKey].updatedAt = now
+          }
+        })
+      }
+
+      if (isReadyStock) {
+        nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
+        timelineMessage = `Partial packet approved for sections: ${packet.sectionsIncluded.join(", ")}. Moving to QA. Pending: ${packet.sectionsPending.join(", ")}`
+      } else {
+        nextStatus = ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION
+        timelineMessage = `Partial packet approved for sections: ${packet.sectionsIncluded.join(", ")}. Moving to production. Pending: ${packet.sectionsPending.join(", ")}`
+      }
     } else {
-      nextStatus = ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
-      timelineMessage = "Packet approved - Ready for production"
+      // Full packet OR partial packet with all sections now complete
+      if (isReadyStock) {
+        nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
+        timelineMessage = "Packet approved - Moving to Quality Assurance for client photos/videos"
+      } else {
+        nextStatus = ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
+        timelineMessage = "Packet approved - Ready for production"
+      }
     }
 
     // Update order item status
@@ -706,6 +734,76 @@ const rejectPacket = http.post(
   }
 )
 
+/**
+ * POST /api/order-items/:id/packet/approve-section
+ * Approve specific sections of a partial packet (for granular control)
+ */
+const approveSectionPacket = http.post(
+  "/api/order-items/:id/packet/approve-section",
+  async ({ params, request }) => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+
+    const { id } = params
+    const data = await request.json()
+    const { userId, sections } = data // sections is array of section names to approve
+
+    if (!sections || sections.length === 0) {
+      return HttpResponse.json(
+        { success: false, error: "No sections specified" },
+        { status: 400 }
+      )
+    }
+
+    const packet = getPacketByOrderItemId(id)
+    if (!packet) {
+      return HttpResponse.json(
+        { success: false, error: "No packet found" },
+        { status: 404 }
+      )
+    }
+
+    const user = findUser(userId)
+    const now = new Date().toISOString()
+
+    // Update section statuses
+    const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
+    if (orderItemIndex !== -1) {
+      const orderItem = mockOrderItems[orderItemIndex]
+
+      sections.forEach((section) => {
+        const sectionKey = section.toLowerCase()
+        if (orderItem.sectionStatuses && orderItem.sectionStatuses[sectionKey]) {
+          orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.PACKET_VERIFIED
+          orderItem.sectionStatuses[sectionKey].updatedAt = now
+        }
+      })
+
+      // Add timeline
+      orderItem.timeline.push({
+        id: `log-${Date.now()}`,
+        action: `Partial packet verified for sections: ${sections.join(", ")}`,
+        user: user?.name || "Production Head",
+        timestamp: now,
+      })
+
+      orderItem.updatedAt = now
+    }
+
+    addPacketTimeline(
+      packet,
+      `Sections verified: ${sections.join(", ")}`,
+      user?.name || "Production Head",
+      `Approved by ${user?.name || "Production Head"}`
+    )
+
+    return HttpResponse.json({
+      success: true,
+      data: { packet, verifiedSections: sections },
+      message: `Sections ${sections.join(", ")} verified successfully`,
+    })
+  }
+)
+
 // ============================================================================
 // EXPORT
 // ============================================================================
@@ -720,5 +818,6 @@ export const packetHandlers = [
   pickItem,
   completePacket,
   approvePacket,
+  approveSectionPacket,
   rejectPacket,
 ]
