@@ -23,7 +23,7 @@ import {
 import { CheckCircle, XCircle, Loader2, ClipboardCheck, AlertTriangle, Info } from "lucide-react"
 import { useApprovePacket, useRejectPacket } from "@/hooks/usePacket"
 import { useAuth } from "@/features/auth/hooks/useAuth"
-import { PACKET_STATUS, PACKET_REJECTION_REASONS } from "@/constants/orderConstants"
+import { PACKET_STATUS, PACKET_REJECTION_REASONS, SECTION_STATUS } from "@/constants/orderConstants"
 import { formatDistanceToNow } from "date-fns"
 
 export default function PacketCheckPanel({ packet, orderItem }) {
@@ -109,6 +109,25 @@ export default function PacketCheckPanel({ packet, orderItem }) {
                 <strong>Notes:</strong> {packet.notes}
               </AlertDescription>
             </Alert>
+          )}
+
+          {/* Partial Packet Section Summary */}
+          {packet.isPartial && (
+            <div className="bg-slate-50 p-4 rounded-lg mb-4">
+              <h4 className="font-medium text-sm mb-2">Sections Being Verified</h4>
+              <div className="flex flex-wrap gap-2">
+                {packet.sectionsIncluded?.map((section) => (
+                  <Badge key={section} className="bg-blue-100 text-blue-800 capitalize">
+                    {section}
+                  </Badge>
+                ))}
+              </div>
+              {packet.sectionsPending?.length > 0 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Sections still pending: {packet.sectionsPending.join(", ")}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Action buttons */}
