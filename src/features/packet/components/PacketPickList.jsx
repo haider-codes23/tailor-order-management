@@ -18,10 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Package, MapPin, CheckCircle2, Circle, Loader2 } from "lucide-react"
+import { Package, MapPin, CheckCircle2, Circle, Loader2, AlertCircle } from "lucide-react"
 import { usePickItem } from "@/hooks/usePacket"
 import { useAuth } from "@/features/auth/hooks/useAuth"
-import { PACKET_STATUS } from "@/constants/orderConstants"
+import { PACKET_STATUS, SECTION_STATUS, SECTION_STATUS_CONFIG } from "@/constants/orderConstants"
 
 export default function PacketPickList({ packet, canPick = false, onItemPicked }) {
   const { user } = useAuth()
@@ -82,10 +82,46 @@ export default function PacketPickList({ packet, canPick = false, onItemPicked }
         <Progress value={progress} className="h-2 mt-2" />
       </CardHeader>
 
+      {/* Partial Packet Info Banner */}
+      {packet.isPartial && packet.sectionsPending?.length > 0 && (
+        <div className="mx-4 mb-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-900">
+                Partial Packet (Round {packet.packetRound})
+              </p>
+              <p className="text-amber-700">Included: {packet.sectionsIncluded?.join(", ")}</p>
+              <p className="text-amber-600">Pending: {packet.sectionsPending?.join(", ")}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CardContent className="space-y-4">
         {Object.entries(groupedItems).map(([piece, items]) => (
           <div key={piece} className="space-y-2">
-            <h4 className="text-sm font-medium text-muted-foreground capitalize">{piece}</h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium text-muted-foreground capitalize">{piece}</h4>
+              {packet.isPartial && (
+                <Badge
+                  variant="outline"
+                  className={
+                    packet.sectionsIncluded
+                      ?.map((s) => s.toLowerCase())
+                      .includes(piece.toLowerCase())
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200"
+                  }
+                >
+                  {packet.sectionsIncluded
+                    ?.map((s) => s.toLowerCase())
+                    .includes(piece.toLowerCase())
+                    ? "Included"
+                    : "Pending"}
+                </Badge>
+              )}
+            </div>
 
             <div className="border rounded-lg overflow-hidden">
               <Table>
