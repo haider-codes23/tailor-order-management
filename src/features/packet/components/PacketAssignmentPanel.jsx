@@ -1,6 +1,7 @@
 /**
  * PacketAssignmentPanel.jsx
  * Production Head assigns packet to Fabrication team member
+ * Updated to handle partial packet rounds with auto-reassign option
  */
 
 import { useState } from "react"
@@ -15,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { UserPlus, Loader2, CheckCircle, Clock, User } from "lucide-react"
+import { UserPlus, Loader2, CheckCircle, Clock, User, RefreshCw } from "lucide-react"
 import { useAssignPacket } from "@/hooks/usePacket"
 import { useUsers } from "@/hooks/useUsers"
 import { useAuth } from "@/features/auth/hooks/useAuth"
@@ -49,7 +50,24 @@ export default function PacketAssignmentPanel({ packet, orderItemId }) {
     setSelectedUserId("")
   }
 
-  // If packet is already assigned, show assignment info
+  // Handle auto-reassign to previous fabrication user
+  const handleAutoReassign = async () => {
+    const previousUserId = packet.previousAssignee?.assignedTo || packet.assignedTo
+    if (!previousUserId) return
+
+    await assignPacket.mutateAsync({
+      orderItemId,
+      assignToUserId: previousUserId,
+      assignedByUserId: user?.id,
+    })
+  }
+
+  // Check if this is a subsequent round with a previous assignee
+  const isSubsequentRound = packet?.packetRound > 1
+  const hasPreviousAssignee = packet?.previousAssignee?.assignedTo || packet?.assignedTo
+  const previousAssigneeName = packet?.previousAssignee?.assignedToName || packet?.assignedToName
+
+  // If packet is already assigned and NOT pending, show assignment info
   if (packet?.assignedTo && packet.status !== PACKET_STATUS.PENDING) {
     return (
       <Card>
@@ -94,17 +112,70 @@ export default function PacketAssignmentPanel({ packet, orderItemId }) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <UserPlus className="h-4 w-4" />
-          Assign Packet
+          {isSubsequentRound
+            ? `Assign Remaining Materials (Round ${packet.packetRound})`
+            : "Assign Packet"}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert>
-          <Clock className="h-4 w-4" />
-          <AlertDescription>
-            This packet needs to be assigned to a fabrication team member who will gather the
-            materials.
-          </AlertDescription>
-        </Alert>
+        {/* Round 2+ Info Banner */}
+        {isSubsequentRound && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <RefreshCw className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <strong>Round {packet.packetRound}:</strong> New materials added for{" "}
+              <strong>{packet.currentRoundSections?.join(", ") || "remaining sections"}</strong>.
+              {hasPreviousAssignee && (
+                <span className="block mt-1">
+                  Previously worked on by: <strong>{previousAssigneeName}</strong>
+                </span>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Quick Reassign Button for Round 2+ */}
+        {isSubsequentRound && hasPreviousAssignee && (
+          <Button
+            onClick={handleAutoReassign}
+            disabled={assignPacket.isPending}
+            variant="outline"
+            className="w-full border-green-300 bg-green-50 hover:bg-green-100 text-green-800"
+          >
+            {assignPacket.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Assigning...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reassign to {previousAssigneeName}
+              </>
+            )}
+          </Button>
+        )}
+
+        {isSubsequentRound && hasPreviousAssignee && (
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">Or assign to someone else</span>
+            </div>
+          </div>
+        )}
+
+        {!isSubsequentRound && (
+          <Alert>
+            <Clock className="h-4 w-4" />
+            <AlertDescription>
+              This packet needs to be assigned to a fabrication team member who will gather the
+              materials.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-3">
           <label className="text-sm font-medium">Select Fabrication Team Member</label>
@@ -130,6 +201,10 @@ export default function PacketAssignmentPanel({ packet, orderItemId }) {
                       <Badge variant="outline" className="text-xs">
                         {member.role}
                       </Badge>
+                      {isSubsequentRound && 
+                        String(member.id) === String(packet.previousAssignee?.assignedTo || packet.assignedTo) && (
+                        <Badge className="bg-green-100 text-green-800 text-xs">Previous</Badge>
+                      )}
                     </div>
                   </SelectItem>
                 ))
@@ -150,7 +225,7 @@ export default function PacketAssignmentPanel({ packet, orderItemId }) {
             ) : (
               <>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Assign Packet Task
+                Assign Task
               </>
             )}
           </Button>
