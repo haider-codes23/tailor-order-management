@@ -15,6 +15,14 @@ export const ORDER_ITEM_STATUS = {
   PACKET_CHECK: "PACKET_CHECK",
   PARTIAL_PACKET_CHECK: "PARTIAL_PACKET_CHECK", // NEW
   QUALITY_ASSURANCE: "QUALITY_ASSURANCE", // NEW - QA takes photos/videos before client approval
+  // ============================================================================
+  // PHASE 12.5: DYEING DEPARTMENT STATUSES (NEW)
+  // ============================================================================
+  READY_FOR_DYEING: "READY_FOR_DYEING",
+  PARTIALLY_IN_DYEING: "PARTIALLY_IN_DYEING",
+  IN_DYEING: "IN_DYEING",
+  DYEING_COMPLETED: "DYEING_COMPLETED",
+  // ============================================================================
   READY_FOR_PRODUCTION: "READY_FOR_PRODUCTION",
   IN_PRODUCTION: "IN_PRODUCTION",
   PARTIAL_IN_PRODUCTION: "PARTIAL_IN_PRODUCTION", // NEW
@@ -58,6 +66,30 @@ export const ORDER_ITEM_STATUS_CONFIG = {
     color: "bg-violet-100 text-violet-800",
     description: "QA review - photos/videos for client",
   }, // NEW
+  // ============================================================================
+  // PHASE 12.5: DYEING DEPARTMENT STATUS CONFIGS (NEW)
+  // ============================================================================
+  READY_FOR_DYEING: {
+    label: "Ready for Dyeing",
+    color: "bg-fuchsia-100 text-fuchsia-800",
+    description: "All verified sections ready for dyeing department",
+  },
+  PARTIALLY_IN_DYEING: {
+    label: "Partially in Dyeing",
+    color: "bg-fuchsia-200 text-fuchsia-900",
+    description: "Some sections in dyeing, others in packet flow or awaiting material",
+  },
+  IN_DYEING: {
+    label: "In Dyeing",
+    color: "bg-fuchsia-300 text-fuchsia-900",
+    description: "All sections currently in dyeing process",
+  },
+  DYEING_COMPLETED: {
+    label: "Dyeing Completed",
+    color: "bg-fuchsia-400 text-white",
+    description: "All sections completed dyeing, ready for production",
+  },
+  // ============================================================================
   READY_FOR_PRODUCTION: { label: "Ready for Production", color: "bg-teal-100 text-teal-800" },
   IN_PRODUCTION: { label: "In Production", color: "bg-amber-100 text-amber-800" },
   PARTIAL_IN_PRODUCTION: {
@@ -92,6 +124,7 @@ export const PACKET_STATUS = {
   COMPLETED: "COMPLETED", // All materials gathered, ready for check
   APPROVED: "APPROVED", // Production head approved the packet
   REJECTED: "REJECTED", // Production head rejected - needs rework
+  INVALIDATED: "INVALIDATED",
 }
 
 export const PACKET_STATUS_CONFIG = {
@@ -101,6 +134,12 @@ export const PACKET_STATUS_CONFIG = {
   COMPLETED: { label: "Awaiting Check", color: "bg-cyan-100 text-cyan-800", icon: "CheckSquare" },
   APPROVED: { label: "Approved", color: "bg-green-100 text-green-800", icon: "CheckCircle" },
   REJECTED: { label: "Rejected", color: "bg-red-100 text-red-800", icon: "XCircle" },
+  INVALIDATED: {
+    label: "Invalidated",
+    color: "bg-gray-200 text-gray-600",
+    icon: "Ban",
+    description: "Packet invalidated due to dyeing rejection",
+  },
 }
 
 /**
@@ -114,6 +153,15 @@ export const SECTION_STATUS = {
   CREATE_PACKET: "CREATE_PACKET",
   PACKET_CREATED: "PACKET_CREATED",
   PACKET_VERIFIED: "PACKET_VERIFIED",
+  // ============================================================================
+  // PHASE 12.5: DYEING SECTION STATUSES (NEW)
+  // ============================================================================
+  READY_FOR_DYEING: "READY_FOR_DYEING",
+  DYEING_ACCEPTED: "DYEING_ACCEPTED",
+  DYEING_IN_PROGRESS: "DYEING_IN_PROGRESS",
+  DYEING_COMPLETED: "DYEING_COMPLETED",
+  DYEING_REJECTED: "DYEING_REJECTED",
+  // ============================================================================
   READY_FOR_PRODUCTION: "READY_FOR_PRODUCTION",
   IN_PRODUCTION: "IN_PRODUCTION",
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
@@ -153,6 +201,35 @@ export const SECTION_STATUS_CONFIG = {
     color: "bg-teal-100 text-teal-800",
     icon: "ShieldCheck",
   },
+  // ============================================================================
+  // PHASE 12.5: DYEING SECTION STATUS CONFIGS (NEW)
+  // ============================================================================
+  READY_FOR_DYEING: {
+    label: "Ready for Dyeing",
+    color: "bg-fuchsia-100 text-fuchsia-800",
+    icon: "Droplets",
+  },
+  DYEING_ACCEPTED: {
+    label: "Dyeing Accepted",
+    color: "bg-fuchsia-200 text-fuchsia-900",
+    icon: "UserCheck",
+  },
+  DYEING_IN_PROGRESS: {
+    label: "Dyeing in Progress",
+    color: "bg-fuchsia-300 text-fuchsia-900",
+    icon: "Loader",
+  },
+  DYEING_COMPLETED: {
+    label: "Dyeing Complete",
+    color: "bg-fuchsia-400 text-white",
+    icon: "CheckCircle2",
+  },
+  DYEING_REJECTED: {
+    label: "Dyeing Rejected",
+    color: "bg-red-100 text-red-800",
+    icon: "XCircle",
+  },
+  // ============================================================================
   READY_FOR_PRODUCTION: {
     label: "Ready for Production",
     color: "bg-blue-100 text-blue-800",
@@ -183,6 +260,102 @@ export const SECTION_STATUS_CONFIG = {
     color: "bg-green-100 text-green-800",
     icon: "Check",
   },
+}
+
+// ============================================================================
+// PHASE 12.5: DYEING REJECTION REASONS (NEW)
+// ============================================================================
+
+/**
+ * Dyeing Rejection Reasons
+ * Predefined reasons that dyeing department can select when rejecting a section
+ * Note: Selecting a reason is OPTIONAL, but providing notes is REQUIRED
+ */
+export const DYEING_REJECTION_REASONS = {
+  MATERIAL_QUALITY_ISSUE: {
+    code: "MATERIAL_QUALITY_ISSUE",
+    label: "Material Quality Issue",
+    description: "The fabric or material has quality defects",
+  },
+  COLOR_MISMATCH: {
+    code: "COLOR_MISMATCH",
+    label: "Color Mismatch",
+    description: "Color doesn't match specifications or customer requirements",
+  },
+  FABRIC_DEFECT: {
+    code: "FABRIC_DEFECT",
+    label: "Fabric Defect",
+    description: "Fabric has tears, holes, or visible damage",
+  },
+  MISSING_INVENTORY_MATERIAL: {
+    code: "MISSING_INVENTORY_MATERIAL",
+    label: "Missing Inventory Material",
+    description: "Required materials are missing from the packet",
+  },
+  INCORRECT_MEASUREMENTS: {
+    code: "INCORRECT_MEASUREMENTS",
+    label: "Incorrect Measurements",
+    description: "Material measurements don't match BOM specifications",
+  },
+  STAINS_OR_MARKS: {
+    code: "STAINS_OR_MARKS",
+    label: "Stains or Marks",
+    description: "Material has stains, marks, or discoloration",
+  },
+  WRONG_MATERIAL_TYPE: {
+    code: "WRONG_MATERIAL_TYPE",
+    label: "Wrong Material Type",
+    description: "Incorrect material type included in packet",
+  },
+  INSUFFICIENT_QUANTITY: {
+    code: "INSUFFICIENT_QUANTITY",
+    label: "Insufficient Quantity",
+    description: "Material quantity is less than required",
+  },
+  DAMAGE_DURING_HANDLING: {
+    code: "DAMAGE_DURING_HANDLING",
+    label: "Damage During Handling",
+    description: "Material was damaged during packet handling",
+  },
+  OTHER: {
+    code: "OTHER",
+    label: "Other",
+    description: "Other reason - details must be provided in notes",
+  },
+}
+
+// ============================================================================
+// DYEING TIMELINE EVENTS (NEW - Phase 12.5)
+// ============================================================================
+
+/**
+ * Dyeing Timeline Event Types
+ * Used for tracking dyeing workflow events in order item timeline
+ */
+export const DYEING_TIMELINE_EVENTS = {
+  READY_FOR_DYEING: "READY_FOR_DYEING",
+  SECTION_ACCEPTED: "SECTION_ACCEPTED",
+  SECTION_STARTED: "SECTION_STARTED",
+  SECTION_COMPLETED: "SECTION_COMPLETED",
+  SECTION_REJECTED: "SECTION_REJECTED",
+  AUTO_ASSIGNED: "AUTO_ASSIGNED",
+  INVENTORY_RELEASED: "INVENTORY_RELEASED",
+  PACKET_INVALIDATED: "PACKET_INVALIDATED",
+}
+
+export const DYEING_TIMELINE_MESSAGES = {
+  READY_FOR_DYEING: (sections) => `Sections ready for dyeing: ${sections.join(", ")}`,
+  SECTION_ACCEPTED: (section, user) => `${section} accepted for dyeing by ${user}`,
+  SECTION_STARTED: (section, user) => `Dyeing started for ${section} by ${user}`,
+  SECTION_COMPLETED: (section, user) => `Dyeing completed for ${section} by ${user}`,
+  SECTION_REJECTED: (section, user, reason) => 
+    `${section} rejected from dyeing by ${user}. Reason: ${reason}`,
+  AUTO_ASSIGNED: (sections, user) => 
+    `Sections ${sections.join(", ")} auto-assigned to ${user} (Round 2+)`,
+  INVENTORY_RELEASED: (section) => 
+    `Inventory released back to stock for ${section} due to dyeing rejection`,
+  PACKET_INVALIDATED: (section) => 
+    `Packet for ${section} marked as invalidated due to dyeing rejection`,
 }
 
 /**
