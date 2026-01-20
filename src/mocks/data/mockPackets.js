@@ -169,7 +169,8 @@ export const createPartialPacketFromRequirements = (
     return {
       id: `pick-${orderItemId}-${index + 1}`,
       inventoryItemId: req.inventoryItemId,
-      inventoryItemName: inventoryItem.name || req.inventoryItemName || `Item ${req.inventoryItemId}`,
+      inventoryItemName:
+        inventoryItem.name || req.inventoryItemName || `Item ${req.inventoryItemId}`,
       inventoryItemSku: inventoryItem.sku || req.inventoryItemSku || "",
       inventoryItemCategory: inventoryItem.category || req.category || "",
       requiredQty: req.requiredQty,
@@ -271,6 +272,18 @@ export const addMaterialsToExistingPacket = (
     }
   })
 
+  // Store previous round's sections before updating
+  // Store previous round's sections before updating - MUST COPY THE ARRAY to avoid reference mutation
+  const previousRoundSections = [...(packet.currentRoundSections || packet.sectionsIncluded || [])]
+
+  // Store the previous assignee info for potential auto-reassign
+  const previousAssignee = {
+    assignedTo: packet.assignedTo,
+    assignedToName: packet.assignedToName,
+    assignedBy: packet.assignedBy,
+    assignedByName: packet.assignedByName,
+  }
+
   packet.pickList.push(...newPickItems)
   packet.sectionsIncluded.push(...newSections)
   packet.sectionsPending = packet.sectionsPending.filter(
@@ -278,8 +291,29 @@ export const addMaterialsToExistingPacket = (
   )
   packet.packetRound += 1
   packet.totalItems = packet.pickList.length
-  packet.status = PACKET_STATUS.PENDING // Reset for new materials
+  // If packet was previously assigned, keep it ASSIGNED so fabrication user can continue
+  // Otherwise set to PENDING for new assignment
+  if (packet.assignedTo) {
+    packet.status = PACKET_STATUS.ASSIGNED // Keep assigned - fabrication user can continue
+  } else {
+    packet.status = PACKET_STATUS.PENDING // Needs new assignment
+  }
   packet.updatedAt = now
+
+  // NEW: Track current round sections separately
+  packet.currentRoundSections = newSections
+
+  // NEW: Store previous assignee for auto-reassign option
+  packet.previousAssignee = previousAssignee
+
+  // NEW: Track verified sections from previous rounds
+  packet.verifiedSections = packet.verifiedSections || []
+  packet.verifiedSections.push(...previousRoundSections)
+
+  // Reset picking progress for new round (only new items need picking)
+  // Keep track of items already picked in previous rounds
+  packet.previousRoundPickedItems = packet.pickedItems
+  packet.pickedItems = 0 // Reset for new round - will count only new items
 
   packet.timeline.push({
     id: `timeline-${Date.now()}`,
@@ -287,6 +321,17 @@ export const addMaterialsToExistingPacket = (
     user: "System",
     timestamp: now,
   })
+
+  // Add timeline entry for auto-reassignment if packet was previously assigned
+  if (packet.assignedTo && previousAssignee.assignedToName) {
+    packet.timeline.push({
+      id: `timeline-${Date.now() + 1}`,
+      action: `Round ${packet.packetRound} auto-assigned to ${previousAssignee.assignedToName}`,
+      user: "System",
+      timestamp: now,
+      details: `Continuing from previous round assignment`,
+    })
+  }
 
   return packet
 }
