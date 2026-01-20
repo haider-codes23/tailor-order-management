@@ -112,16 +112,40 @@ export default function PacketCheckPanel({ packet, orderItem }) {
           )}
 
           {/* Partial Packet Section Summary */}
+          {/* Partial Packet Section Summary */}
           {packet.isPartial && (
             <div className="bg-slate-50 p-4 rounded-lg mb-4">
-              <h4 className="font-medium text-sm mb-2">Sections Being Verified</h4>
+              <h4 className="font-medium text-sm mb-2">
+                Sections Being Verified (Round {packet.packetRound})
+              </h4>
               <div className="flex flex-wrap gap-2">
-                {packet.sectionsIncluded?.map((section) => (
+                {/* Show ONLY current round sections */}
+                {(packet.currentRoundSections || packet.sectionsIncluded)?.map((section) => (
                   <Badge key={section} className="bg-blue-100 text-blue-800 capitalize">
                     {section}
                   </Badge>
                 ))}
               </div>
+
+              {/* Show previously verified sections if this is round 2+ */}
+              {packet.verifiedSections?.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <p className="text-xs text-muted-foreground mb-1">Previously verified:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {packet.verifiedSections.map((section) => (
+                      <Badge
+                        key={section}
+                        variant="outline"
+                        className="bg-green-50 text-green-700 border-green-200 text-xs capitalize"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        {section}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {packet.sectionsPending?.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-2">
                   Sections still pending: {packet.sectionsPending.join(", ")}
