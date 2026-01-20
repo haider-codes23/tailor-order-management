@@ -16,6 +16,7 @@ export const USER_ROLES = {
   SALES: "SALES",
   PRODUCTION_HEAD: "PRODUCTION_HEAD",
   PACKET_CREATOR: "PACKET_CREATOR",
+  DYEING: "DYEING", // NEW - Phase 12.5
   WORKER: "WORKER",
   QA: "QA",
   PURCHASER: "PURCHASER",
@@ -30,6 +31,7 @@ export const ROLE_LABELS = {
   FABRICATION_BESPOKE: "Custom BOM Creator",
   PRODUCTION_HEAD: "Production Head",
   PACKET_CREATOR: "Packet Creator",
+  DYEING: "Dyeing Department", // NEW - Phase 12.5
   WORKER: "Production Worker",
   QA: "Quality Assurance",
   PURCHASER: "Purchaser",
@@ -103,6 +105,11 @@ export const mockUsers = [
       "fabrication.view",
       "fabrication.create_bom",
       "fabrication.edit_bom",
+      "dyeing.view",
+      "dyeing.accept",
+      "dyeing.start",
+      "dyeing.complete",
+      "dyeing.view_all",
     ],
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -316,6 +323,45 @@ export const mockUsers = [
     ],
     created_at: "2024-04-20T00:00:00Z",
     updated_at: "2024-04-20T00:00:00Z",
+  },
+  {
+    id: 14, // Adjust ID based on your existing users
+    name: "Imran Shah",
+    email: "imran_dyeing@tailor.com",
+    password: "password123",
+    role: USER_ROLES.DYEING,
+    is_active: true,
+    permissions: [
+      "dyeing.view",
+      "dyeing.accept",
+      "dyeing.start",
+      "dyeing.complete",
+      "orders.view",
+      "inventory.view",
+      "products.view",
+    ],
+    createdAt: "2024-01-10T09:00:00Z",
+    updatedAt: "2024-01-10T09:00:00Z",
+  },
+
+  {
+    id: 15, // Adjust ID based on your existing users
+    name: "Tariq Ahmed",
+    email: "tariq_dyeing@tailor.com",
+    password: "password123",
+    role: USER_ROLES.DYEING,
+    is_active: true,
+    permissions: [
+      "dyeing.view",
+      "dyeing.accept",
+      "dyeing.start",
+      "dyeing.complete",
+      "orders.view",
+      "inventory.view",
+      "products.view",
+    ],
+    createdAt: "2024-01-10T09:00:00Z",
+    updatedAt: "2024-01-10T09:00:00Z",
   },
 ]
 
