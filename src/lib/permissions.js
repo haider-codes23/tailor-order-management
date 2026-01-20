@@ -88,6 +88,18 @@ export const PERMISSION_GROUPS = {
     },
   },
 
+  DYEING: {
+    label: "Dyeing Department",
+    description: "Manage dyeing workflow for order items",
+    permissions: {
+      "dyeing.view": "View dyeing tasks and dashboard",
+      "dyeing.accept": "Accept or reject dyeing tasks",
+      "dyeing.start": "Start dyeing work on accepted tasks",
+      "dyeing.complete": "Mark dyeing tasks as complete",
+      "dyeing.view_all": "View all dyeing tasks (admin oversight)",
+    },
+  },
+
   PRODUCTION: {
     label: "Production Workflow",
     description: "Manage production tasks and workflows",
@@ -203,6 +215,19 @@ export const ROLE_TEMPLATES = {
   [USER_ROLES.PACKET_CREATOR]: {
     label: "Packet Creator",
     permissions: ["orders.view", "production.view", "inventory.view", "products.view"],
+  },
+
+  [USER_ROLES.DYEING]: {
+    label: "Dyeing Department",
+    permissions: [
+      "dyeing.view",
+      "dyeing.accept",
+      "dyeing.start",
+      "dyeing.complete",
+      "orders.view",
+      "inventory.view",
+      "products.view",
+    ],
   },
 
   [USER_ROLES.WORKER]: {
