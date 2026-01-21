@@ -649,10 +649,10 @@ const getStats = http.get(`${BASE_URL}/stats`, async ({ request }) => {
   return HttpResponse.json({
     success: true,
     data: {
-      availableTasks: availableCount,
-      accepted: acceptedCount,
-      inProgress: inProgressCount,
-      completedToday: completedTodayCount,
+      availableCount: availableCount,
+      acceptedCount: acceptedCount,
+      inProgressCount: inProgressCount,
+      completedTodayCount: completedTodayCount,
     },
   })
 })
