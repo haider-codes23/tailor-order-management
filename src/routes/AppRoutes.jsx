@@ -46,6 +46,13 @@ import ProcurementDashboardPage from "../features/procurement/pages/ProcurementD
 import PacketCreatorQueuePage from "@/features/packet/pages/PacketCreatorQueuePage"
 import PacketCheckQueuePage from "@/features/packet/pages/PacketCheckQueuePage"
 
+// Dyeing pages (Phase 12.5)
+import DyeingDashboardPage from "@/features/dyeing/pages/DyeingDashboardPage"
+import DyeingAvailableTasksPage from "@/features/dyeing/pages/DyeingAvailableTasksPage"
+import DyeingMyTasksPage from "@/features/dyeing/pages/DyeingMyTasksPage"
+import DyeingCompletedTasksPage from "@/features/dyeing/pages/DyeingCompletedTasksPage"
+import DyeingTaskDetailPage from "@/features/dyeing/pages/DyeingTaskDetailPage"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -248,6 +255,50 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute requiredPermissions={["production.approve_packets"]}>
                 <PacketCheckQueuePage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== DYEING ROUTES (Phase 12.5) ==================== */}
+        <Route path="/dyeing">
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={["dyeing.view"]}>
+                <DyeingDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="available"
+            element={
+              <ProtectedRoute requiredPermissions={["dyeing.view"]}>
+                <DyeingAvailableTasksPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="my-tasks"
+            element={
+              <ProtectedRoute requiredPermissions={["dyeing.view"]}>
+                <DyeingMyTasksPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="completed"
+            element={
+              <ProtectedRoute requiredPermissions={["dyeing.view"]}>
+                <DyeingCompletedTasksPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="task/:orderItemId"
+            element={
+              <ProtectedRoute requiredPermissions={["dyeing.view"]}>
+                <DyeingTaskDetailPage />
               </ProtectedRoute>
             }
           />
