@@ -105,6 +105,7 @@ export const mockUsers = [
       "fabrication.view",
       "fabrication.create_bom",
       "fabrication.edit_bom",
+      // Dyeing
       "dyeing.view",
       "dyeing.accept",
       "dyeing.start",
