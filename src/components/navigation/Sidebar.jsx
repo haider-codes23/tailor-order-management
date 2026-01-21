@@ -12,7 +12,8 @@ import {
   Ruler,
   Box,
   Scissors,
-  ClipboardCheck
+  ClipboardCheck,
+  Droplets,
 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
@@ -97,6 +98,16 @@ const navItems = [
     iconColor: "text-cyan-600",
     iconBgColor: "bg-cyan-300",
   },
+
+  {
+    name: "Dyeing",
+    href: "/dyeing",
+    icon: Droplets,
+    requiredPermissions: ["dyeing.view"],
+    iconColor: "text-fuchsia-600",
+    iconBgColor: "bg-fuchsia-100",
+  },
+
   {
     name: "Production",
     href: "/production",
