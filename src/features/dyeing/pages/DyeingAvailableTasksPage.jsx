@@ -39,7 +39,7 @@ export default function DyeingAvailableTasksPage() {
   const acceptMutation = useAcceptDyeingSections()
   const rejectMutation = useRejectDyeingSections()
 
-  const tasks = tasksData?.data || []
+  const tasks = tasksData || tasksData?.data || []
 
   // Filter and sort tasks client-side (for now)
   const filteredTasks = tasks.filter((task) => {

@@ -61,7 +61,7 @@ export default function DyeingCompletedTasksPage() {
     pageSize,
   })
 
-  const tasks = tasksData?.data || []
+  const tasks = tasksData || tasksData?.data || []
   const totalCount = tasksData?.meta?.total || 0
   const totalPages = Math.ceil(totalCount / pageSize)
 

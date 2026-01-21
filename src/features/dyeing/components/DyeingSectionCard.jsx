@@ -114,16 +114,16 @@ export default function DyeingSectionCard({
                       <TableRow key={idx}>
                         <TableCell className="font-medium">
                           <div>
-                            <span>{material.name || material.materialName}</span>
-                            {material.sku && (
+                            <span>{material.inventoryItemName || material.materialName}</span>
+                            {material.inventoryItemSku && (
                               <span className="text-xs text-muted-foreground ml-2">
-                                ({material.sku})
+                                ({material.inventoryItemSku})
                               </span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          {material.quantity} {material.unit || ""}
+                          {material.requiredQty} {material.unit || ""}
                         </TableCell>
                       </TableRow>
                     ))}

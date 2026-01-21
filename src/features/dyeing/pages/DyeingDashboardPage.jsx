@@ -26,7 +26,7 @@ export default function DyeingDashboardPage() {
   const { user } = useAuth()
   const { data: statsData, isLoading, isError } = useDyeingStats(user?.id)
 
-  const stats = statsData?.data || {
+  const stats = statsData || {
     availableCount: 0,
     acceptedCount: 0,
     inProgressCount: 0,

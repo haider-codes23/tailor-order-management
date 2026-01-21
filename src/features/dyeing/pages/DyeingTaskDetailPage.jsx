@@ -66,7 +66,7 @@ export default function DyeingTaskDetailPage() {
   const completeMutation = useCompleteDyeing()
   const rejectMutation = useRejectDyeingSections()
 
-  const task = taskData?.data
+  const task = taskData || taskData?.data
 
   if (isLoading) {
     return (

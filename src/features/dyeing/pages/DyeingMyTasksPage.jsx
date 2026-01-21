@@ -54,7 +54,7 @@ export default function DyeingMyTasksPage() {
   const completeMutation = useCompleteDyeing()
   const rejectMutation = useRejectDyeingSections()
 
-  const tasks = tasksData?.data || []
+  const tasks = tasksData || tasksData?.data || []
 
   // Filter tasks client-side
   const filteredTasks = tasks.filter((task) => {
