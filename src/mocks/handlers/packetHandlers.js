@@ -573,13 +573,14 @@ const approvePacket = http.post(
     // Check if this is a partial packet with sections still pending
     if (packet.isPartial && packet.sectionsPending && packet.sectionsPending.length > 0) {
       // Partial packet - some sections still awaiting material
-      // Update section statuses for the approved sections
+      // Update section statuses for the approved sections to READY_FOR_DYEING
       const orderItem = mockOrderItems.find((oi) => oi.id === id)
       if (orderItem && orderItem.sectionStatuses) {
         packet.sectionsIncluded.forEach((section) => {
           const sectionKey = section.toLowerCase()
           if (orderItem.sectionStatuses[sectionKey]) {
-            orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.PACKET_VERIFIED
+            // Set to READY_FOR_DYEING instead of PACKET_VERIFIED
+            orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.READY_FOR_DYEING
             orderItem.sectionStatuses[sectionKey].updatedAt = now
           }
         })
@@ -589,17 +590,28 @@ const approvePacket = http.post(
         nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
         timelineMessage = `Partial packet approved for sections: ${packet.sectionsIncluded.join(", ")}. Moving to QA. Pending: ${packet.sectionsPending.join(", ")}`
       } else {
-        nextStatus = ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION
-        timelineMessage = `Partial packet approved for sections: ${packet.sectionsIncluded.join(", ")}. Moving to production. Pending: ${packet.sectionsPending.join(", ")}`
+        // Changed from PARTIAL_IN_PRODUCTION to PARTIALLY_IN_DYEING
+        nextStatus = ORDER_ITEM_STATUS.PARTIALLY_IN_DYEING
+        timelineMessage = `Partial packet approved for sections: ${packet.sectionsIncluded.join(", ")}. Moving to dyeing. Pending: ${packet.sectionsPending.join(", ")}`
       }
     } else {
       // Full packet OR partial packet with all sections now complete
+      // Update ALL section statuses to READY_FOR_DYEING
+      const orderItem = mockOrderItems.find((oi) => oi.id === id)
+      if (orderItem && orderItem.sectionStatuses) {
+        Object.keys(orderItem.sectionStatuses).forEach((sectionKey) => {
+          orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.READY_FOR_DYEING
+          orderItem.sectionStatuses[sectionKey].updatedAt = now
+        })
+      }
+
       if (isReadyStock) {
         nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
         timelineMessage = "Packet approved - Moving to Quality Assurance for client photos/videos"
       } else {
-        nextStatus = ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
-        timelineMessage = "Packet approved - Ready for production"
+        // Changed from READY_FOR_PRODUCTION to READY_FOR_DYEING
+        nextStatus = ORDER_ITEM_STATUS.READY_FOR_DYEING
+        timelineMessage = "Packet approved - Ready for dyeing"
       }
     }
 
@@ -748,18 +760,12 @@ const approveSectionPacket = http.post(
     const { userId, sections } = data // sections is array of section names to approve
 
     if (!sections || sections.length === 0) {
-      return HttpResponse.json(
-        { success: false, error: "No sections specified" },
-        { status: 400 }
-      )
+      return HttpResponse.json({ success: false, error: "No sections specified" }, { status: 400 })
     }
 
     const packet = getPacketByOrderItemId(id)
     if (!packet) {
-      return HttpResponse.json(
-        { success: false, error: "No packet found" },
-        { status: 404 }
-      )
+      return HttpResponse.json({ success: false, error: "No packet found" }, { status: 404 })
     }
 
     const user = findUser(userId)
@@ -773,7 +779,8 @@ const approveSectionPacket = http.post(
       sections.forEach((section) => {
         const sectionKey = section.toLowerCase()
         if (orderItem.sectionStatuses && orderItem.sectionStatuses[sectionKey]) {
-          orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.PACKET_VERIFIED
+          // Set to READY_FOR_DYEING instead of PACKET_VERIFIED
+          orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.READY_FOR_DYEING
           orderItem.sectionStatuses[sectionKey].updatedAt = now
         }
       })
