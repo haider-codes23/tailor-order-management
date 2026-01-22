@@ -214,7 +214,7 @@ const getAvailableTasks = http.get(`${BASE_URL}/available-tasks`, async ({ reque
       quantity: item.quantity,
       fwdDate: order?.fwdDate || null,
       priority: order?.priority || dyeingTask?.priority || null,
-      readyForDyeingSections,
+      sections: readyForDyeingSections,
       otherSections,
       assignedTo: dyeingTask?.assignedTo || null,
       assignedToName: dyeingTask?.assignedToName || null,
@@ -354,7 +354,7 @@ const getMyTasks = http.get(`${BASE_URL}/my-tasks`, async ({ request }) => {
       quantity: item.quantity,
       fwdDate: order?.fwdDate || null,
       priority: order?.priority || dyeingTask?.priority || null,
-      mySections,
+      sections: mySections,
       otherSections,
       acceptedAt: dyeingTask?.assignedAt,
     }
@@ -390,10 +390,10 @@ const getMyTasks = http.get(`${BASE_URL}/my-tasks`, async ({ request }) => {
     meta: {
       total: tasks.length,
       inProgress: tasks.filter((t) =>
-        t.mySections.some((s) => s.status === SECTION_STATUS.DYEING_IN_PROGRESS)
+        t.sections.some((s) => s.status === SECTION_STATUS.DYEING_IN_PROGRESS)
       ).length,
       accepted: tasks.filter((t) =>
-        t.mySections.some((s) => s.status === SECTION_STATUS.DYEING_ACCEPTED)
+        t.sections.some((s) => s.status === SECTION_STATUS.DYEING_ACCEPTED)
       ).length,
     },
   })
@@ -598,21 +598,21 @@ const getStats = http.get(`${BASE_URL}/stats`, async ({ request }) => {
 
     Object.entries(item.sectionStatuses).forEach(([sectionName, section]) => {
       const status = section.status
-      
+
       // Debug log
       console.log(`  Section ${sectionName}: status = "${status}"`)
 
       // Available: READY_FOR_DYEING and NOT yet accepted by anyone
       if (status === "READY_FOR_DYEING" && !section.dyeingAcceptedBy) {
         availableCount++
-        console.log(`    ✅ Counted as available`)
+        console.log(` Counted as available`)
       }
 
       // User-specific counts (only if userId provided)
       if (userId) {
         const userIdNum = parseInt(userId)
-        const isMyTask = 
-          section.dyeingAcceptedBy === userId || 
+        const isMyTask =
+          section.dyeingAcceptedBy === userId ||
           section.dyeingAcceptedBy === userIdNum ||
           section.dyeingAcceptedBy === String(userId)
 
@@ -628,10 +628,24 @@ const getStats = http.get(`${BASE_URL}/stats`, async ({ request }) => {
           }
 
           // Completed Today
-          if (status === "DYEING_COMPLETED" && section.dyeingCompletedAt) {
+          // Completed Today - check for dyeingCompletedAt regardless of current status
+          // (because status moves to READY_FOR_PRODUCTION after dyeing completes)
+          if (section.dyeingCompletedAt) {
             const completedDate = new Date(section.dyeingCompletedAt).toDateString()
             if (completedDate === today) {
-              completedTodayCount++
+              // Only count if this user completed it (or count all if no userId filter)
+              if (!userId) {
+                completedTodayCount++
+              } else {
+                const userIdNum = parseInt(userId)
+                const wasCompletedByUser =
+                  section.dyeingAcceptedBy === userId ||
+                  section.dyeingAcceptedBy === userIdNum ||
+                  section.dyeingAcceptedBy === String(userId)
+                if (wasCompletedByUser) {
+                  completedTodayCount++
+                }
+              }
             }
           }
         }
