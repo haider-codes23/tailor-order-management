@@ -174,12 +174,16 @@ export default function PacketCreatorQueuePage() {
                       <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Package className="h-3 w-3" />
-                          {packet.totalItems} items
+                          {packet.isPartial && packet.packetRound > 1
+                            ? `${packet.pickList?.filter((item) => item.addedInRound === packet.packetRound)?.length || 0} items (Round ${packet.packetRound})`
+                            : `${packet.totalItems} items`}
                         </span>
                         {packet.status === PACKET_STATUS.IN_PROGRESS && (
                           <span className="flex items-center gap-1">
                             <CheckCircle className="h-3 w-3" />
-                            {packet.pickedItems}/{packet.totalItems} picked
+                            {packet.isPartial && packet.packetRound > 1
+                              ? `${packet.pickedItems}/${packet.pickList?.filter((item) => item.addedInRound === packet.packetRound)?.length || 0} picked`
+                              : `${packet.pickedItems}/${packet.totalItems} picked`}
                           </span>
                         )}
                         <span>
