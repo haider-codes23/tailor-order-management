@@ -49,6 +49,8 @@ export const getMyTasks = async (userId, params = {}) => {
 /**
  * Get completed dyeing tasks with pagination and filters
  * @param {Object} params - Query params: userId, page, limit, startDate, endDate
+ * 
+ * NOTE: This function returns the full response including meta for pagination
  */
 export const getCompletedTasks = async (params = {}) => {
   const queryParams = new URLSearchParams()
@@ -62,7 +64,14 @@ export const getCompletedTasks = async (params = {}) => {
   const url = `${BASE_URL}/completed-tasks${queryString ? `?${queryString}` : ""}`
 
   const response = await httpClient.get(url)
-  return response.data
+
+  // Return full response with meta for pagination
+  // The handler returns: { success: true, data: [...], meta: {...} }
+  // We need to preserve meta for pagination
+  return {
+    tasks: response.data,
+    meta: response.meta,
+  }
 }
 
 /**
