@@ -596,12 +596,40 @@ const approvePacket = http.post(
       }
     } else {
       // Full packet OR partial packet with all sections now complete
-      // Update ALL section statuses to READY_FOR_DYEING
+      // IMPORTANT: Only update sections that need updating - don't reset sections
+      // that have already progressed beyond PACKET_VERIFIED (e.g., in dyeing or completed)
       const orderItem = mockOrderItems.find((oi) => oi.id === id)
       if (orderItem && orderItem.sectionStatuses) {
-        Object.keys(orderItem.sectionStatuses).forEach((sectionKey) => {
-          orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.READY_FOR_DYEING
-          orderItem.sectionStatuses[sectionKey].updatedAt = now
+        // Determine which sections to update based on packet round
+        const sectionsToUpdate =
+          packet.packetRound > 1
+            ? packet.currentRoundSections || packet.sectionsIncluded || []
+            : Object.keys(orderItem.sectionStatuses)
+
+        // Statuses that should NOT be overwritten (already beyond packet verification)
+        const protectedStatuses = [
+          SECTION_STATUS.READY_FOR_DYEING,
+          SECTION_STATUS.DYEING_ACCEPTED,
+          SECTION_STATUS.DYEING_IN_PROGRESS,
+          SECTION_STATUS.DYEING_COMPLETED,
+          SECTION_STATUS.READY_FOR_PRODUCTION,
+          SECTION_STATUS.IN_PRODUCTION,
+          SECTION_STATUS.PRODUCTION_COMPLETED,
+          SECTION_STATUS.QA_PENDING,
+          SECTION_STATUS.QA_APPROVED,
+          SECTION_STATUS.COMPLETED,
+        ]
+
+        sectionsToUpdate.forEach((section) => {
+          const sectionKey = section.toLowerCase()
+          if (orderItem.sectionStatuses[sectionKey]) {
+            const currentStatus = orderItem.sectionStatuses[sectionKey].status
+            // Only update if the section is NOT already in a protected status
+            if (!protectedStatuses.includes(currentStatus)) {
+              orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.READY_FOR_DYEING
+              orderItem.sectionStatuses[sectionKey].updatedAt = now
+            }
+          }
         })
       }
 
@@ -610,8 +638,36 @@ const approvePacket = http.post(
         timelineMessage = "Packet approved - Moving to Quality Assurance for client photos/videos"
       } else {
         // Changed from READY_FOR_PRODUCTION to READY_FOR_DYEING
-        nextStatus = ORDER_ITEM_STATUS.READY_FOR_DYEING
-        timelineMessage = "Packet approved - Ready for dyeing"
+        // But we need to check if some sections are already beyond dyeing
+        // to determine the correct overall status
+        if (orderItem && orderItem.sectionStatuses) {
+          const sectionStatuses = Object.values(orderItem.sectionStatuses)
+          const hasDyeingCompleted = sectionStatuses.some(
+            (s) => s.status === SECTION_STATUS.DYEING_COMPLETED
+          )
+          const hasInDyeing = sectionStatuses.some((s) =>
+            [SECTION_STATUS.DYEING_ACCEPTED, SECTION_STATUS.DYEING_IN_PROGRESS].includes(s.status)
+          )
+          const hasReadyForDyeing = sectionStatuses.some(
+            (s) => s.status === SECTION_STATUS.READY_FOR_DYEING
+          )
+
+          if (hasDyeingCompleted && !hasReadyForDyeing && !hasInDyeing) {
+            // All sections completed dyeing
+            nextStatus = ORDER_ITEM_STATUS.DYEING_COMPLETED
+            timelineMessage = "Packet approved - All sections completed dyeing"
+          } else if (hasInDyeing || hasDyeingCompleted) {
+            // Mixed state - some in dyeing, some ready for dyeing
+            nextStatus = ORDER_ITEM_STATUS.PARTIALLY_IN_DYEING
+            timelineMessage = `Packet approved for ${packet.currentRoundSections?.join(", ") || "remaining sections"}. Some sections already in/completed dyeing.`
+          } else {
+            nextStatus = ORDER_ITEM_STATUS.READY_FOR_DYEING
+            timelineMessage = "Packet approved - Ready for dyeing"
+          }
+        } else {
+          nextStatus = ORDER_ITEM_STATUS.READY_FOR_DYEING
+          timelineMessage = "Packet approved - Ready for dyeing"
+        }
       }
     }
 
