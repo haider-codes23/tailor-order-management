@@ -386,14 +386,19 @@ export default function OrderItemDetailPage() {
         <TabsList>
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="form">Order Form</TabsTrigger>
-          {/* Packet Tab - only show for relevant statuses (including PARTIAL) */}
+          {/* Packet Tab - only show for relevant statuses (including PARTIAL and DYEING) */}
           {(item?.status === ORDER_ITEM_STATUS.CREATE_PACKET ||
             item?.status === ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET ||
             item?.status === ORDER_ITEM_STATUS.PACKET_CHECK ||
             item?.status === ORDER_ITEM_STATUS.PARTIAL_PACKET_CHECK ||
             item?.status === ORDER_ITEM_STATUS.QUALITY_ASSURANCE ||
+            item?.status === ORDER_ITEM_STATUS.READY_FOR_DYEING ||
+            item?.status === ORDER_ITEM_STATUS.PARTIALLY_IN_DYEING ||
+            item?.status === ORDER_ITEM_STATUS.IN_DYEING ||
+            item?.status === ORDER_ITEM_STATUS.DYEING_COMPLETED ||
             item?.status === ORDER_ITEM_STATUS.READY_FOR_PRODUCTION ||
-            item?.status === ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION) && (
+            item?.status === ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION ||
+            item?.status === ORDER_ITEM_STATUS.IN_PRODUCTION) && (
             <TabsTrigger value="packet">Packet</TabsTrigger>
           )}
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
