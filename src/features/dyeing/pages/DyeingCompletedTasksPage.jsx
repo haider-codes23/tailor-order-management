@@ -27,7 +27,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
-import { format, differenceInHours, differenceInMinutes } from "date-fns"
+import { format } from "date-fns"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { useDyeingCompletedTasks } from "../../../hooks/usedyeing"
 import DyeingFilters from "../components/DyeingFilters"
@@ -58,22 +58,34 @@ export default function DyeingCompletedTasksPage() {
     userId: user?.id,
     ...filters,
     page,
-    pageSize,
+    limit: pageSize,
   })
 
-  const tasks = tasksData || tasksData?.data || []
-  const totalCount = tasksData?.meta?.total || 0
-  const totalPages = Math.ceil(totalCount / pageSize)
+  // Handle both wrapped and unwrapped responses
+  // API might return { tasks: [...], meta: {...} } or just [...]
+  const tasks = Array.isArray(tasksData) ? tasksData : tasksData?.tasks || tasksData?.data || []
+  const totalCount = tasksData?.meta?.total || tasks.length
+  const totalPages = tasksData?.meta?.totalPages || Math.ceil(totalCount / pageSize)
 
-  // Calculate duration between accepted and completed
-  const calculateDuration = (acceptedAt, completedAt) => {
-    if (!acceptedAt || !completedAt) return "—"
-    const hours = differenceInHours(new Date(completedAt), new Date(acceptedAt))
-    const minutes = differenceInMinutes(new Date(completedAt), new Date(acceptedAt)) % 60
+  // Format duration from milliseconds
+  const formatDuration = (durationMs) => {
+    if (!durationMs) return "—"
+    const totalMinutes = Math.floor(durationMs / 60000)
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
     if (hours > 0) {
       return `${hours}h ${minutes}m`
     }
     return `${minutes}m`
+  }
+
+  // Get average duration for a task
+  const getAverageDuration = (completedSections) => {
+    if (!completedSections || completedSections.length === 0) return "—"
+    const validDurations = completedSections.filter((s) => s.duration).map((s) => s.duration)
+    if (validDurations.length === 0) return "—"
+    const avgMs = validDurations.reduce((a, b) => a + b, 0) / validDurations.length
+    return formatDuration(avgMs)
   }
 
   const handleViewDetails = (task) => {
@@ -168,13 +180,13 @@ export default function DyeingCompletedTasksPage() {
                   <TableHead>Product</TableHead>
                   <TableHead>Sections</TableHead>
                   <TableHead>Completed</TableHead>
-                  <TableHead>Duration</TableHead>
+                  <TableHead>Avg Duration</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((task) => (
-                  <TableRow key={`${task.orderItemId}-${task.completedAt}`}>
+                {tasks.map((task, index) => (
+                  <TableRow key={`${task.orderItemId}-${task.completedAt || index}`}>
                     <TableCell>
                       <div>
                         <span className="font-medium">{task.orderNumber}</span>
@@ -195,15 +207,19 @@ export default function DyeingCompletedTasksPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {task.completedSections?.map((section) => (
-                          <Badge
-                            key={section}
-                            variant="secondary"
-                            className="bg-green-100 text-green-800 capitalize"
-                          >
-                            {section}
-                          </Badge>
-                        )) || <span className="text-muted-foreground">—</span>}
+                        {task.completedSections && task.completedSections.length > 0 ? (
+                          task.completedSections.map((section) => (
+                            <Badge
+                              key={section.name}
+                              variant="secondary"
+                              className="bg-green-100 text-green-800 capitalize"
+                            >
+                              {section.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -211,11 +227,7 @@ export default function DyeingCompletedTasksPage() {
                         ? format(new Date(task.completedAt), "MMM d, yyyy h:mm a")
                         : "—"}
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {calculateDuration(task.acceptedAt, task.completedAt)}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{getAverageDuration(task.completedSections)}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleViewDetails(task)}>
                         <Eye className="h-4 w-4 mr-1" />
@@ -232,7 +244,7 @@ export default function DyeingCompletedTasksPage() {
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <p className="text-sm text-muted-foreground">
                   Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, totalCount)} of{" "}
-                  {totalCount}
+                  {totalCount} tasks
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -244,7 +256,7 @@ export default function DyeingCompletedTasksPage() {
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
-                  <span className="text-sm text-muted-foreground px-2">
+                  <span className="text-sm">
                     Page {page} of {totalPages}
                   </span>
                   <Button
