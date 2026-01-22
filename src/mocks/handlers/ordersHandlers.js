@@ -699,14 +699,17 @@ export const ordersHandlers = [
 
             // Create stock movement record
             const movement = {
-              id: `mov-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              inventoryItemId: req.inventoryItemId,
-              type: "ISSUE_TO_ORDER",
-              quantity: -req.requiredQty,
-              referenceType: "ORDER_ITEM",
-              referenceId: id,
+              id: mockStockMovements.length + 1,
+              inventory_item_id: req.inventoryItemId,
+              variant_id: null,
+              movement_type: "STOCK_OUT",
+              quantity: req.requiredQty,
+              remaining_stock_after: inventoryItem.remaining_stock,
+              transaction_date: now,
+              reference_number: `ORDER-${item.orderId}-ITEM-${id}`,
               notes: `Reserved for order item ${id}, section: ${section.piece}`,
-              createdAt: now,
+              performed_by_user_id: 1,
+              created_at: now,
             }
             mockStockMovements.push(movement)
 
@@ -1033,14 +1036,17 @@ export const ordersHandlers = [
 
               // Create stock movement record
               const movement = {
-                id: `mov-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                inventoryItemId: req.inventoryItemId,
-                type: "ISSUE_TO_ORDER",
-                quantity: -req.requiredQty,
-                referenceType: "ORDER_ITEM",
-                referenceId: id,
+                id: mockStockMovements.length + 1,
+                inventory_item_id: req.inventoryItemId,
+                variant_id: null,
+                movement_type: "STOCK_OUT",
+                quantity: req.requiredQty,
+                remaining_stock_after: inventoryItem.remaining_stock,
+                transaction_date: now,
+                reference_number: `ORDER-${item.orderId}-ITEM-${id}-RERUN`,
                 notes: `Reserved for order item ${id}, section: ${sectionName} (rerun)`,
-                createdAt: now,
+                performed_by_user_id: 1,
+                created_at: now,
               }
               mockStockMovements.push(movement)
 
