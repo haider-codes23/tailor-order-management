@@ -5,7 +5,7 @@
  * File: src/features/dyeing/components/DyeingAcceptDialog.jsx
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -28,13 +28,20 @@ export default function DyeingAcceptDialog({
   onConfirm,
   isLoading = false,
 }) {
-  const [selectedSections, setSelectedSections] = useState(sections)
+  const [selectedSections, setSelectedSections] = useState([])
   const [error, setError] = useState("")
 
-  // Reset state when dialog opens
-  const handleOpenChange = (isOpen) => {
-    if (isOpen) {
+  // Sync selectedSections when dialog opens or sections prop changes
+  useEffect(() => {
+    if (open) {
       setSelectedSections(sections)
+      setError("")
+    }
+  }, [open, sections])
+
+  // Handle dialog close
+  const handleOpenChange = (isOpen) => {
+    if (!isOpen) {
       setError("")
     }
     onOpenChange(isOpen)

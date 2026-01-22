@@ -5,7 +5,7 @@
  * File: src/features/dyeing/components/DyeingRejectionDialog.jsx
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,15 @@ export default function DyeingRejectionDialog({
   const [notes, setNotes] = useState("")
   const [selectedSections, setSelectedSections] = useState(sections)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (open) {
+      setSelectedSections(sections)
+      setReasonCode("")
+      setNotes("")
+      setError("")
+    }
+  }, [open, sections])
 
   // Reset state when dialog opens
   const handleOpenChange = (isOpen) => {

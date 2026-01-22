@@ -5,7 +5,7 @@
  * File: src/features/dyeing/components/DyeingCompleteDialog.jsx
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,13 @@ export default function DyeingCompleteDialog({
 }) {
   const [selectedSections, setSelectedSections] = useState(sections)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (open) {
+      setSelectedSections(sections)
+      setError("")
+    }
+  }, [open, sections])
 
   // Reset state when dialog opens
   const handleOpenChange = (isOpen) => {
