@@ -882,17 +882,23 @@ export const ordersHandlers = [
         )
       }
 
-      // Find sections that are in AWAITING_MATERIAL status
+      // Find sections that are in AWAITING_MATERIAL or PENDING_INVENTORY_CHECK status
+      // PENDING_INVENTORY_CHECK can occur after dyeing rejection when inventory was released
       const sectionsToRecheck = []
       Object.entries(item.sectionStatuses).forEach(([sectionName, sectionData]) => {
-        if (sectionData.status === SECTION_STATUS.AWAITING_MATERIAL) {
+        if (
+          sectionData.status === SECTION_STATUS.AWAITING_MATERIAL ||
+          sectionData.status === SECTION_STATUS.PENDING_INVENTORY_CHECK
+        ) {
           sectionsToRecheck.push(sectionName)
         }
       })
 
       if (sectionsToRecheck.length === 0) {
         return HttpResponse.json(
-          { error: "No sections in AWAITING_MATERIAL status to recheck." },
+          {
+            error: "No sections in AWAITING_MATERIAL or PENDING_INVENTORY_CHECK status to recheck.",
+          },
           { status: 400 }
         )
       }

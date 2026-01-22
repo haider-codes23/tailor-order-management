@@ -71,6 +71,7 @@ function SectionInventoryResults({
   })
 
   // Check if any section in AWAITING_MATERIAL has all demands fulfilled
+  // Also include PENDING_INVENTORY_CHECK sections (after dyeing rejection - inventory was released)
   const sectionsReadyForRecheck = []
   Object.entries(sectionStatuses).forEach(([sectionName, sectionData]) => {
     if (sectionData.status === SECTION_STATUS.AWAITING_MATERIAL) {
@@ -81,6 +82,10 @@ function SectionInventoryResults({
       if (allFulfilled) {
         sectionsReadyForRecheck.push(sectionName)
       }
+    } else if (sectionData.status === SECTION_STATUS.PENDING_INVENTORY_CHECK) {
+      // Sections rejected from dyeing go back to PENDING_INVENTORY_CHECK
+      // They can be re-checked immediately since inventory was released
+      sectionsReadyForRecheck.push(sectionName)
     }
   })
 
@@ -233,7 +238,7 @@ function SectionInventoryResults({
           <div className="pt-4 border-t">
             <Alert className="border-green-200 bg-green-50 mb-4">
               <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertTitle className="text-green-900">Procurement Complete</AlertTitle>
+              <AlertTitle className="text-green-900">Ready for Inventory Check</AlertTitle>
               <AlertDescription className="text-green-700">
                 Sections ready for inventory recheck:{" "}
                 <strong>{sectionsReadyForRecheck.join(", ")}</strong>
@@ -241,7 +246,7 @@ function SectionInventoryResults({
             </Alert>
             <Button onClick={onRerunCheck} className="w-full">
               <ClipboardCheck className="h-4 w-4 mr-2" />
-              Re-run Inventory Check for {sectionsReadyForRecheck.join(", ")}
+              Run Inventory Check for {sectionsReadyForRecheck.join(", ")}
             </Button>
           </div>
         )}
