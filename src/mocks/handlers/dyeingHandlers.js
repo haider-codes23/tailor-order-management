@@ -17,7 +17,7 @@
 import { http, HttpResponse } from "msw"
 import { getDyeingTaskByOrderItemId } from "../data/mockDyeingTasks"
 import { mockOrderItems, mockOrders } from "../data/mockOrders"
-import { mockInventoryItems } from "../data/mockInventory"
+import { mockInventoryItems, mockStockMovements } from "../data/mockInventory"
 import { mockPackets } from "../data/mockPackets"
 import { mockUsers } from "../data/mockUser"
 import {
@@ -1075,14 +1075,34 @@ const rejectSections = http.post(
         // Find inventory item and release stock
         const invIndex = mockInventoryItems.findIndex((inv) => inv.id === material.inventoryItemId)
         if (invIndex !== -1) {
+          const previousStock = mockInventoryItems[invIndex].remaining_stock
           mockInventoryItems[invIndex].remaining_stock += material.requiredQty
           mockInventoryItems[invIndex].updatedAt = now
+
+          // Create inventory movement record for audit trail
+          const movement = {
+            id: mockStockMovements.length + 1,
+            inventory_item_id: material.inventoryItemId,
+            variant_id: null,
+            movement_type: "STOCK_IN",
+            quantity: material.requiredQty,
+            remaining_stock_after: mockInventoryItems[invIndex].remaining_stock,
+            transaction_date: now,
+            reference_number: `DYEING-REJECT-${orderItemId}-${sectionName.toUpperCase()}`,
+            notes: `Stock released from dyeing rejection. Section: ${sectionName}. Reason: ${rejectionReason}`,
+            performed_by_user_id: parseInt(userId) || 1,
+            created_at: now,
+          }
+          mockStockMovements.push(movement)
 
           inventoryReleased.push({
             inventoryItemId: material.inventoryItemId,
             name: material.inventoryItemName,
             quantity: material.requiredQty,
             section: sectionName,
+            movementId: movement.id,
+            previousStock,
+            newStock: mockInventoryItems[invIndex].remaining_stock,
           })
         }
       })
