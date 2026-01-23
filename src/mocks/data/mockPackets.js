@@ -240,6 +240,11 @@ export const createPartialPacketFromRequirements = (
 
 /**
  * Add materials to existing packet (for subsequent partial packet rounds)
+ *
+ * UPDATED: Now removes old pickList items for sections being re-added.
+ * This handles the case where a section was rejected from dyeing and
+ * needs to go through inventory check → packet creation again.
+ * Without this fix, we'd have duplicate pickList items (old + new).
  */
 export const addMaterialsToExistingPacket = (
   packet,
@@ -250,6 +255,53 @@ export const addMaterialsToExistingPacket = (
   if (!packet) return null
 
   const now = new Date().toISOString()
+
+  // ============================================================
+  // NEW: Remove old pickList items for sections being re-added
+  // This prevents duplicate items when a section is rejected from
+  // dyeing and goes through inventory check again
+  // ============================================================
+  const newSectionsLower = newSections.map((s) => s.toLowerCase())
+
+  // Find existing pickList items for these sections (to be removed)
+  const itemsToRemove = packet.pickList.filter((item) => {
+    const itemSection = (item.piece || "").toLowerCase()
+    return newSectionsLower.includes(itemSection)
+  })
+
+  if (itemsToRemove.length > 0) {
+    console.log(
+      "[addMaterialsToExistingPacket] Removing",
+      itemsToRemove.length,
+      "old pickList items for sections:",
+      newSections
+    )
+
+    // Store removed items in history for audit trail (optional)
+    packet.removedPickListItems = packet.removedPickListItems || []
+    packet.removedPickListItems.push(
+      ...itemsToRemove.map((item) => ({
+        ...item,
+        removedAt: now,
+        reason: "Section re-processed (likely after dyeing rejection)",
+        removedInRound: packet.packetRound,
+      }))
+    )
+
+    // Remove old items from pickList
+    packet.pickList = packet.pickList.filter((item) => {
+      const itemSection = (item.piece || "").toLowerCase()
+      return !newSectionsLower.includes(itemSection)
+    })
+
+    // Update pickedItems count after removal
+    packet.pickedItems = packet.pickList.filter((item) => item.isPicked).length
+  }
+  // ============================================================
+  // END OF NEW CODE
+  // ============================================================
+
+  // Now add new items (starting from the updated pickList length)
   const startIndex = packet.pickList.length
 
   const newPickItems = newMaterialRequirements.map((req, index) => {
@@ -273,7 +325,7 @@ export const addMaterialsToExistingPacket = (
   })
 
   // Store previous round's sections before updating
-  // Store previous round's sections before updating - MUST COPY THE ARRAY to avoid reference mutation
+  // MUST COPY THE ARRAY to avoid reference mutation
   const previousRoundSections = [...(packet.currentRoundSections || packet.sectionsIncluded || [])]
 
   // Store the previous assignee info for potential auto-reassign
@@ -284,13 +336,26 @@ export const addMaterialsToExistingPacket = (
     assignedByName: packet.assignedByName,
   }
 
+  // Add new items to pickList
   packet.pickList.push(...newPickItems)
-  packet.sectionsIncluded.push(...newSections)
+
+  // Update sectionsIncluded - add new sections if not already present
+  newSections.forEach((section) => {
+    const sectionLower = section.toLowerCase()
+    const alreadyIncluded = packet.sectionsIncluded.some((s) => s.toLowerCase() === sectionLower)
+    if (!alreadyIncluded) {
+      packet.sectionsIncluded.push(section)
+    }
+  })
+
+  // Remove from sectionsPending
   packet.sectionsPending = packet.sectionsPending.filter(
     (s) => !newSections.map((n) => n.toLowerCase()).includes(s.toLowerCase())
   )
+
   packet.packetRound += 1
   packet.totalItems = packet.pickList.length
+
   // If packet was previously assigned, keep it ASSIGNED so fabrication user can continue
   // Otherwise set to PENDING for new assignment
   if (packet.assignedTo) {
@@ -300,15 +365,24 @@ export const addMaterialsToExistingPacket = (
   }
   packet.updatedAt = now
 
-  // NEW: Track current round sections separately
+  // Track current round sections separately
   packet.currentRoundSections = newSections
 
-  // NEW: Store previous assignee for auto-reassign option
+  // Store previous assignee for auto-reassign option
   packet.previousAssignee = previousAssignee
 
-  // NEW: Track verified sections from previous rounds
+  // Track verified sections from previous rounds
   packet.verifiedSections = packet.verifiedSections || []
-  packet.verifiedSections.push(...previousRoundSections)
+  // Only add sections that aren't being re-processed
+  previousRoundSections.forEach((section) => {
+    const sectionLower = section.toLowerCase()
+    // Don't add to verifiedSections if this section is being re-added (dyeing rejection case)
+    if (!newSectionsLower.includes(sectionLower)) {
+      if (!packet.verifiedSections.some((s) => s.toLowerCase() === sectionLower)) {
+        packet.verifiedSections.push(section)
+      }
+    }
+  })
 
   // Reset picking progress for new round (only new items need picking)
   // Keep track of items already picked in previous rounds
@@ -320,6 +394,10 @@ export const addMaterialsToExistingPacket = (
     action: `Added materials for sections: ${newSections.join(", ")} (Round ${packet.packetRound})`,
     user: "System",
     timestamp: now,
+    details:
+      itemsToRemove.length > 0
+        ? `Replaced ${itemsToRemove.length} old items from previous round`
+        : undefined,
   })
 
   // Add timeline entry for auto-reassignment if packet was previously assigned
