@@ -894,6 +894,17 @@ export const ordersHandlers = [
         }
       })
 
+      console.log("[Rerun Section Inventory Check] Sections to recheck:", sectionsToRecheck)
+      console.log(
+        "[Rerun Section Inventory Check] Section statuses:",
+        Object.entries(item.sectionStatuses).map(([name, data]) => ({
+          name,
+          status: data.status,
+          dyeingRejectedAt: data.dyeingRejectedAt,
+          dyeingRound: data.dyeingRound,
+        }))
+      )
+
       if (sectionsToRecheck.length === 0) {
         return HttpResponse.json(
           {
