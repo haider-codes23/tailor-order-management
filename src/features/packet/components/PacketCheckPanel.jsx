@@ -111,15 +111,18 @@ export default function PacketCheckPanel({ packet, orderItem }) {
             </Alert>
           )}
 
-          {/* Partial Packet Section Summary */}
-          {/* Partial Packet Section Summary */}
-          {packet.isPartial && (
+          {/* Section Summary - Show for partial packets OR Round 2+ (after dyeing rejection) */}
+          {(packet.isPartial || packet.packetRound > 1) && (
             <div className="bg-slate-50 p-4 rounded-lg mb-4">
-              <h4 className="font-medium text-sm mb-2">
-                Sections Being Verified (Round {packet.packetRound})
+              <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4" />
+                {packet.packetRound > 1
+                  ? `Verifying Sections (Round ${packet.packetRound})`
+                  : `Sections Being Verified (Round ${packet.packetRound})`}
               </h4>
+
+              {/* Current round sections being verified */}
               <div className="flex flex-wrap gap-2">
-                {/* Show ONLY current round sections */}
                 {(packet.currentRoundSections || packet.sectionsIncluded)?.map((section) => (
                   <Badge key={section} className="bg-blue-100 text-blue-800 capitalize">
                     {section}
@@ -127,10 +130,26 @@ export default function PacketCheckPanel({ packet, orderItem }) {
                 ))}
               </div>
 
+              {/* Show items count for current round */}
+              {packet.packetRound > 1 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Items in this round:{" "}
+                  <strong>
+                    {packet.pickList?.filter((item) =>
+                      (packet.currentRoundSections || [])
+                        .map((s) => s.toLowerCase())
+                        .includes((item.piece || "").toLowerCase())
+                    ).length || 0}
+                  </strong>
+                </p>
+              )}
+
               {/* Show previously verified sections if this is round 2+ */}
               {packet.verifiedSections?.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-slate-200">
-                  <p className="text-xs text-muted-foreground mb-1">Previously verified:</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Previously verified & in dyeing:
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {packet.verifiedSections.map((section) => (
                       <Badge
@@ -146,6 +165,7 @@ export default function PacketCheckPanel({ packet, orderItem }) {
                 </div>
               )}
 
+              {/* Show sections still pending material */}
               {packet.sectionsPending?.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-2">
                   Sections still pending: {packet.sectionsPending.join(", ")}
