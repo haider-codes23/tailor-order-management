@@ -705,6 +705,11 @@ const approvePacket = http.post(
 /**
  * POST /api/order-items/:id/packet/reject
  * Production head rejects the packet
+ * 
+ * UPDATED: Now handles section-level rejection for partial packets (Round 2+)
+ * - Only resets pickList items for current round sections
+ * - Only updates section statuses for current round sections
+ * - Preserves sections that have already moved to dyeing/production
  */
 const rejectPacket = http.post(
   "/api/order-items/:id/packet/reject",
@@ -753,8 +758,23 @@ const rejectPacket = http.post(
     const user = findUser(userId)
     const now = new Date().toISOString()
 
-    // Reset packet for rework
-    packet.status = PACKET_STATUS.ASSIGNED // Back to assigned state
+    // Determine which sections are being rejected
+    // For Round 2+, only the currentRoundSections are being verified/rejected
+    // For Round 1, all sectionsIncluded are being verified/rejected
+    const sectionsBeingRejected =
+      packet.packetRound > 1 && packet.currentRoundSections?.length > 0
+        ? packet.currentRoundSections
+        : packet.sectionsIncluded?.length > 0
+          ? packet.sectionsIncluded
+          : [] // Full packet - all sections
+
+    const isPartialRejection = packet.packetRound > 1 && sectionsBeingRejected.length > 0
+
+    console.log("[Packet Reject] Packet round:", packet.packetRound)
+    console.log("[Packet Reject] Sections being rejected:", sectionsBeingRejected)
+    console.log("[Packet Reject] Is partial rejection:", isPartialRejection)
+
+    // Update packet metadata
     packet.checkedBy = userId
     packet.checkedByName = user?.name || "Production Head"
     packet.checkedAt = now
@@ -765,40 +785,165 @@ const rejectPacket = http.post(
     packet.completedAt = null // Clear completion
     packet.updatedAt = now
 
-    // Reset pick list items for re-verification
-    packet.pickList.forEach((item) => {
-      item.isPicked = false
-      item.pickedQty = 0
-      item.pickedAt = null
-      item.notes = ""
-    })
-    packet.pickedItems = 0
+    if (isPartialRejection) {
+      // ============================================================
+      // PARTIAL REJECTION (Round 2+): Only affect current round sections
+      // ============================================================
 
-    // Update order item back to CREATE_PACKET
-    const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
-    if (orderItemIndex !== -1) {
-      mockOrderItems[orderItemIndex].status = ORDER_ITEM_STATUS.CREATE_PACKET
-      mockOrderItems[orderItemIndex].updatedAt = now
-      mockOrderItems[orderItemIndex].timeline.push({
-        id: `log-${Date.now()}`,
-        action: `Packet rejected - ${reason}`,
-        user: user?.name || "Production Head",
-        timestamp: now,
+      // Reset ONLY pickList items for the sections being rejected
+      const sectionsLower = sectionsBeingRejected.map((s) => s.toLowerCase())
+      let resetItemCount = 0
+
+      packet.pickList.forEach((item) => {
+        const itemSection = (item.piece || "").toLowerCase()
+        if (sectionsLower.includes(itemSection)) {
+          item.isPicked = false
+          item.pickedQty = 0
+          item.pickedAt = null
+          item.notes = ""
+          resetItemCount++
+        }
+      })
+
+      // Update pickedItems count - count items that are still picked
+      packet.pickedItems = packet.pickList.filter((item) => item.isPicked).length
+
+      // Keep packet in ASSIGNED status so fabrication user can rework only the rejected sections
+      packet.status = PACKET_STATUS.ASSIGNED
+
+      console.log("[Packet Reject] Reset", resetItemCount, "pickList items for sections:", sectionsBeingRejected)
+
+      // Update ONLY the rejected sections' status in the order item
+      const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
+      if (orderItemIndex !== -1) {
+        const orderItem = mockOrderItems[orderItemIndex]
+
+        // Update section statuses for rejected sections only
+        sectionsBeingRejected.forEach((section) => {
+          const sectionKey = section.toLowerCase()
+          if (orderItem.sectionStatuses && orderItem.sectionStatuses[sectionKey]) {
+            // Reset section to CREATE_PACKET (ready for packet re-work)
+            orderItem.sectionStatuses[sectionKey] = {
+              ...orderItem.sectionStatuses[sectionKey],
+              status: SECTION_STATUS.CREATE_PACKET,
+              packetRejectedAt: now,
+              packetRejectionReason: reason,
+              packetRejectionNotes: notes || "",
+              packetRejectedBy: user?.name || "Production Head",
+              updatedAt: now,
+            }
+          }
+        })
+
+        // Determine overall order item status based on all section statuses
+        const allSectionStatuses = Object.values(orderItem.sectionStatuses || {})
+        
+        // Check what states sections are in
+        const hasInDyeing = allSectionStatuses.some((s) =>
+          [
+            SECTION_STATUS.READY_FOR_DYEING,
+            SECTION_STATUS.DYEING_ACCEPTED,
+            SECTION_STATUS.DYEING_IN_PROGRESS,
+            SECTION_STATUS.DYEING_COMPLETED,
+          ].includes(s.status)
+        )
+        const hasCreatePacket = allSectionStatuses.some(
+          (s) => s.status === SECTION_STATUS.CREATE_PACKET
+        )
+        const hasReadyForProduction = allSectionStatuses.some(
+          (s) => s.status === SECTION_STATUS.READY_FOR_PRODUCTION
+        )
+
+        // Set appropriate mixed status
+        if (hasInDyeing && hasCreatePacket) {
+          orderItem.status = ORDER_ITEM_STATUS.PARTIALLY_IN_DYEING
+        } else if (hasReadyForProduction && hasCreatePacket) {
+          orderItem.status = ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION
+        } else if (hasCreatePacket) {
+          orderItem.status = ORDER_ITEM_STATUS.CREATE_PACKET
+        }
+
+        orderItem.updatedAt = now
+        orderItem.timeline.push({
+          id: `log-${Date.now()}`,
+          action: `Packet rejected for sections: ${sectionsBeingRejected.join(", ")} - ${reason}`,
+          user: user?.name || "Production Head",
+          timestamp: now,
+          details: notes || "",
+        })
+      }
+
+      addPacketTimeline(
+        packet,
+        `Packet rejected for sections: ${sectionsBeingRejected.join(", ")}`,
+        user?.name || "Production Head",
+        `Reason: ${reason}${notes ? `. Notes: ${notes}` : ""}`
+      )
+
+      return HttpResponse.json({
+        success: true,
+        data: packet,
+        message: `Packet rejected for sections: ${sectionsBeingRejected.join(", ")}. Sent back to ${packet.assignedToName} for correction.`,
+      })
+    } else {
+      // ============================================================
+      // FULL REJECTION (Round 1 or non-partial packet): Original behavior
+      // ============================================================
+
+      // Reset packet for rework
+      packet.status = PACKET_STATUS.ASSIGNED // Back to assigned state
+
+      // Reset ALL pick list items for re-verification
+      packet.pickList.forEach((item) => {
+        item.isPicked = false
+        item.pickedQty = 0
+        item.pickedAt = null
+        item.notes = ""
+      })
+      packet.pickedItems = 0
+
+      // Update order item back to CREATE_PACKET
+      const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
+      if (orderItemIndex !== -1) {
+        mockOrderItems[orderItemIndex].status = ORDER_ITEM_STATUS.CREATE_PACKET
+        mockOrderItems[orderItemIndex].updatedAt = now
+        mockOrderItems[orderItemIndex].timeline.push({
+          id: `log-${Date.now()}`,
+          action: `Packet rejected - ${reason}`,
+          user: user?.name || "Production Head",
+          timestamp: now,
+        })
+
+        // Reset ALL section statuses to CREATE_PACKET
+        const orderItem = mockOrderItems[orderItemIndex]
+        if (orderItem.sectionStatuses) {
+          Object.keys(orderItem.sectionStatuses).forEach((sectionKey) => {
+            orderItem.sectionStatuses[sectionKey] = {
+              ...orderItem.sectionStatuses[sectionKey],
+              status: SECTION_STATUS.CREATE_PACKET,
+              packetRejectedAt: now,
+              packetRejectionReason: reason,
+              packetRejectionNotes: notes || "",
+              packetRejectedBy: user?.name || "Production Head",
+              updatedAt: now,
+            }
+          })
+        }
+      }
+
+      addPacketTimeline(
+        packet,
+        "Packet rejected",
+        user?.name || "Production Head",
+        `Reason: ${reason}${notes ? `. Notes: ${notes}` : ""}`
+      )
+
+      return HttpResponse.json({
+        success: true,
+        data: packet,
+        message: `Packet rejected. Sent back to ${packet.assignedToName} for correction.`,
       })
     }
-
-    addPacketTimeline(
-      packet,
-      "Packet rejected",
-      user?.name || "Production Head",
-      `Reason: ${reason}${notes ? `. Notes: ${notes}` : ""}`
-    )
-
-    return HttpResponse.json({
-      success: true,
-      data: packet,
-      message: `Packet rejected. Sent back to ${packet.assignedToName} for correction.`,
-    })
   }
 )
 
