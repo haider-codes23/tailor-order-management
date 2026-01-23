@@ -128,6 +128,41 @@ function SectionInventoryResults({
                 </Badge>
               </div>
 
+              {/* ============================================================ */}
+              {/* Dyeing Rejection Banner - Shows when section was rejected */}
+              {/* ============================================================ */}
+              {sectionData.dyeingRejectedAt && (
+                <div className="mb-3 p-3 rounded-lg bg-red-50 border border-red-200">
+                  <div className="flex items-start gap-2">
+                    <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-900">
+                        Previously Rejected from Dyeing (Round {sectionData.dyeingRound || 1})
+                      </p>
+                      <p className="text-sm text-red-800 mt-1">
+                        <span className="font-medium">Reason:</span>{" "}
+                        {sectionData.dyeingRejectionReason || "Not specified"}
+                      </p>
+                      {sectionData.dyeingRejectionNotes && (
+                        <p className="text-sm text-red-700 mt-1">
+                          <span className="font-medium">Notes:</span>{" "}
+                          {sectionData.dyeingRejectionNotes}
+                        </p>
+                      )}
+                      <p className="text-xs text-red-600 mt-2">
+                        Rejected by {sectionData.dyeingRejectedByName || "Unknown"} on{" "}
+                        {new Date(sectionData.dyeingRejectedAt).toLocaleString()}
+                      </p>
+                      {sectionData.previousFabricationUserName && (
+                        <p className="text-xs text-amber-700 mt-1">
+                          ⚡ Auto-assigned to: {sectionData.previousFabricationUserName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Procurement Status Banner for AWAITING_MATERIAL sections */}
               {isAwaiting && sectionDemands.length > 0 && (
                 <div
