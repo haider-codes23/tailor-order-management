@@ -90,17 +90,23 @@ export default function TaskCreationPanel({ orderItemId, sectionName, onClose, o
   // Handle predefined task selection
   const handleTaskToggle = (taskKey) => {
     setSelectedTasks((prev) => {
-      const newSelected = { ...prev }
-      if (newSelected[taskKey]) {
-        delete newSelected[taskKey]
-        // Remove from sequence
-        setTaskSequence((seq) => seq.filter((k) => k !== taskKey))
+      const isSelected = !!prev[taskKey]
+      const nextSelected = { ...prev }
+
+      if (isSelected) {
+        delete nextSelected[taskKey]
       } else {
-        newSelected[taskKey] = { workerId: "", notes: "" }
-        // Add to sequence
-        setTaskSequence((seq) => [...seq, taskKey])
+        nextSelected[taskKey] = { workerId: "", notes: "" }
       }
-      return newSelected
+
+      return nextSelected
+    })
+
+    setTaskSequence((seq) => {
+      if (seq.includes(taskKey)) {
+        return seq.filter((k) => k !== taskKey)
+      }
+      return [...seq, taskKey]
     })
   }
 
@@ -210,7 +216,7 @@ export default function TaskCreationPanel({ orderItemId, sectionName, onClose, o
       // Create tasks
       await createTasksMutation.mutateAsync({
         orderItemId,
-        sectionName,
+        section: sectionName,
         tasks,
         notes,
       })
@@ -218,7 +224,7 @@ export default function TaskCreationPanel({ orderItemId, sectionName, onClose, o
       // Start production
       await startProductionMutation.mutateAsync({
         orderItemId,
-        sectionName,
+        section: sectionName,
       })
 
       toast.success("Tasks created and production started!", {
