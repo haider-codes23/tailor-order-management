@@ -71,7 +71,7 @@ export default function ProductionAdminDashboard() {
 
     try {
       console.log("Calling assignMutation.mutateAsync with:", orderItemId)
-      await assignMutation.mutateAsync(orderItemId)
+      await assignMutation.mutateAsync({ orderItemId })
       console.log("Assignment successful!")
       toast.success(`Production head assigned to ${productName} (${orderNumber})`, {
         description: "The production head can now manage this order item.",
