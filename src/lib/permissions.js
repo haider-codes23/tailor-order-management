@@ -104,10 +104,14 @@ export const PERMISSION_GROUPS = {
     label: "Production Workflow",
     description: "Manage production tasks and workflows",
     permissions: {
-      "production.view": "View production tasks",
+      "production.view": "View production tasks and dashboard",
       "production.manage": "Manage production workflow",
-      "production.assign_tasks": "Assign tasks to workers",
+      "production.assign_tasks": "Create and assign tasks to workers",
       "production.approve_packets": "Approve packets",
+      "production.start_task": "Start assigned tasks", // NEW
+      "production.complete_task": "Complete assigned tasks", // NEW
+      "production.assign_head": "Assign production head to orders", // NEW (for admin)
+      "production.send_to_qa": "Send completed sections to QA", // NEW
     },
   },
 
@@ -207,6 +211,7 @@ export const ROLE_TEMPLATES = {
       "production.manage",
       "production.assign_tasks",
       "production.approve_packets",
+      "production.send_to_qa", // NEW - Can send to QA
       "inventory.view",
       "products.view",
     ],
@@ -232,7 +237,12 @@ export const ROLE_TEMPLATES = {
 
   [USER_ROLES.WORKER]: {
     label: "Production Worker",
-    permissions: ["production.view", "orders.view"],
+    permissions: [
+      "production.view",
+      "production.start_task", // NEW - Can start assigned tasks
+      "production.complete_task", // NEW - Can complete assigned tasks
+      "orders.view",
+    ],
   },
 
   [USER_ROLES.QA]: {
