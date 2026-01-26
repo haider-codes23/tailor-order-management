@@ -348,14 +348,247 @@ export const DYEING_TIMELINE_MESSAGES = {
   SECTION_ACCEPTED: (section, user) => `${section} accepted for dyeing by ${user}`,
   SECTION_STARTED: (section, user) => `Dyeing started for ${section} by ${user}`,
   SECTION_COMPLETED: (section, user) => `Dyeing completed for ${section} by ${user}`,
-  SECTION_REJECTED: (section, user, reason) => 
+  SECTION_REJECTED: (section, user, reason) =>
     `${section} rejected from dyeing by ${user}. Reason: ${reason}`,
-  AUTO_ASSIGNED: (sections, user) => 
+  AUTO_ASSIGNED: (sections, user) =>
     `Sections ${sections.join(", ")} auto-assigned to ${user} (Round 2+)`,
-  INVENTORY_RELEASED: (section) => 
+  INVENTORY_RELEASED: (section) =>
     `Inventory released back to stock for ${section} due to dyeing rejection`,
-  PACKET_INVALIDATED: (section) => 
+  PACKET_INVALIDATED: (section) =>
     `Packet for ${section} marked as invalidated due to dyeing rejection`,
+}
+
+// ============================================================================
+// PHASE 13: PRODUCTION WORKFLOW CONSTANTS
+// ============================================================================
+
+/**
+ * Predefined Production Task Types
+ * Production heads can select from these + add custom tasks
+ */
+export const PRODUCTION_TASK_TYPES = {
+  ADDA_WORK: "ADDA_WORK",
+  CUTTING_WORK: "CUTTING_WORK",
+  IRON_WORK: "IRON_WORK",
+  TASSELS_WORK: "TASSELS_WORK",
+  ALTERATION_WORK: "ALTERATION_WORK",
+  EMBROIDERY_WORK: "EMBROIDERY_WORK",
+  CUSTOM: "CUSTOM", // For custom task names
+}
+
+export const PRODUCTION_TASK_TYPE_CONFIG = {
+  ADDA_WORK: {
+    label: "Adda Work",
+    icon: "Hammer",
+    description: "Adda stitching and assembly work",
+  },
+  CUTTING_WORK: {
+    label: "Cutting Work",
+    icon: "Scissors",
+    description: "Fabric cutting and preparation",
+  },
+  IRON_WORK: {
+    label: "Iron Work",
+    icon: "Flame",
+    description: "Ironing and pressing",
+  },
+  TASSELS_WORK: {
+    label: "Tassels Work",
+    icon: "Sparkles",
+    description: "Adding tassels and decorative elements",
+  },
+  ALTERATION_WORK: {
+    label: "Alteration Work",
+    icon: "Ruler",
+    description: "Adjustments and alterations",
+  },
+  EMBROIDERY_WORK: {
+    label: "Embroidery Work",
+    icon: "Palette",
+    description: "Embroidery and decorative stitching",
+  },
+  CUSTOM: {
+    label: "Custom Task",
+    icon: "Plus",
+    description: "Custom task defined by production head",
+  },
+}
+
+/**
+ * Get predefined task types as array for dropdowns
+ * Excludes CUSTOM as that's handled separately
+ */
+export const PREDEFINED_TASK_TYPES = Object.entries(PRODUCTION_TASK_TYPE_CONFIG)
+  .filter(([key]) => key !== "CUSTOM")
+  .map(([key, config]) => ({
+    value: key,
+    label: config.label,
+    icon: config.icon,
+    description: config.description,
+  }))
+
+/**
+ * Production Task Status
+ * Tracks the lifecycle of each task
+ */
+export const PRODUCTION_TASK_STATUS = {
+  PENDING: "PENDING", // Created but previous task not complete
+  READY: "READY", // Previous task complete, can be started
+  IN_PROGRESS: "IN_PROGRESS", // Worker has started
+  COMPLETED: "COMPLETED", // Worker has completed
+}
+
+export const PRODUCTION_TASK_STATUS_CONFIG = {
+  PENDING: {
+    label: "Pending",
+    color: "bg-gray-100 text-gray-800",
+    icon: "Clock",
+    description: "Waiting for previous task to complete",
+  },
+  READY: {
+    label: "Ready to Start",
+    color: "bg-blue-100 text-blue-800",
+    icon: "PlayCircle",
+    description: "Can be started by assigned worker",
+  },
+  IN_PROGRESS: {
+    label: "In Progress",
+    color: "bg-amber-100 text-amber-800",
+    icon: "Loader",
+    description: "Currently being worked on",
+  },
+  COMPLETED: {
+    label: "Completed",
+    color: "bg-green-100 text-green-800",
+    icon: "CheckCircle",
+    description: "Task finished",
+  },
+}
+
+/**
+ * Production Timeline Event Types
+ * Used for tracking production workflow events
+ */
+export const PRODUCTION_TIMELINE_EVENTS = {
+  PRODUCTION_HEAD_ASSIGNED: "PRODUCTION_HEAD_ASSIGNED",
+  TASKS_CREATED: "TASKS_CREATED",
+  PRODUCTION_STARTED: "PRODUCTION_STARTED",
+  TASK_STARTED: "TASK_STARTED",
+  TASK_COMPLETED: "TASK_COMPLETED",
+  SECTION_PRODUCTION_COMPLETED: "SECTION_PRODUCTION_COMPLETED",
+  SECTION_SENT_TO_QA: "SECTION_SENT_TO_QA",
+  ORDER_ITEM_PRODUCTION_COMPLETED: "ORDER_ITEM_PRODUCTION_COMPLETED",
+}
+
+export const PRODUCTION_TIMELINE_MESSAGES = {
+  PRODUCTION_HEAD_ASSIGNED: (productionHeadName, assignedBy) =>
+    `Production head ${productionHeadName} assigned by ${assignedBy}`,
+  TASKS_CREATED: (sectionName, taskCount, productionHeadName) =>
+    `${taskCount} task(s) created for ${sectionName} section by ${productionHeadName}`,
+  PRODUCTION_STARTED: (sectionName, productionHeadName) =>
+    `Production started for ${sectionName} section by ${productionHeadName}`,
+  TASK_STARTED: (taskName, workerName, sectionName) =>
+    `${taskName} started by ${workerName} for ${sectionName}`,
+  TASK_COMPLETED: (taskName, workerName, sectionName, duration) =>
+    `${taskName} completed by ${workerName} for ${sectionName} (${duration})`,
+  SECTION_PRODUCTION_COMPLETED: (sectionName) =>
+    `All tasks completed for ${sectionName} section - Production completed`,
+  SECTION_SENT_TO_QA: (sectionName, productionHeadName) =>
+    `${sectionName} section sent to QA by ${productionHeadName}`,
+  ORDER_ITEM_PRODUCTION_COMPLETED: () =>
+    `All sections completed production - Order item ready for QA`,
+}
+
+/**
+ * Status Priority for Order Item calculation
+ * Higher number = higher priority (most advanced stage)
+ * Used to determine overall order item status when sections are in different stages
+ */
+export const STATUS_PRIORITY = {
+  // QA & Completion stages (highest)
+  COMPLETED: 150,
+  DISPATCHED: 145,
+  CLIENT_APPROVED: 140,
+  AWAITING_CLIENT_APPROVAL: 135,
+
+  // Production stages
+  PRODUCTION_COMPLETED: 100,
+  IN_PRODUCTION: 95,
+  PARTIAL_IN_PRODUCTION: 94,
+  READY_FOR_PRODUCTION: 90,
+
+  // Dyeing stages
+  DYEING_COMPLETED: 80,
+  IN_DYEING: 75,
+  PARTIALLY_IN_DYEING: 74,
+  READY_FOR_DYEING: 70,
+
+  // Packet stages
+  PACKET_CHECK: 60,
+  PARTIAL_PACKET_CHECK: 59,
+  CREATE_PACKET: 50,
+  PARTIAL_CREATE_PACKET: 49,
+
+  // Inventory & Initial stages
+  AWAITING_MATERIAL: 30,
+  INVENTORY_CHECK: 20,
+  FABRICATION_BESPOKE: 15,
+  AWAITING_CUSTOMER_FORM_APPROVAL: 10,
+  RECEIVED: 5,
+
+  // Special statuses
+  REWORK_REQUIRED: 200, // Highest priority - needs attention
+  CANCELLED: 0,
+}
+
+/**
+ * Calculate the priority status for mixed section states
+ * Returns the appropriate order item status based on section statuses
+ */
+export const calculateOrderItemStatusFromSections = (sectionStatuses) => {
+  if (!sectionStatuses || Object.keys(sectionStatuses).length === 0) {
+    return null
+  }
+
+  const sections = Object.values(sectionStatuses)
+  const statuses = sections.map((s) => s.status)
+
+  // Check for specific combined states
+  const hasInProduction = statuses.some((s) => s === SECTION_STATUS.IN_PRODUCTION)
+  const hasProductionCompleted = statuses.some((s) => s === SECTION_STATUS.PRODUCTION_COMPLETED)
+  const hasReadyForProduction = statuses.some((s) => s === SECTION_STATUS.READY_FOR_PRODUCTION)
+  const allProductionCompleted = statuses.every((s) => s === SECTION_STATUS.PRODUCTION_COMPLETED)
+  const allInProduction = statuses.every((s) => s === SECTION_STATUS.IN_PRODUCTION)
+  const allReadyForProduction = statuses.every((s) => s === SECTION_STATUS.READY_FOR_PRODUCTION)
+
+  // All sections completed production
+  if (allProductionCompleted) {
+    return ORDER_ITEM_STATUS.PRODUCTION_COMPLETED
+  }
+
+  // All sections in production
+  if (allInProduction) {
+    return ORDER_ITEM_STATUS.IN_PRODUCTION
+  }
+
+  // All sections ready for production
+  if (allReadyForProduction) {
+    return ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
+  }
+
+  // Mixed production states
+  if (hasInProduction || hasProductionCompleted || hasReadyForProduction) {
+    // If any section is in production or beyond, show partial production
+    if (hasInProduction || hasProductionCompleted) {
+      return ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION
+    }
+    // Some ready, others not yet
+    return ORDER_ITEM_STATUS.READY_FOR_PRODUCTION
+  }
+
+  // Fall back to dyeing status calculation (existing logic)
+  // This handles cases where no section has reached production yet
+  return null // Let existing logic handle
 }
 
 /**
