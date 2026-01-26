@@ -33,7 +33,11 @@ import {
   FileText,
 } from "lucide-react"
 import { toast } from "sonner"
-import { useProductionOrderItemDetails, useSectionTasks, useSendSectionToQA } from "@/hooks/useProduction"
+import {
+  useProductionOrderItemDetails,
+  useSectionTasks,
+  useSendSectionToQA,
+} from "@/hooks/useProduction"
 // import { formatDate } from "@/lib/formatters"
 import { formatDate } from "../../../utils/formatters"
 import { SECTION_STATUS_CONFIG } from "@/constants/orderConstants"
@@ -483,10 +487,14 @@ function OrderDetailsCard({ orderItem }) {
 
 // Helper component for detail rows
 function DetailRow({ label, value }) {
+  // Handle objects - convert to string or show "N/A"
+  const displayValue =
+    typeof value === "object" && value !== null ? JSON.stringify(value) : (value ?? "N/A")
+
   return (
-    <div className="flex justify-between py-1 border-b border-slate-100 last:border-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+    <div className="flex justify-between py-2 border-b border-slate-100 last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-slate-900">{displayValue}</span>
     </div>
   )
 }
