@@ -9,6 +9,7 @@ import { fabricationHandlers } from "./handlers/fabricationHandlers"
 import { procurementHandlers } from "./handlers/procurementHandlers"
 import { packetHandlers } from "./handlers/packetHandlers"
 import { dyeingHandlers } from "./handlers/dyeingHandlers"
+import { productionHandlers } from "./handlers/productionHandlers"
 // Combine all handlers as we add more features
 // For now, we only have auth handlers
 const handlers = [
@@ -22,6 +23,7 @@ const handlers = [
   ...procurementHandlers,
   ...packetHandlers,
   ...dyeingHandlers,
+  ...productionHandlers,
   // Future handlers will be added here:
   // ...orderHandlers,
   // ...inventoryHandlers,
