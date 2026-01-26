@@ -75,9 +75,9 @@ export function useReadyForAssignment() {
  */
 export function useMyAssignments(userId) {
   return useQuery({
-    queryKey: productionKeys.myAssignments(userId),
+    queryKey: productionKeys.myAssignments(userId || "current"),
     queryFn: () => productionApi.getMyAssignments(userId),
-    enabled: !!userId,
+    // Remove enabled check - backend determines user from JWT
     staleTime: 30 * 1000,
   })
 }
