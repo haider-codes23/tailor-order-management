@@ -111,6 +111,13 @@ export const mockUsers = [
       "dyeing.start",
       "dyeing.complete",
       "dyeing.view_all",
+      // Production
+      "production.assign_head",
+      "production.view",
+      "production.manage",
+      "production.assign_tasks",
+      "production.approve_packets",
+      "production.send_to_qa", // NEW - Can send to QA
     ],
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -148,6 +155,7 @@ export const mockUsers = [
       "production.manage",
       "production.assign_tasks",
       "production.approve_packets",
+      "production.send_to_qa",
       "inventory.view",
       "products.view",
     ],
@@ -157,12 +165,17 @@ export const mockUsers = [
   {
     id: 4,
     name: "John Worker",
-    email: "worker@tailor.com", // Kept your existing email
+    email: "john_worker@tailor.com", // Kept your existing email
     password: "worker123", // For authentication
     role: USER_ROLES.WORKER,
     phone: "+92 300 4234567",
     is_active: true,
-    permissions: ["production.view", "orders.view"],
+    permissions: [
+      "production.view",
+      "production.start_task", // NEW
+      "production.complete_task", // NEW
+      "orders.view",
+    ],
     created_at: "2024-02-01T00:00:00Z",
     updated_at: "2024-02-01T00:00:00Z",
   },
@@ -198,9 +211,9 @@ export const mockUsers = [
   },
   {
     id: 7,
-    name: "Inactive User",
-    email: "inactive@tailor.com",
-    password: "inactive123",
+    name: "Micheal",
+    email: "micheal_worker@tailor.com",
+    password: "worker123",
     role: USER_ROLES.WORKER,
     phone: "+92 300 0000000",
     is_active: false,
@@ -281,6 +294,7 @@ export const mockUsers = [
       "production.manage",
       "production.assign_tasks",
       "production.approve_packets",
+      "production.send_to_qa",
       "inventory.view",
       "products.view",
     ],
@@ -301,6 +315,7 @@ export const mockUsers = [
       "production.manage",
       "production.assign_tasks",
       "production.approve_packets",
+      "production.send_to_qa",
       "inventory.view",
       "products.view",
     ],
@@ -363,6 +378,100 @@ export const mockUsers = [
     ],
     createdAt: "2024-01-10T09:00:00Z",
     updatedAt: "2024-01-10T09:00:00Z",
+  },
+
+  {
+    id: 16,
+    name: "Usman Ali",
+    email: "usman@tailor.com",
+    password: "usman123",
+    role: USER_ROLES.WORKER,
+    phone: "+92 300 2001111",
+    is_active: true,
+    permissions: [
+      "production.view",
+      "production.start_task",
+      "production.complete_task",
+      "orders.view",
+    ],
+    created_at: "2024-05-01T00:00:00Z",
+    updated_at: "2024-05-01T00:00:00Z",
+  },
+
+  // Worker 3 - Kamran Shah
+  {
+    id: 17,
+    name: "Kamran Shah",
+    email: "kamran@tailor.com",
+    password: "kamran123",
+    role: USER_ROLES.WORKER,
+    phone: "+92 300 2002222",
+    is_active: true,
+    permissions: [
+      "production.view",
+      "production.start_task",
+      "production.complete_task",
+      "orders.view",
+    ],
+    created_at: "2024-05-05T00:00:00Z",
+    updated_at: "2024-05-05T00:00:00Z",
+  },
+
+  // Worker 4 - Nadeem Akhtar
+  {
+    id: 18,
+    name: "Nadeem Akhtar",
+    email: "nadeem@tailor.com",
+    password: "nadeem123",
+    role: USER_ROLES.WORKER,
+    phone: "+92 300 2003333",
+    is_active: true,
+    permissions: [
+      "production.view",
+      "production.start_task",
+      "production.complete_task",
+      "orders.view",
+    ],
+    created_at: "2024-05-10T00:00:00Z",
+    updated_at: "2024-05-10T00:00:00Z",
+  },
+
+  // Worker 5 - Tariq Mehmood
+  {
+    id: 19,
+    name: "Tariq Mehmood",
+    email: "tariq@tailor.com",
+    password: "tariq123",
+    role: USER_ROLES.WORKER,
+    phone: "+92 300 2004444",
+    is_active: true,
+    permissions: [
+      "production.view",
+      "production.start_task",
+      "production.complete_task",
+      "orders.view",
+    ],
+    created_at: "2024-05-15T00:00:00Z",
+    updated_at: "2024-05-15T00:00:00Z",
+  },
+
+  // Worker 6 - Waseem Khan
+  {
+    id: 20,
+    name: "Waseem Khan",
+    email: "waseem@tailor.com",
+    password: "waseem123",
+    role: USER_ROLES.WORKER,
+    phone: "+92 300 2005555",
+    is_active: true,
+    permissions: [
+      "production.view",
+      "production.start_task",
+      "production.complete_task",
+      "orders.view",
+    ],
+    created_at: "2024-05-20T00:00:00Z",
+    updated_at: "2024-05-20T00:00:00Z",
   },
 ]
 
@@ -447,4 +556,20 @@ export function generateMockToken(userId) {
 export function sanitizeUser(user) {
   const { password, ...sanitizedUser } = user
   return sanitizedUser
+}
+
+/**
+ * Get all active production heads
+ * Used for round-robin assignment
+ */
+export const getActiveProductionHeads = () => {
+  return mockUsers.filter((user) => user.role === USER_ROLES.PRODUCTION_HEAD && user.is_active)
+}
+
+/**
+ * Get all active production workers
+ * Used for task assignment dropdowns
+ */
+export const getActiveProductionWorkers = () => {
+  return mockUsers.filter((user) => user.role === USER_ROLES.WORKER && user.is_active)
 }
