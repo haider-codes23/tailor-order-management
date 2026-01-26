@@ -53,6 +53,11 @@ import DyeingMyTasksPage from "@/features/dyeing/pages/DyeingMyTasksPage"
 import DyeingCompletedTasksPage from "@/features/dyeing/pages/DyeingCompletedTasksPage"
 import DyeingTaskDetailPage from "@/features/dyeing/pages/DyeingTaskDetailPage"
 
+import ProductionDashboardPage from "@/features/production/pages/ProductionDashboardPage"
+// import ProductionAssignmentPage from "@/features/production/pages/ProductionAssignmentPage"
+import ProductionOrderItemPage from "@/features/production/pages/ProductionOrderItemPage"
+// import WorkerTasksPage from "@/features/production/pages/WorkerTasksPage"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -299,6 +304,30 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute requiredPermissions={["dyeing.view"]}>
                 <DyeingTaskDetailPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== PRODUCTION ROUTES (Phase 13) ==================== */}
+        <Route path="/production">
+          {/* Main dashboard - shows different views based on user role */}
+          {/* Admin sees assignment panel, Production Head sees their assignments, Worker sees their tasks */}
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={["production.view"]}>
+                <ProductionDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Production Head: Order item detail with task creation and management */}
+          <Route
+            path="order-item/:orderItemId"
+            element={
+              <ProtectedRoute requiredPermissions={["production.manage"]}>
+                <ProductionOrderItemPage />
               </ProtectedRoute>
             }
           />
