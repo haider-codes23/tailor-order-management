@@ -605,7 +605,7 @@ const getWorkerTasks = http.get(`${BASE_URL}/worker/my-tasks`, async ({ request 
   // Get tasks - if worker, filter to their tasks only
   let tasks = mockProductionTasks
   if (currentUser?.role === "WORKER") {
-    tasks = tasks.filter((t) => t.assignedToId === currentUser.id)
+    tasks = tasks.filter((t) => parseInt(t.assignedToId) === parseInt(currentUser.id))
   }
 
   // Enrich tasks with order info and blocking task info
