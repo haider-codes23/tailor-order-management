@@ -142,9 +142,9 @@ export function useSectionTimeline(orderItemId, section) {
  */
 export function useWorkerTasks(userId) {
   return useQuery({
-    queryKey: productionKeys.workerTasks(userId),
+    queryKey: productionKeys.workerTasks(userId || "current"),
     queryFn: () => productionApi.getWorkerTasks(userId),
-    enabled: !!userId,
+    // enabled: !!userId,
     staleTime: 15 * 1000, // Shorter stale time for workers
     refetchInterval: 30 * 1000, // Refetch every 30 seconds
   })
@@ -224,7 +224,7 @@ export function useCreateSectionTasks() {
 
       toast({
         title: "Tasks Created",
-        description: data.message || `Tasks created for ${variables.section}`,
+        description: data?.message || `Tasks created for ${variables.section}`,
       })
     },
 
@@ -268,7 +268,7 @@ export function useStartSectionProduction() {
 
       toast({
         title: "Production Started",
-        description: data.message || `Production started for ${variables.section}`,
+        description: data?.message || `Production started for ${variables.section}`,
       })
     },
 
