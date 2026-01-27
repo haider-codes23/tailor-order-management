@@ -705,7 +705,7 @@ const approvePacket = http.post(
 /**
  * POST /api/order-items/:id/packet/reject
  * Production head rejects the packet
- * 
+ *
  * UPDATED: Now handles section-level rejection for partial packets (Round 2+)
  * - Only resets pickList items for current round sections
  * - Only updates section statuses for current round sections
@@ -811,7 +811,12 @@ const rejectPacket = http.post(
       // Keep packet in ASSIGNED status so fabrication user can rework only the rejected sections
       packet.status = PACKET_STATUS.ASSIGNED
 
-      console.log("[Packet Reject] Reset", resetItemCount, "pickList items for sections:", sectionsBeingRejected)
+      console.log(
+        "[Packet Reject] Reset",
+        resetItemCount,
+        "pickList items for sections:",
+        sectionsBeingRejected
+      )
 
       // Update ONLY the rejected sections' status in the order item
       const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
@@ -837,7 +842,7 @@ const rejectPacket = http.post(
 
         // Determine overall order item status based on all section statuses
         const allSectionStatuses = Object.values(orderItem.sectionStatuses || {})
-        
+
         // Check what states sections are in
         const hasInDyeing = allSectionStatuses.some((s) =>
           [
@@ -917,15 +922,19 @@ const rejectPacket = http.post(
         // Reset ALL section statuses to CREATE_PACKET
         const orderItem = mockOrderItems[orderItemIndex]
         if (orderItem.sectionStatuses) {
-          Object.keys(orderItem.sectionStatuses).forEach((sectionKey) => {
-            orderItem.sectionStatuses[sectionKey] = {
-              ...orderItem.sectionStatuses[sectionKey],
-              status: SECTION_STATUS.CREATE_PACKET,
-              packetRejectedAt: now,
-              packetRejectionReason: reason,
-              packetRejectionNotes: notes || "",
-              packetRejectedBy: user?.name || "Production Head",
-              updatedAt: now,
+          const sectionsToReset = sectionsBeingRejected.map((s) => s.toLowerCase())
+
+          sectionsToReset.forEach((sectionKey) => {
+            if (orderItem.sectionStatuses[sectionKey]) {
+              orderItem.sectionStatuses[sectionKey] = {
+                ...orderItem.sectionStatuses[sectionKey],
+                status: SECTION_STATUS.CREATE_PACKET,
+                packetRejectedAt: now,
+                packetRejectionReason: reason,
+                packetRejectionNotes: notes || "",
+                packetRejectedBy: user?.name || "Production Head",
+                updatedAt: now,
+              }
             }
           })
         }
