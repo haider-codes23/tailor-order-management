@@ -302,7 +302,31 @@ export const addMaterialsToExistingPacket = (
   // ============================================================
 
   // Now add new items (starting from the updated pickList length)
-  const startIndex = packet.pickList.length
+  // Calculate the highest existing ID number to avoid collisions
+  // The ID format is "pick-{orderItemId}-{number}", e.g., "pick-item-004-1"
+  // We need to extract the final number after the last hyphen
+  const getIdNumber = (id) => {
+    const match = id.match(/-(\d+)$/)
+    return match ? parseInt(match[1], 10) : 0
+  }
+
+  const existingIdNumbers = packet.pickList.map((item) => getIdNumber(item.id))
+  const highestExistingId = existingIdNumbers.length > 0 ? Math.max(...existingIdNumbers) : 0
+
+  // Also check removedPickListItems for previously used IDs
+  const removedIdNumbers = (packet.removedPickListItems || []).map((item) => getIdNumber(item.id))
+  const highestRemovedId = removedIdNumbers.length > 0 ? Math.max(...removedIdNumbers) : 0
+
+  // Start from the highest ID ever used + 1 to ensure uniqueness
+  const startIndex = Math.max(highestExistingId, highestRemovedId)
+
+  console.log("[addMaterialsToExistingPacket] ID calculation:", {
+    existingIdNumbers,
+    highestExistingId,
+    removedIdNumbers,
+    highestRemovedId,
+    startIndex,
+  })
 
   const newPickItems = newMaterialRequirements.map((req, index) => {
     const inventoryItem = inventoryItemsMap[req.inventoryItemId] || {}
