@@ -234,7 +234,7 @@ export default function TaskCreationPanel({ orderItemId, sectionName, onClose, o
       onSuccess?.()
     } catch (error) {
       toast.error("Failed to create tasks", {
-        description: error.message || "Please try again.",
+        description: error?.message || "Please try again.",
       })
     }
   }
