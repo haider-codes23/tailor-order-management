@@ -266,7 +266,7 @@ function AssignmentCard({ assignment, onNavigate, isCompleted = false }) {
     try {
       await sendToQAMutation.mutateAsync({
         orderItemId: assignment.id,
-        sectionName,
+        section: sectionName,
       })
       toast.success(`${sectionName} sent to QA`, {
         description: "Quality check pending.",

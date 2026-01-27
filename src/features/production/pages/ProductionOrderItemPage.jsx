@@ -62,7 +62,7 @@ export default function ProductionOrderItemPage() {
     try {
       await sendToQAMutation.mutateAsync({
         orderItemId,
-        sectionName,
+        section: sectionName,
       })
       toast.success(`${sectionName} sent to QA`, {
         description: "Quality check pending.",

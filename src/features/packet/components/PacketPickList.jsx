@@ -42,6 +42,12 @@ export default function PacketPickList({ packet, canPick = false, onItemPicked }
   const progress = totalItems > 0 ? (pickedItems / totalItems) * 100 : 0
 
   const handlePickItem = async (item) => {
+    console.log("[PacketPickList] Picking item:", {
+      id: item.id,
+      name: item.inventoryItemName,
+      piece: item.piece,
+      fullItem: item,
+    })
     if (!canPick || item.isPicked) return
 
     setPickingItemId(item.id)

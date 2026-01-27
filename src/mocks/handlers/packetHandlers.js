@@ -571,28 +571,58 @@ const approvePacket = http.post(
     let timelineMessage
 
     // Check if this is a partial packet with sections still pending
+    // Check if this is a partial packet with sections still pending
     if (packet.isPartial && packet.sectionsPending && packet.sectionsPending.length > 0) {
       // Partial packet - some sections still awaiting material
       // Update section statuses for the approved sections to READY_FOR_DYEING
       const orderItem = mockOrderItems.find((oi) => oi.id === id)
       if (orderItem && orderItem.sectionStatuses) {
-        packet.sectionsIncluded.forEach((section) => {
+        // CRITICAL FIX: Only update sections in the CURRENT ROUND, not all sectionsIncluded
+        // This prevents resetting sections that are already in dyeing from previous rounds
+        const sectionsToUpdate = packet.currentRoundSections || packet.sectionsIncluded || []
+
+        // Statuses that should NOT be overwritten (already beyond packet verification)
+        const protectedStatuses = [
+          SECTION_STATUS.READY_FOR_DYEING,
+          SECTION_STATUS.DYEING_ACCEPTED,
+          SECTION_STATUS.DYEING_IN_PROGRESS,
+          SECTION_STATUS.DYEING_COMPLETED,
+          SECTION_STATUS.READY_FOR_PRODUCTION,
+          SECTION_STATUS.IN_PRODUCTION,
+          SECTION_STATUS.PRODUCTION_COMPLETED,
+          SECTION_STATUS.QA_PENDING,
+          SECTION_STATUS.QA_APPROVED,
+          SECTION_STATUS.COMPLETED,
+        ]
+
+        console.log(
+          "[approvePacket] Partial packet approval - sections to update:",
+          sectionsToUpdate
+        )
+        console.log(
+          "[approvePacket] Current section statuses:",
+          Object.entries(orderItem.sectionStatuses).map(([k, v]) => ({
+            section: k,
+            status: v.status,
+          }))
+        )
+
+        sectionsToUpdate.forEach((section) => {
           const sectionKey = section.toLowerCase()
           if (orderItem.sectionStatuses[sectionKey]) {
-            // Set to READY_FOR_DYEING instead of PACKET_VERIFIED
-            orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.READY_FOR_DYEING
-            orderItem.sectionStatuses[sectionKey].updatedAt = now
+            const currentStatus = orderItem.sectionStatuses[sectionKey].status
+            // Only update if the section is NOT already in a protected status
+            if (!protectedStatuses.includes(currentStatus)) {
+              orderItem.sectionStatuses[sectionKey].status = SECTION_STATUS.READY_FOR_DYEING
+              orderItem.sectionStatuses[sectionKey].updatedAt = now
+              console.log(`[approvePacket] Updated ${sectionKey} to READY_FOR_DYEING`)
+            } else {
+              console.log(
+                `[approvePacket] Skipped ${sectionKey} - already in protected status: ${currentStatus}`
+              )
+            }
           }
         })
-      }
-
-      if (isReadyStock) {
-        nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
-        timelineMessage = `Partial packet approved for sections: ${packet.sectionsIncluded.join(", ")}. Moving to QA. Pending: ${packet.sectionsPending.join(", ")}`
-      } else {
-        // Changed from PARTIAL_IN_PRODUCTION to PARTIALLY_IN_DYEING
-        nextStatus = ORDER_ITEM_STATUS.PARTIALLY_IN_DYEING
-        timelineMessage = `Partial packet approved for sections: ${packet.sectionsIncluded.join(", ")}. Moving to dyeing. Pending: ${packet.sectionsPending.join(", ")}`
       }
     } else {
       // Full packet OR partial packet with all sections now complete

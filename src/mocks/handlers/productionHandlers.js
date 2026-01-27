@@ -33,15 +33,30 @@ const BASE_URL = "/api/production"
 /**
  * Get current user from auth token (simplified - in real app, decode JWT)
  */
+// const getCurrentUser = (request) => {
+//   // For now, return a mock logged-in user based on some logic
+//   // In production, this would decode the JWT token
+//   const authHeader = request.headers.get("Authorization")
+//   if (authHeader) {
+//     // Simplified: Return first production head or worker based on role
+//     // In real implementation, decode JWT to get user ID
+//   }
+//   // Default to admin for testing
+//   return mockUsers.find((u) => u.id === 1)
+// }
+
+// AFTER:
 const getCurrentUser = (request) => {
-  // For now, return a mock logged-in user based on some logic
-  // In production, this would decode the JWT token
-  const authHeader = request.headers.get("Authorization")
-  if (authHeader) {
-    // Simplified: Return first production head or worker based on role
-    // In real implementation, decode JWT to get user ID
+  // Get the actual logged-in user from localStorage (same as authHandlers)
+  try {
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      return JSON.parse(storedUser)
+    }
+  } catch (e) {
+    console.error("Error parsing stored user:", e)
   }
-  // Default to admin for testing
+  // Fallback to admin only if no user is stored
   return mockUsers.find((u) => u.id === 1)
 }
 

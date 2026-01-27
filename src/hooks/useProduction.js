@@ -408,7 +408,7 @@ export function useSendSectionToQA() {
 
       toast({
         title: "Sent to QA",
-        description: data.message || `${variables.section} sent to QA`,
+        description: data?.message || `${variables.section} sent to QA`,
       })
     },
 
