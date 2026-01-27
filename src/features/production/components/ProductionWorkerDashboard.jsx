@@ -88,7 +88,7 @@ export default function ProductionWorkerDashboard() {
   // Handle start task
   const handleStartTask = async (taskId) => {
     try {
-      await startTaskMutation.mutateAsync(taskId)
+      await startTaskMutation.mutateAsync({ taskId })
       toast.success("Task started!", {
         description: "You can now work on this task.",
       })
@@ -102,7 +102,7 @@ export default function ProductionWorkerDashboard() {
   // Handle complete task
   const handleCompleteTask = async (taskId) => {
     try {
-      await completeTaskMutation.mutateAsync(taskId)
+      await completeTaskMutation.mutateAsync({ taskId })
       toast.success("Task completed!", {
         description: "Great work! The next task is now ready.",
       })
