@@ -118,6 +118,9 @@ export const mockUsers = [
       "production.assign_tasks",
       "production.approve_packets",
       "production.send_to_qa", // NEW - Can send to QA
+      "sales.view_approval_queue", // NEW
+      "sales.send_to_client", // NEW
+      "sales.mark_client_approved",
     ],
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -137,6 +140,9 @@ export const mockUsers = [
       "orders.approve_customer_forms",
       "inventory.view",
       "products.view",
+      "sales.view_approval_queue", // NEW
+      "sales.send_to_client", // NEW
+      "sales.mark_client_approved",
     ],
     created_at: "2024-01-15T00:00:00Z",
     updated_at: "2024-01-15T00:00:00Z",
@@ -201,11 +207,18 @@ export const mockUsers = [
     id: 6,
     name: "David QA",
     email: "qa@tailor.com", // Kept your existing email
-    password: "qa123", // For authentication
+    password: "qa1234", // For authentication
     role: USER_ROLES.QA,
     phone: "+92 300 6234567",
     is_active: true,
-    permissions: ["orders.view", "qa.view", "qa.approve", "qa.request_rework", "products.view"],
+    permissions: [
+      "orders.view",
+      "qa.view",
+      "qa.approve",
+      "qa.request_rework",
+      "products.view",
+      "qa.add_video_link",
+    ],
     created_at: "2024-03-01T00:00:00Z",
     updated_at: "2024-03-01T00:00:00Z",
   },
@@ -472,6 +485,19 @@ export const mockUsers = [
     ],
     created_at: "2024-05-20T00:00:00Z",
     updated_at: "2024-05-20T00:00:00Z",
+  },
+
+  {
+    id: 21,
+    name: "Tom Dispatch",
+    email: "dispatch@tailor.com",
+    password: "dispatch123",
+    role: USER_ROLES.DISPATCH,
+    phone: "+92 300 1134567",
+    is_active: true,
+    permissions: ["orders.view", "dispatch.view", "dispatch.manage"],
+    created_at: "2024-03-15T00:00:00Z",
+    updated_at: "2024-03-15T00:00:00Z",
   },
 ]
 
