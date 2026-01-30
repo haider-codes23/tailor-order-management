@@ -133,6 +133,7 @@ export const ordersHandlers = [
       productionInchargeName: data.productionInchargeName || null,
       currency: data.currency,
       paymentMethod: data.paymentMethod,
+      discount: data.discount || 0,
       totalAmount: data.totalAmount || 0,
       payments: [],
       paymentStatus: "PENDING",
@@ -160,6 +161,7 @@ export const ordersHandlers = [
           sizeType: itemData.sizeType,
           size: itemData.size,
           quantity: itemData.quantity || 1,
+          unitPrice: itemData.unitPrice || 0,
           includedItems: itemData.includedItems || [],
           selectedAddOns: itemData.selectedAddOns || [],
           status: ORDER_ITEM_STATUS.RECEIVED,
@@ -478,6 +480,7 @@ export const ordersHandlers = [
       orderForm: newFormVersion,
       orderFormVersions: updatedVersions,
       status: ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL,
+      garmentNotes: data.garmentNotes || null,
       updatedAt: now,
     }
 
