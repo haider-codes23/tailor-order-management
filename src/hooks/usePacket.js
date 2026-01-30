@@ -17,7 +17,7 @@ export const packetKeys = {
   all: ["packets"],
   lists: () => [...packetKeys.all, "list"],
   list: (filters) => [...packetKeys.lists(), filters],
-  myTasks: (userId) => [...packetKeys.all, "my-tasks", userId],
+  myTasks: (userId, dateFilters = {}) => [...packetKeys.all, "my-tasks", userId, dateFilters],
   checkQueue: () => [...packetKeys.all, "check-queue"],
   detail: (orderItemId) => [...packetKeys.all, "detail", orderItemId],
 }
@@ -43,10 +43,24 @@ const packetApi = {
   /**
    * Get packets assigned to current user (fabrication team)
    */
-  getMyTasks: async (userId, status = null) => {
+  /**
+   * Get packets assigned to current user (fabrication team)
+   * @param {string} userId - User ID
+   * @param {string|null} status - Optional status filter
+   * @param {Object} dateFilters - Optional date filters
+   * @param {string} dateFilters.dateFrom - Start date (ISO string)
+   * @param {string} dateFilters.dateTo - End date (ISO string)
+   * @param {string} dateFilters.filterType - Type of date filter ('created' | 'fwd' | 'productionShipping')
+   */
+  getMyTasks: async (userId, status = null, dateFilters = {}) => {
     const params = new URLSearchParams()
     params.append("userId", userId)
     if (status) params.append("status", status)
+
+    // Add date filter params
+    if (dateFilters.dateFrom) params.append("dateFrom", dateFilters.dateFrom)
+    if (dateFilters.dateTo) params.append("dateTo", dateFilters.dateTo)
+    if (dateFilters.filterType) params.append("filterType", dateFilters.filterType)
 
     const response = await fetch(`/api/packets/my-tasks?${params}`)
     if (!response.ok) throw new Error("Failed to fetch my packet tasks")
@@ -176,10 +190,16 @@ export function usePackets(filters = {}) {
 /**
  * useMyPacketTasks - Get packets assigned to current user
  */
-export function useMyPacketTasks(userId, status = null) {
+/**
+ * useMyPacketTasks - Get packets assigned to current user
+ * @param {string} userId - User ID
+ * @param {string|null} status - Optional status filter
+ * @param {Object} dateFilters - Optional date filters
+ */
+export function useMyPacketTasks(userId, status = null, dateFilters = {}) {
   return useQuery({
-    queryKey: packetKeys.myTasks(userId),
-    queryFn: () => packetApi.getMyTasks(userId, status),
+    queryKey: packetKeys.myTasks(userId, dateFilters),
+    queryFn: () => packetApi.getMyTasks(userId, status, dateFilters),
     enabled: !!userId,
   })
 }
