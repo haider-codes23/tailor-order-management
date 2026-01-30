@@ -58,6 +58,12 @@ import ProductionDashboardPage from "@/features/production/pages/ProductionDashb
 import ProductionOrderItemPage from "@/features/production/pages/ProductionOrderItemPage"
 // import WorkerTasksPage from "@/features/production/pages/WorkerTasksPage"
 
+import QADashboardPage from "@/features/qa/pages/QADashboardPage"
+import QASectionDetailPage from "@/features/qa/pages/QASectionDetailPage"
+
+import SalesApprovalDashboardPage from "@/features/sales/pages/SalesApprovalDashboardPage"
+import ClientApprovalPage from "@/features/sales/pages/ClientApprovalPage"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -328,6 +334,52 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute requiredPermissions={["production.manage"]}>
                 <ProductionOrderItemPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== QA ROUTES (Phase 14) ==================== */}
+        <Route path="/qa">
+          {/* QA Dashboard - List of sections pending QA */}
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={["qa.view"]}>
+                <QADashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* QA Section Detail - Add/view video link */}
+          <Route
+            path="section/:orderItemId/:sectionName"
+            element={
+              <ProtectedRoute requiredPermissions={["qa.view"]}>
+                <QASectionDetailPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== SALES APPROVAL ROUTES (Phase 14) ==================== */}
+        <Route path="/sales">
+          {/* Sales Approval Dashboard */}
+          <Route
+            path="approval"
+            element={
+              <ProtectedRoute requiredPermissions={["orders.view"]}>
+                <SalesApprovalDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Client Approval Detail Page */}
+          <Route
+            path="approval/:orderItemId"
+            element={
+              <ProtectedRoute requiredPermissions={["orders.view"]}>
+                <ClientApprovalPage />
               </ProtectedRoute>
             }
           />
