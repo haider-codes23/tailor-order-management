@@ -29,6 +29,7 @@ export const ORDER_ITEM_STATUS = {
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
   AWAITING_CLIENT_APPROVAL: "AWAITING_CLIENT_APPROVAL",
   CLIENT_APPROVED: "CLIENT_APPROVED",
+  READY_FOR_DISPATCH: "READY_FOR_DISPATCH",
   DISPATCHED: "DISPATCHED",
   COMPLETED: "COMPLETED",
   REWORK_REQUIRED: "REWORK_REQUIRED",
@@ -103,6 +104,11 @@ export const ORDER_ITEM_STATUS_CONFIG = {
     color: "bg-pink-100 text-pink-800",
   },
   CLIENT_APPROVED: { label: "Client Approved", color: "bg-emerald-100 text-emerald-800" },
+  READY_FOR_DISPATCH: {
+    label: "Ready for Dispatch",
+    color: "bg-sky-100 text-sky-800",
+    description: "All sections approved by client, ready for shipping",
+  },
   DISPATCHED: { label: "Dispatched", color: "bg-sky-100 text-sky-800" },
   COMPLETED: { label: "Completed", color: "bg-green-100 text-green-800" },
   REWORK_REQUIRED: { label: "Rework Required", color: "bg-red-100 text-red-800" },
@@ -167,6 +173,13 @@ export const SECTION_STATUS = {
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
   QA_PENDING: "QA_PENDING",
   QA_APPROVED: "QA_APPROVED",
+  // ============================================================================
+  // PHASE 14: QA + CLIENT APPROVAL SECTION STATUSES (NEW)
+  // ============================================================================
+  READY_FOR_CLIENT_APPROVAL: "READY_FOR_CLIENT_APPROVAL", // QA added YouTube link
+  AWAITING_CLIENT_APPROVAL: "AWAITING_CLIENT_APPROVAL", // Sales sent to client
+  CLIENT_APPROVED: "CLIENT_APPROVED", // Client approved via Sales
+  // ============================================================================
   COMPLETED: "COMPLETED",
 }
 
@@ -250,6 +263,25 @@ export const SECTION_STATUS_CONFIG = {
     color: "bg-violet-100 text-violet-800",
     icon: "Camera",
   },
+  // ============================================================================
+  // PHASE 14: QA + CLIENT APPROVAL SECTION STATUS CONFIGS (NEW)
+  // ============================================================================
+  READY_FOR_CLIENT_APPROVAL: {
+    label: "Ready for Client",
+    color: "bg-blue-100 text-blue-800",
+    icon: "Video",
+  },
+  AWAITING_CLIENT_APPROVAL: {
+    label: "Awaiting Client",
+    color: "bg-amber-100 text-amber-800",
+    icon: "Clock",
+  },
+  CLIENT_APPROVED: {
+    label: "Client Approved",
+    color: "bg-emerald-100 text-emerald-800",
+    icon: "ThumbsUp",
+  },
+  // ============================================================================
   QA_APPROVED: {
     label: "QA Approved",
     color: "bg-emerald-100 text-emerald-800",
@@ -508,8 +540,11 @@ export const STATUS_PRIORITY = {
   // QA & Completion stages (highest)
   COMPLETED: 150,
   DISPATCHED: 145,
+  READY_FOR_DISPATCH: 142,
   CLIENT_APPROVED: 140,
   AWAITING_CLIENT_APPROVAL: 135,
+  READY_FOR_CLIENT_APPROVAL: 132,
+  QA_PENDING: 130,
 
   // Production stages
   PRODUCTION_COMPLETED: 100,
@@ -712,3 +747,24 @@ export const MODESTY_OPTIONS = [
 
 // Aliases for backwards compatibility
 export const URGENT_TYPE = URGENT_FLAGS
+
+export const PHASE_14_TIMELINE_EVENTS = {
+  QA_VIDEO_ADDED: "QA_VIDEO_ADDED",
+  SENT_TO_CLIENT: "SENT_TO_CLIENT",
+  CLIENT_APPROVED: "CLIENT_APPROVED",
+  ALL_SECTIONS_APPROVED: "ALL_SECTIONS_APPROVED",
+  ORDER_READY_FOR_DISPATCH: "ORDER_READY_FOR_DISPATCH",
+  ORDER_DISPATCHED: "ORDER_DISPATCHED",
+}
+
+export const PHASE_14_TIMELINE_MESSAGES = {
+  QA_VIDEO_ADDED: (sectionName, qaUserName) =>
+    `QA video link added for ${sectionName} by ${qaUserName}`,
+  SENT_TO_CLIENT: (sectionName, salesUserName) =>
+    `${sectionName} sent to client for approval by ${salesUserName}`,
+  CLIENT_APPROVED: (sectionName) => `${sectionName} approved by client`,
+  ALL_SECTIONS_APPROVED: () => `All sections approved by client - Ready for dispatch`,
+  ORDER_READY_FOR_DISPATCH: () => `Order ready for dispatch - All items approved`,
+  ORDER_DISPATCHED: (courier, trackingNumber) =>
+    `Order dispatched via ${courier} - Tracking: ${trackingNumber}`,
+}
