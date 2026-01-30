@@ -73,7 +73,14 @@ export default function OrderFormGeneratorPage() {
   })
   const product = productData?.data
 
-  const { control, handleSubmit, watch, reset } = useForm({
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    register,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       styleType: CUSTOMIZATION_TYPE.ORIGINAL,
       styleDetails: "",
@@ -83,6 +90,22 @@ export default function OrderFormGeneratorPage() {
       fabricDetails: "",
       notes: "",
       measurements: {},
+      // NEW: Garment-specific customization notes
+      shirtSilhouette: "",
+      shirtDressColor: "",
+      shirtFront: "",
+      shirtBack: "",
+      shirtEmbroidery: "",
+      bottomSilhouette: "",
+      bottomDressColor: "",
+      bottomFront: "",
+      bottomBack: "",
+      bottomEmbroidery: "",
+      dupattaSilhouette: "",
+      dupattaDressColor: "",
+      dupattaFront: "",
+      dupattaBack: "",
+      dupattaEmbroidery: "",
     },
   })
 
@@ -100,6 +123,22 @@ export default function OrderFormGeneratorPage() {
         fabricDetails: form.fabric?.details || "",
         notes: form.notes || "",
         measurements: form.measurements || {},
+        // NEW: Pre-fill garment notes
+        shirtSilhouette: form.garmentNotes?.shirt?.silhouette || "",
+        shirtDressColor: form.garmentNotes?.shirt?.dressColor || "",
+        shirtFront: form.garmentNotes?.shirt?.front || "",
+        shirtBack: form.garmentNotes?.shirt?.back || "",
+        shirtEmbroidery: form.garmentNotes?.shirt?.embroidery || "",
+        bottomSilhouette: form.garmentNotes?.bottom?.silhouette || "",
+        bottomDressColor: form.garmentNotes?.bottom?.dressColor || "",
+        bottomFront: form.garmentNotes?.bottom?.front || "",
+        bottomBack: form.garmentNotes?.bottom?.back || "",
+        bottomEmbroidery: form.garmentNotes?.bottom?.embroidery || "",
+        dupattaSilhouette: form.garmentNotes?.dupatta?.silhouette || "",
+        dupattaDressColor: form.garmentNotes?.dupatta?.dressColor || "",
+        dupattaFront: form.garmentNotes?.dupatta?.front || "",
+        dupattaBack: form.garmentNotes?.dupatta?.back || "",
+        dupattaEmbroidery: form.garmentNotes?.dupatta?.embroidery || "",
       })
       // Set measurement categories
       if (form.selectedCategories) {
@@ -238,6 +277,30 @@ export default function OrderFormGeneratorPage() {
           type: data.fabricType,
           details: data.fabricType === CUSTOMIZATION_TYPE.CUSTOMIZED ? data.fabricDetails : null,
           image: data.fabricType === CUSTOMIZATION_TYPE.CUSTOMIZED ? fabricImage : null,
+        },
+        // NEW: Add garment notes
+        garmentNotes: {
+          shirt: {
+            silhouette: data.shirtSilhouette,
+            dressColor: data.shirtDressColor,
+            front: data.shirtFront,
+            back: data.shirtBack,
+            embroidery: data.shirtEmbroidery,
+          },
+          bottom: {
+            silhouette: data.bottomSilhouette,
+            dressColor: data.bottomDressColor,
+            front: data.bottomFront,
+            back: data.bottomBack,
+            embroidery: data.bottomEmbroidery,
+          },
+          dupatta: {
+            silhouette: data.dupattaSilhouette,
+            dressColor: data.dupattaDressColor,
+            front: data.dupattaFront,
+            back: data.dupattaBack,
+            embroidery: data.dupattaEmbroidery,
+          },
         },
         sketchImage: !isStandardSize ? sketchImage : null,
         productImage: productImage,
@@ -477,8 +540,8 @@ export default function OrderFormGeneratorPage() {
               <p>${order?.fwdDate ? new Date(order.fwdDate).toLocaleDateString() : "—"}</p>
             </div>
             <div class="field">
-              <label>Production Ship Date:</label>
-              <p>${order?.productionShippingDate ? new Date(order.productionShippingDate).toLocaleDateString() : "—"}</p>
+              <label>Expected Shipping Date:</label>
+              <p>${order?.actualShippingDate ? new Date(order.actualShippingDate).toLocaleDateString() : "To be confirmed"}</p>
             </div>
             <div class="field">
               <label>Urgent:</label>
@@ -644,6 +707,42 @@ export default function OrderFormGeneratorPage() {
               <p>${generatedFormData?.fabric?.type || "Original"}</p>
               ${generatedFormData?.fabric?.details ? `<p style="font-size:11px;color:#64748b;">${generatedFormData.fabric.details}</p>` : ""}
               ${generatedFormData?.fabric?.image ? `<img src="${generatedFormData.fabric.image}" class="customization-image" alt="Fabric reference" />` : ""}
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Garment Details</div>
+          <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+            <div class="field">
+              <label style="font-weight:600;">Shirt:</label>
+              <ul style="list-style-type: disc; padding-left: 20px; font-size: 11px;">
+                <li><strong>Silhouette:</strong> ${generatedFormData?.garmentNotes?.shirt?.silhouette || "—"}</li>
+                <li><strong>Dress Color:</strong> ${generatedFormData?.garmentNotes?.shirt?.dressColor || "—"}</li>
+                <li><strong>Front:</strong> ${generatedFormData?.garmentNotes?.shirt?.front || "—"}</li>
+                <li><strong>Back:</strong> ${generatedFormData?.garmentNotes?.shirt?.back || "—"}</li>
+                <li><strong>Embroidery/Adda Work:</strong> ${generatedFormData?.garmentNotes?.shirt?.embroidery || "—"}</li>
+              </ul>
+            </div>
+            <div class="field">
+              <label style="font-weight:600;">Bottom:</label>
+              <ul style="list-style-type: disc; padding-left: 20px; font-size: 11px;">
+                <li><strong>Silhouette:</strong> ${generatedFormData?.garmentNotes?.bottom?.silhouette || "—"}</li>
+                <li><strong>Dress Color:</strong> ${generatedFormData?.garmentNotes?.bottom?.dressColor || "—"}</li>
+                <li><strong>Front:</strong> ${generatedFormData?.garmentNotes?.bottom?.front || "—"}</li>
+                <li><strong>Back:</strong> ${generatedFormData?.garmentNotes?.bottom?.back || "—"}</li>
+                <li><strong>Embroidery/Adda Work:</strong> ${generatedFormData?.garmentNotes?.bottom?.embroidery || "—"}</li>
+              </ul>
+            </div>
+            <div class="field">
+              <label style="font-weight:600;">Dupatta/Hijab:</label>
+              <ul style="list-style-type: disc; padding-left: 20px; font-size: 11px;">
+                <li><strong>Silhouette:</strong> ${generatedFormData?.garmentNotes?.dupatta?.silhouette || "—"}</li>
+                <li><strong>Dress Color:</strong> ${generatedFormData?.garmentNotes?.dupatta?.dressColor || "—"}</li>
+                <li><strong>Front:</strong> ${generatedFormData?.garmentNotes?.dupatta?.front || "—"}</li>
+                <li><strong>Back:</strong> ${generatedFormData?.garmentNotes?.dupatta?.back || "—"}</li>
+                <li><strong>Embroidery/Adda Work:</strong> ${generatedFormData?.garmentNotes?.dupatta?.embroidery || "—"}</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1019,141 +1118,377 @@ export default function OrderFormGeneratorPage() {
         )}
 
         {/* Customizations */}
+        {/* Customization Options - Two Column Layout */}
         <Card>
           <CardHeader>
-            <CardTitle>Customizations</CardTitle>
+            <CardTitle>Customization Options</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Style */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Style</Label>
-                <Controller
-                  name="styleType"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={CUSTOMIZATION_TYPE.ORIGINAL}>Original</SelectItem>
-                        <SelectItem value={CUSTOMIZATION_TYPE.CUSTOMIZED}>Customized</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-              {watch("styleType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
-                <div className="md:col-span-2 space-y-4">
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Existing Style/Color/Fabric Options */}
+              <div className="space-y-6">
+                {/* Style */}
+                <div className="space-y-4">
                   <div>
-                    <Label>Style Details</Label>
+                    <Label>Style</Label>
                     <Controller
-                      name="styleDetails"
+                      name="styleType"
                       control={control}
                       render={({ field }) => (
-                        <Textarea {...field} placeholder="Describe style changes" />
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={CUSTOMIZATION_TYPE.ORIGINAL}>Original</SelectItem>
+                            <SelectItem value={CUSTOMIZATION_TYPE.CUSTOMIZED}>
+                              Customized
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       )}
                     />
                   </div>
-                  <div>
-                    <Label>Style Reference Image</Label>
-                    <ImageUploader
-                      value={styleImage}
-                      onChange={setStyleImage}
-                      label="Upload style reference"
-                    />
-                  </div>
+                  {watch("styleType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
+                    <div className="space-y-4 pl-4 border-l-2 border-slate-200">
+                      <div>
+                        <Label>Style Details</Label>
+                        <Controller
+                          name="styleDetails"
+                          control={control}
+                          render={({ field }) => (
+                            <Textarea {...field} placeholder="Describe style changes" />
+                          )}
+                        />
+                      </div>
+                      <div>
+                        <Label>Style Reference Image</Label>
+                        <ImageUploader
+                          value={styleImage}
+                          onChange={setStyleImage}
+                          label="Upload style reference"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Color */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Color</Label>
-                <Controller
-                  name="colorType"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={CUSTOMIZATION_TYPE.ORIGINAL}>Original</SelectItem>
-                        <SelectItem value={CUSTOMIZATION_TYPE.CUSTOMIZED}>Customized</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-              {watch("colorType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
-                <div className="md:col-span-2 space-y-4">
+                {/* Color */}
+                <div className="space-y-4">
                   <div>
-                    <Label>Color Details</Label>
+                    <Label>Color</Label>
                     <Controller
-                      name="colorDetails"
+                      name="colorType"
                       control={control}
                       render={({ field }) => (
-                        <Textarea {...field} placeholder="Describe color changes" />
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={CUSTOMIZATION_TYPE.ORIGINAL}>Original</SelectItem>
+                            <SelectItem value={CUSTOMIZATION_TYPE.CUSTOMIZED}>
+                              Customized
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       )}
                     />
                   </div>
-                  <div>
-                    <Label>Color Reference Image</Label>
-                    <ImageUploader
-                      value={colorImage}
-                      onChange={setColorImage}
-                      label="Upload color reference"
-                    />
-                  </div>
+                  {watch("colorType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
+                    <div className="space-y-4 pl-4 border-l-2 border-slate-200">
+                      <div>
+                        <Label>Color Details</Label>
+                        <Controller
+                          name="colorDetails"
+                          control={control}
+                          render={({ field }) => (
+                            <Textarea {...field} placeholder="Describe color changes" />
+                          )}
+                        />
+                      </div>
+                      <div>
+                        <Label>Color Reference Image</Label>
+                        <ImageUploader
+                          value={colorImage}
+                          onChange={setColorImage}
+                          label="Upload color reference"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Fabric */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Fabric</Label>
-                <Controller
-                  name="fabricType"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={CUSTOMIZATION_TYPE.ORIGINAL}>Original</SelectItem>
-                        <SelectItem value={CUSTOMIZATION_TYPE.CUSTOMIZED}>Customized</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-              {watch("fabricType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
-                <div className="md:col-span-2 space-y-4">
+                {/* Fabric */}
+                <div className="space-y-4">
                   <div>
-                    <Label>Fabric Details</Label>
+                    <Label>Fabric</Label>
                     <Controller
-                      name="fabricDetails"
+                      name="fabricType"
                       control={control}
                       render={({ field }) => (
-                        <Textarea {...field} placeholder="Describe fabric changes" />
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={CUSTOMIZATION_TYPE.ORIGINAL}>Original</SelectItem>
+                            <SelectItem value={CUSTOMIZATION_TYPE.CUSTOMIZED}>
+                              Customized
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       )}
                     />
                   </div>
-                  <div>
-                    <Label>Fabric Reference Image</Label>
-                    <ImageUploader
-                      value={fabricImage}
-                      onChange={setFabricImage}
-                      label="Upload fabric reference"
-                    />
+                  {watch("fabricType") === CUSTOMIZATION_TYPE.CUSTOMIZED && (
+                    <div className="space-y-4 pl-4 border-l-2 border-slate-200">
+                      <div>
+                        <Label>Fabric Details</Label>
+                        <Controller
+                          name="fabricDetails"
+                          control={control}
+                          render={({ field }) => (
+                            <Textarea {...field} placeholder="Describe fabric changes" />
+                          )}
+                        />
+                      </div>
+                      <div>
+                        <Label>Fabric Reference Image</Label>
+                        <ImageUploader
+                          value={fabricImage}
+                          onChange={setFabricImage}
+                          label="Upload fabric reference"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column - Garment-Specific Notes (Required) */}
+              <div className="space-y-6">
+                <p className="text-sm text-muted-foreground">
+                  All fields below are required before generating the form.
+                </p>
+
+                {/* Shirt Section */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-slate-900">Shirt</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <Label>Silhouette *</Label>
+                      <Input
+                        {...register("shirtSilhouette", {
+                          required: "Shirt silhouette is required",
+                        })}
+                        placeholder="Enter silhouette details"
+                      />
+                      {errors.shirtSilhouette && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.shirtSilhouette.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Dress Color *</Label>
+                      <Input
+                        {...register("shirtDressColor", {
+                          required: "Shirt dress color is required",
+                        })}
+                        placeholder="Enter dress color"
+                      />
+                      {errors.shirtDressColor && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.shirtDressColor.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Front *</Label>
+                      <Input
+                        {...register("shirtFront", {
+                          required: "Shirt front details are required",
+                        })}
+                        placeholder="Enter front details"
+                      />
+                      {errors.shirtFront && (
+                        <p className="text-xs text-red-500 mt-1">{errors.shirtFront.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Back *</Label>
+                      <Input
+                        {...register("shirtBack", { required: "Shirt back details are required" })}
+                        placeholder="Enter back details"
+                      />
+                      {errors.shirtBack && (
+                        <p className="text-xs text-red-500 mt-1">{errors.shirtBack.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Embroidery/Adda Work *</Label>
+                      <Input
+                        {...register("shirtEmbroidery", {
+                          required: "Shirt embroidery details are required",
+                        })}
+                        placeholder="Enter embroidery/adda work details"
+                      />
+                      {errors.shirtEmbroidery && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.shirtEmbroidery.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              )}
+
+                {/* Bottom Section */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-slate-900">Bottom</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <Label>Silhouette *</Label>
+                      <Input
+                        {...register("bottomSilhouette", {
+                          required: "Bottom silhouette is required",
+                        })}
+                        placeholder="Enter silhouette details"
+                      />
+                      {errors.bottomSilhouette && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.bottomSilhouette.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Dress Color *</Label>
+                      <Input
+                        {...register("bottomDressColor", {
+                          required: "Bottom dress color is required",
+                        })}
+                        placeholder="Enter dress color"
+                      />
+                      {errors.bottomDressColor && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.bottomDressColor.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Front *</Label>
+                      <Input
+                        {...register("bottomFront", {
+                          required: "Bottom front details are required",
+                        })}
+                        placeholder="Enter front details"
+                      />
+                      {errors.bottomFront && (
+                        <p className="text-xs text-red-500 mt-1">{errors.bottomFront.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Back *</Label>
+                      <Input
+                        {...register("bottomBack", {
+                          required: "Bottom back details are required",
+                        })}
+                        placeholder="Enter back details"
+                      />
+                      {errors.bottomBack && (
+                        <p className="text-xs text-red-500 mt-1">{errors.bottomBack.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Embroidery/Adda Work *</Label>
+                      <Input
+                        {...register("bottomEmbroidery", {
+                          required: "Bottom embroidery details are required",
+                        })}
+                        placeholder="Enter embroidery/adda work details"
+                      />
+                      {errors.bottomEmbroidery && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.bottomEmbroidery.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dupatta/Hijab Section */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-slate-900">Dupatta/Hijab</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <Label>Silhouette *</Label>
+                      <Input
+                        {...register("dupattaSilhouette", {
+                          required: "Dupatta silhouette is required",
+                        })}
+                        placeholder="Enter silhouette details"
+                      />
+                      {errors.dupattaSilhouette && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.dupattaSilhouette.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Dress Color *</Label>
+                      <Input
+                        {...register("dupattaDressColor", {
+                          required: "Dupatta dress color is required",
+                        })}
+                        placeholder="Enter dress color"
+                      />
+                      {errors.dupattaDressColor && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.dupattaDressColor.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Front *</Label>
+                      <Input
+                        {...register("dupattaFront", {
+                          required: "Dupatta front details are required",
+                        })}
+                        placeholder="Enter front details"
+                      />
+                      {errors.dupattaFront && (
+                        <p className="text-xs text-red-500 mt-1">{errors.dupattaFront.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Back *</Label>
+                      <Input
+                        {...register("dupattaBack", {
+                          required: "Dupatta back details are required",
+                        })}
+                        placeholder="Enter back details"
+                      />
+                      {errors.dupattaBack && (
+                        <p className="text-xs text-red-500 mt-1">{errors.dupattaBack.message}</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Embroidery/Adda Work *</Label>
+                      <Input
+                        {...register("dupattaEmbroidery", {
+                          required: "Dupatta embroidery details are required",
+                        })}
+                        placeholder="Enter embroidery/adda work details"
+                      />
+                      {errors.dupattaEmbroidery && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.dupattaEmbroidery.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1260,11 +1595,11 @@ export default function OrderFormGeneratorPage() {
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-600">Production Ship Date:</span>
+                  <span className="text-slate-600">Expected Shipping Date:</span>
                   <p className="font-semibold text-slate-900">
-                    {order?.productionShippingDate
-                      ? new Date(order.productionShippingDate).toLocaleDateString()
-                      : "—"}
+                    {order?.actualShippingDate
+                      ? new Date(order.actualShippingDate).toLocaleDateString()
+                      : "To be confirmed"}
                   </p>
                 </div>
                 <div>
@@ -1481,6 +1816,93 @@ export default function OrderFormGeneratorPage() {
                       )}
                     </>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Garment-Specific Notes Section */}
+            <div className="bg-slate-50 rounded-lg p-4">
+              <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
+                Garment Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Shirt */}
+                <div>
+                  <h4 className="font-medium text-slate-800 mb-2">Shirt</h4>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="text-slate-500">Silhouette:</span>{" "}
+                      {generatedFormData?.garmentNotes?.shirt?.silhouette || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Dress Color:</span>{" "}
+                      {generatedFormData?.garmentNotes?.shirt?.dressColor || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Front:</span>{" "}
+                      {generatedFormData?.garmentNotes?.shirt?.front || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Back:</span>{" "}
+                      {generatedFormData?.garmentNotes?.shirt?.back || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Embroidery/Adda:</span>{" "}
+                      {generatedFormData?.garmentNotes?.shirt?.embroidery || "—"}
+                    </p>
+                  </div>
+                </div>
+                {/* Bottom */}
+                <div>
+                  <h4 className="font-medium text-slate-800 mb-2">Bottom</h4>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="text-slate-500">Silhouette:</span>{" "}
+                      {generatedFormData?.garmentNotes?.bottom?.silhouette || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Dress Color:</span>{" "}
+                      {generatedFormData?.garmentNotes?.bottom?.dressColor || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Front:</span>{" "}
+                      {generatedFormData?.garmentNotes?.bottom?.front || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Back:</span>{" "}
+                      {generatedFormData?.garmentNotes?.bottom?.back || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Embroidery/Adda:</span>{" "}
+                      {generatedFormData?.garmentNotes?.bottom?.embroidery || "—"}
+                    </p>
+                  </div>
+                </div>
+                {/* Dupatta/Hijab */}
+                <div>
+                  <h4 className="font-medium text-slate-800 mb-2">Dupatta/Hijab</h4>
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="text-slate-500">Silhouette:</span>{" "}
+                      {generatedFormData?.garmentNotes?.dupatta?.silhouette || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Dress Color:</span>{" "}
+                      {generatedFormData?.garmentNotes?.dupatta?.dressColor || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Front:</span>{" "}
+                      {generatedFormData?.garmentNotes?.dupatta?.front || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Back:</span>{" "}
+                      {generatedFormData?.garmentNotes?.dupatta?.back || "—"}
+                    </p>
+                    <p>
+                      <span className="text-slate-500">Embroidery/Adda:</span>{" "}
+                      {generatedFormData?.garmentNotes?.dupatta?.embroidery || "—"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
