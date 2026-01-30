@@ -14,6 +14,7 @@ import {
   Scissors,
   ClipboardCheck,
   Droplets,
+  ThumbsUp,
 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { filterNavigationByPermissions } from "@/lib/rbac"
@@ -123,6 +124,14 @@ const navItems = [
     requiredPermissions: ["qa.view"],
     iconColor: "text-teal-600",
     iconBgColor: "bg-teal-100",
+  },
+  {
+    name: "Client Approvals",
+    href: "/sales/approval",
+    icon: ThumbsUp, // import { ThumbsUp } from "lucide-react"
+    requiredPermissions: ["orders.view"],
+    iconColor: "text-blue-600",
+    iconBgColor: "bg-blue-100",
   },
   {
     name: "Dispatch",
