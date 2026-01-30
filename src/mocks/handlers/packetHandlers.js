@@ -23,7 +23,7 @@ import {
   createPartialPacketFromRequirements, // NEW
   addMaterialsToExistingPacket,
 } from "../data/mockPackets"
-import { mockOrderItems } from "../data/mockOrders"
+import { mockOrderItems, mockOrders } from "../data/mockOrders"
 import { mockInventoryItems } from "../data/mockInventory"
 import { mockUsers } from "../data/mockUser"
 import { ORDER_ITEM_STATUS, PACKET_STATUS, SECTION_STATUS } from "../../constants/orderConstants"
@@ -106,12 +106,22 @@ const getPackets = http.get("/api/packets", async ({ request }) => {
  * GET /api/packets/my-tasks
  * Get packets assigned to current user (fabrication team)
  */
+/**
+ * GET /api/packets/my-tasks
+ * Get packets assigned to current user (fabrication team)
+ * Supports date filtering by: dateFrom, dateTo, filterType (created, fwd, productionShipping)
+ */
 const getMyPacketTasks = http.get("/api/packets/my-tasks", async ({ request }) => {
   await new Promise((resolve) => setTimeout(resolve, 200))
 
   const url = new URL(request.url)
   const userId = url.searchParams.get("userId")
   const status = url.searchParams.get("status")
+
+  // Date filter parameters
+  const dateFrom = url.searchParams.get("dateFrom")
+  const dateTo = url.searchParams.get("dateTo")
+  const filterType = url.searchParams.get("filterType") // 'created' | 'fwd' | 'productionShipping'
 
   let packets = mockPackets.filter(
     (p) => p.assignedTo === userId || p.assignedTo === parseInt(userId)
@@ -121,9 +131,11 @@ const getMyPacketTasks = http.get("/api/packets/my-tasks", async ({ request }) =
     packets = packets.filter((p) => p.status === status)
   }
 
-  // Enrich with order item details
+  // Enrich with order item details AND order dates
   const enrichedPackets = packets.map((packet) => {
     const orderItem = mockOrderItems.find((oi) => oi.id === packet.orderItemId)
+    const order = orderItem ? mockOrders.find((o) => o.id === orderItem.orderId) : null
+
     return {
       ...packet,
       orderItemDetails: orderItem
@@ -134,20 +146,70 @@ const getMyPacketTasks = http.get("/api/packets/my-tasks", async ({ request }) =
             quantity: orderItem.quantity,
           }
         : null,
+      // Add order-level dates for filtering and display
+      orderDetails: order
+        ? {
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            fwdDate: order.fwdDate,
+            productionShippingDate: order.productionShippingDate,
+          }
+        : null,
     }
   })
 
+  // Apply date filtering
+  let filteredPackets = enrichedPackets
+
+  if (dateFrom || dateTo) {
+    const fromDate = dateFrom ? new Date(dateFrom) : null
+    const toDate = dateTo ? new Date(dateTo) : null
+
+    // Set toDate to end of day for inclusive filtering
+    if (toDate) {
+      toDate.setHours(23, 59, 59, 999)
+    }
+
+    filteredPackets = enrichedPackets.filter((packet) => {
+      let dateToCompare = null
+
+      switch (filterType) {
+        case "fwd":
+          dateToCompare = packet.orderDetails?.fwdDate
+            ? new Date(packet.orderDetails.fwdDate)
+            : null
+          break
+        case "productionShipping":
+          dateToCompare = packet.orderDetails?.productionShippingDate
+            ? new Date(packet.orderDetails.productionShippingDate)
+            : null
+          break
+        case "created":
+        default:
+          dateToCompare = packet.createdAt ? new Date(packet.createdAt) : null
+          break
+      }
+
+      if (!dateToCompare) return false
+
+      const afterFrom = fromDate ? dateToCompare >= fromDate : true
+      const beforeTo = toDate ? dateToCompare <= toDate : true
+
+      return afterFrom && beforeTo
+    })
+  }
+
   // Sort by assignment date, oldest first (FIFO)
-  enrichedPackets.sort((a, b) => new Date(a.assignedAt) - new Date(b.assignedAt))
+  filteredPackets.sort((a, b) => new Date(a.assignedAt) - new Date(b.assignedAt))
 
   return HttpResponse.json({
     success: true,
-    data: enrichedPackets,
+    data: filteredPackets,
     meta: {
-      total: enrichedPackets.length,
-      pending: enrichedPackets.filter((p) => p.status === PACKET_STATUS.ASSIGNED).length,
-      inProgress: enrichedPackets.filter((p) => p.status === PACKET_STATUS.IN_PROGRESS).length,
-      completed: enrichedPackets.filter((p) => p.status === PACKET_STATUS.COMPLETED).length,
+      total: filteredPackets.length,
+      pending: filteredPackets.filter((p) => p.status === PACKET_STATUS.ASSIGNED).length,
+      inProgress: filteredPackets.filter((p) => p.status === PACKET_STATUS.IN_PROGRESS).length,
+      completed: filteredPackets.filter((p) => p.status === PACKET_STATUS.COMPLETED).length,
     },
   })
 })
