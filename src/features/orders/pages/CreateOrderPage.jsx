@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { useForm, Controller } from "react-hook-form"
 import { useCreateOrder } from "@/hooks/useOrders"
@@ -58,6 +58,7 @@ export default function CreateOrderPage() {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -70,13 +71,31 @@ export default function CreateOrderPage() {
       consultantName: user?.name || "",
       currency: "USD",
       paymentMethod: "",
-      totalAmount: "",
+      discount: "",
       fwdDate: new Date().toISOString().split("T")[0],
       productionShippingDate: "",
       urgent: "none",
       notes: "",
     },
   })
+
+  // Watch discount for real-time calculation
+  const discountValue = watch("discount")
+
+  // Calculate subtotal from order items
+  const calculatedSubtotal = useMemo(() => {
+    return orderItems.reduce((sum, item) => {
+      const product = products.find((p) => p.id.toString() === item.productId)
+      const productPrice = product?.total_price || 0
+      return sum + productPrice * (item.quantity || 1)
+    }, 0)
+  }, [orderItems, products])
+
+  // Calculate final total after discount
+  const calculatedTotal = useMemo(() => {
+    const discount = parseFloat(discountValue) || 0
+    return Math.max(0, calculatedSubtotal - discount)
+  }, [calculatedSubtotal, discountValue])
 
   // Handle adding new item
   const handleAddItem = () => {
@@ -117,6 +136,7 @@ export default function CreateOrderPage() {
         productImage:
           selectedProduct?.primary_image || selectedProduct?.image || currentItem.productImage,
         productSku: selectedProduct?.sku || currentItem.productSku,
+        unitPrice: selectedProduct?.total_price || 0,
         // Ensure these are included
         includedItems: currentItem.includedItems || [],
         selectedAddOns: currentItem.selectedAddOns || [],
@@ -141,7 +161,8 @@ export default function CreateOrderPage() {
       const orderData = {
         ...data,
         urgent: data.urgent === "none" ? "" : data.urgent,
-        totalAmount: parseFloat(data.totalAmount) || 0,
+        discount: parseFloat(data.discount) || 0,
+        totalAmount: calculatedTotal,
         items: orderItems.map((item) => ({
           productId: item.productId,
           productName: item.productName,
@@ -150,6 +171,7 @@ export default function CreateOrderPage() {
           sizeType: item.sizeType,
           size: item.size,
           quantity: item.quantity,
+          unitPrice: item.unitPrice || 0,
           includedItems: item.includedItems || [], // ADD THIS
           selectedAddOns: item.selectedAddOns || [], // ADD THIS
         })),
@@ -258,7 +280,7 @@ export default function CreateOrderPage() {
           <CardHeader>
             <CardTitle>Payment Information</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label>Currency</Label>
               <Controller
@@ -304,8 +326,32 @@ export default function CreateOrderPage() {
             </div>
 
             <div>
+              <Label>Discount Amount</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                {...register("discount")}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
               <Label>Total Amount</Label>
-              <Input type="number" step="0.01" {...register("totalAmount")} placeholder="0.00" />
+              <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted flex items-center">
+                <span className="font-semibold">
+                  {new Intl.NumberFormat("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }).format(calculatedTotal)}
+                </span>
+              </div>
+              {orderItems.length > 0 && calculatedSubtotal !== calculatedTotal && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Subtotal: {calculatedSubtotal.toLocaleString()} - Discount:{" "}
+                  {parseFloat(discountValue) || 0}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
