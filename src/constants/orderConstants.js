@@ -3,6 +3,38 @@
  * Central place for all order-related constants
  */
 
+// ============================================================================
+// ORDER STATUS (Order-level status - different from Order Item status)
+// ============================================================================
+
+/**
+ * Order Status - Tracks the overall order status
+ * This is the order-level status (the parent order, not individual order items)
+ */
+export const ORDER_STATUS = {
+  RECEIVED: "RECEIVED",
+  INVENTORY_CHECK: "INVENTORY_CHECK",
+  AWAITING_MATERIAL: "AWAITING_MATERIAL",
+  CREATE_PACKET: "CREATE_PACKET",
+  PACKET_CHECK: "PACKET_CHECK",
+  READY_FOR_DYEING: "READY_FOR_DYEING",
+  IN_DYEING: "IN_DYEING",
+  READY_FOR_PRODUCTION: "READY_FOR_PRODUCTION",
+  IN_PRODUCTION: "IN_PRODUCTION",
+  PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
+  QUALITY_ASSURANCE: "QUALITY_ASSURANCE",
+
+  // Phase 14 Redesign statuses
+  READY_FOR_CLIENT_APPROVAL: "READY_FOR_CLIENT_APPROVAL",
+  AWAITING_CLIENT_APPROVAL: "AWAITING_CLIENT_APPROVAL",
+  AWAITING_ACCOUNT_APPROVAL: "AWAITING_ACCOUNT_APPROVAL",
+  READY_FOR_DISPATCH: "READY_FOR_DISPATCH",
+  DISPATCHED: "DISPATCHED",
+  COMPLETED: "COMPLETED",
+  CANCELLED: "CANCELLED",
+  CANCELLED_BY_CLIENT: "CANCELLED_BY_CLIENT",
+}
+
 // Order Item Statuses - The workflow each item goes through
 export const ORDER_ITEM_STATUS = {
   RECEIVED: "RECEIVED",
@@ -27,7 +59,15 @@ export const ORDER_ITEM_STATUS = {
   IN_PRODUCTION: "IN_PRODUCTION",
   PARTIAL_IN_PRODUCTION: "PARTIAL_IN_PRODUCTION", // NEW
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
+  // ============================================================================
+  // PHASE 14 REDESIGN: QA + CLIENT APPROVAL + REWORK LOOP (NEW)
+  // ============================================================================
+  ALL_SECTIONS_QA_APPROVED: "ALL_SECTIONS_QA_APPROVED", // All sections approved by QA, ready for video
+  VIDEO_UPLOADED: "VIDEO_UPLOADED", // YouTube video uploaded for this order item
+  ALTERATION_REQUIRED: "ALTERATION_REQUIRED", // Client wants specific sections altered
   AWAITING_CLIENT_APPROVAL: "AWAITING_CLIENT_APPROVAL",
+  READY_FOR_CLIENT_APPROVAL: "READY_FOR_CLIENT_APPROVAL", // All videos uploaded, ready to send
+  CANCELLED_BY_CLIENT: "CANCELLED_BY_CLIENT", // Client rejected order
   CLIENT_APPROVED: "CLIENT_APPROVED",
   READY_FOR_DISPATCH: "READY_FOR_DISPATCH",
   DISPATCHED: "DISPATCHED",
@@ -99,6 +139,39 @@ export const ORDER_ITEM_STATUS_CONFIG = {
     description: "Some sections in production, others pending",
   },
   PRODUCTION_COMPLETED: { label: "Production Completed", color: "bg-lime-100 text-lime-800" },
+  // ============================================================================
+  // PHASE 14 REDESIGN: QA + CLIENT APPROVAL + REWORK LOOP (NEW)
+  // ============================================================================
+  ALL_SECTIONS_QA_APPROVED: {
+    label: "QA Approved",
+    color: "bg-violet-100 text-violet-800",
+    description: "All sections approved by QA - ready for video upload",
+  },
+  VIDEO_UPLOADED: {
+    label: "Video Uploaded",
+    color: "bg-blue-100 text-blue-800",
+    description: "YouTube video uploaded for client review",
+  },
+  ALTERATION_REQUIRED: {
+    label: "Alteration Required",
+    color: "bg-orange-100 text-orange-800",
+    description: "Client wants specific sections altered - back to production",
+  },
+  AWAITING_ACCOUNT_APPROVAL: {
+    label: "Awaiting Payment Verification",
+    color: "bg-purple-100 text-purple-800",
+    description: "Client approved - verifying payments before dispatch",
+  },
+  READY_FOR_CLIENT_APPROVAL: {
+    label: "Ready for Client",
+    color: "bg-blue-100 text-blue-800",
+    description: "All videos uploaded - ready to send to client",
+  },
+  CANCELLED_BY_CLIENT: {
+    label: "Cancelled by Client",
+    color: "bg-red-100 text-red-800",
+    description: "Order cancelled by client",
+  },
   AWAITING_CLIENT_APPROVAL: {
     label: "Awaiting Client Approval",
     color: "bg-pink-100 text-pink-800",
@@ -173,6 +246,7 @@ export const SECTION_STATUS = {
   PRODUCTION_COMPLETED: "PRODUCTION_COMPLETED",
   QA_PENDING: "QA_PENDING",
   QA_APPROVED: "QA_APPROVED",
+  QA_REJECTED: "QA_REJECTED", // NEW Phase 14 - QA rejected section (with reason, goes back to production)
   // ============================================================================
   // PHASE 14: QA + CLIENT APPROVAL SECTION STATUSES (NEW)
   // ============================================================================
@@ -287,6 +361,12 @@ export const SECTION_STATUS_CONFIG = {
     color: "bg-emerald-100 text-emerald-800",
     icon: "Award",
   },
+  QA_REJECTED: {
+    label: "QA Rejected",
+    color: "bg-red-100 text-red-800",
+    icon: "XCircle",
+    description: "Section rejected by QA - sent back to production",
+  },
   COMPLETED: {
     label: "Completed",
     color: "bg-green-100 text-green-800",
@@ -388,6 +468,53 @@ export const DYEING_TIMELINE_MESSAGES = {
     `Inventory released back to stock for ${section} due to dyeing rejection`,
   PACKET_INVALIDATED: (section) =>
     `Packet for ${section} marked as invalidated due to dyeing rejection`,
+}
+
+// ============================================================================
+// PHASE 14 REDESIGN: QA REJECTION REASONS (NEW)
+// ============================================================================
+
+/**
+ * QA Rejection Reasons
+ * Predefined reasons that QA can select when rejecting a section
+ * Note: Providing notes is REQUIRED when rejecting
+ */
+export const QA_REJECTION_REASONS = {
+  STITCHING_DEFECT: {
+    code: "STITCHING_DEFECT",
+    label: "Stitching Defect",
+    description: "Stitching not aligned or has visible defects",
+  },
+  EMBROIDERY_ISSUE: {
+    code: "EMBROIDERY_ISSUE",
+    label: "Embroidery Issue",
+    description: "Embroidery work has visible problems",
+  },
+  COLOR_INCONSISTENCY: {
+    code: "COLOR_INCONSISTENCY",
+    label: "Color Inconsistency",
+    description: "Color doesn't match specifications or is inconsistent",
+  },
+  FABRIC_DAMAGE: {
+    code: "FABRIC_DAMAGE",
+    label: "Fabric Damage",
+    description: "Fabric has tears, stains, or visible damage",
+  },
+  MEASUREMENT_ERROR: {
+    code: "MEASUREMENT_ERROR",
+    label: "Measurement Error",
+    description: "Final measurements don't match specifications",
+  },
+  FINISHING_ISSUE: {
+    code: "FINISHING_ISSUE",
+    label: "Finishing Issue",
+    description: "Final finishing work is incomplete or poor quality",
+  },
+  OTHER: {
+    code: "OTHER",
+    label: "Other",
+    description: "Other reason - details must be provided in notes",
+  },
 }
 
 // ============================================================================
@@ -574,6 +701,14 @@ export const STATUS_PRIORITY = {
   // Special statuses
   REWORK_REQUIRED: 200, // Highest priority - needs attention
   CANCELLED: 0,
+
+  // Phase 14 Redesign priorities
+  ALL_SECTIONS_QA_APPROVED: 125,
+  VIDEO_UPLOADED: 127,
+  AWAITING_ACCOUNT_APPROVAL: 137,
+  ALTERATION_REQUIRED: 85, // Goes back to production level
+  QA_REJECTED: 105, // Between production completed and QA pending
+  CANCELLED_BY_CLIENT: 0, // Same as cancelled
 }
 
 /**
@@ -748,23 +883,66 @@ export const MODESTY_OPTIONS = [
 // Aliases for backwards compatibility
 export const URGENT_TYPE = URGENT_FLAGS
 
+// ============================================================================
+// PHASE 14 REDESIGN: TIMELINE EVENTS (UPDATED)
+// ============================================================================
+
 export const PHASE_14_TIMELINE_EVENTS = {
-  QA_VIDEO_ADDED: "QA_VIDEO_ADDED",
+  // QA Events
+  SECTION_QA_APPROVED: "SECTION_QA_APPROVED",
+  SECTION_QA_REJECTED: "SECTION_QA_REJECTED",
+  ALL_SECTIONS_QA_APPROVED: "ALL_SECTIONS_QA_APPROVED",
+  VIDEO_UPLOADED: "VIDEO_UPLOADED",
+  ORDER_SENT_TO_SALES: "ORDER_SENT_TO_SALES",
+
+  // Sales/Client Events
   SENT_TO_CLIENT: "SENT_TO_CLIENT",
   CLIENT_APPROVED: "CLIENT_APPROVED",
-  ALL_SECTIONS_APPROVED: "ALL_SECTIONS_APPROVED",
+  CLIENT_REVIDEO_REQUESTED: "CLIENT_REVIDEO_REQUESTED",
+  CLIENT_ALTERATION_REQUESTED: "CLIENT_ALTERATION_REQUESTED",
+  CLIENT_REJECTED_CANCELLED: "CLIENT_REJECTED_CANCELLED",
+  CLIENT_RESTART_FROM_SCRATCH: "CLIENT_RESTART_FROM_SCRATCH",
+
+  // Payment Events
+  AWAITING_PAYMENT_VERIFICATION: "AWAITING_PAYMENT_VERIFICATION",
+  PAYMENTS_APPROVED: "PAYMENTS_APPROVED",
+
+  // Dispatch Events
   ORDER_READY_FOR_DISPATCH: "ORDER_READY_FOR_DISPATCH",
   ORDER_DISPATCHED: "ORDER_DISPATCHED",
 }
 
 export const PHASE_14_TIMELINE_MESSAGES = {
-  QA_VIDEO_ADDED: (sectionName, qaUserName) =>
-    `QA video link added for ${sectionName} by ${qaUserName}`,
-  SENT_TO_CLIENT: (sectionName, salesUserName) =>
-    `${sectionName} sent to client for approval by ${salesUserName}`,
-  CLIENT_APPROVED: (sectionName) => `${sectionName} approved by client`,
-  ALL_SECTIONS_APPROVED: () => `All sections approved by client - Ready for dispatch`,
-  ORDER_READY_FOR_DISPATCH: () => `Order ready for dispatch - All items approved`,
+  // QA Messages
+  SECTION_QA_APPROVED: (sectionName, qaUserName, round) =>
+    `${sectionName} approved by QA (Round ${round}) - ${qaUserName}`,
+  SECTION_QA_REJECTED: (sectionName, qaUserName, reason, round) =>
+    `${sectionName} rejected by QA (Round ${round}) - Reason: ${reason} - ${qaUserName}`,
+  ALL_SECTIONS_QA_APPROVED: (orderItemName) =>
+    `All sections of ${orderItemName} approved by QA - ready for video upload`,
+  VIDEO_UPLOADED: (orderItemName, qaUserName) =>
+    `YouTube video uploaded for ${orderItemName} by ${qaUserName}`,
+  ORDER_SENT_TO_SALES: (qaUserName) => `Order sent to Sales for client approval by ${qaUserName}`,
+
+  // Sales/Client Messages
+  SENT_TO_CLIENT: (salesUserName) => `Order sent to client for approval by ${salesUserName}`,
+  CLIENT_APPROVED: (salesUserName) => `Client approved the order - confirmed by ${salesUserName}`,
+  CLIENT_REVIDEO_REQUESTED: (salesUserName, sections) =>
+    `Client requested new video for sections: ${sections.join(", ")} - ${salesUserName}`,
+  CLIENT_ALTERATION_REQUESTED: (salesUserName, sections) =>
+    `Client requested alteration for sections: ${sections.join(", ")} - back to production - ${salesUserName}`,
+  CLIENT_REJECTED_CANCELLED: (salesUserName, reason) =>
+    `Order cancelled by client - Reason: ${reason} - ${salesUserName}`,
+  CLIENT_RESTART_FROM_SCRATCH: (salesUserName) =>
+    `Order reset to start from scratch by client request - ${salesUserName}`,
+
+  // Payment Messages
+  AWAITING_PAYMENT_VERIFICATION: () => `Order awaiting payment verification`,
+  PAYMENTS_APPROVED: (salesUserName) =>
+    `Payments verified and approved by ${salesUserName} - ready for dispatch`,
+
+  // Dispatch Messages
+  ORDER_READY_FOR_DISPATCH: () => `Order ready for dispatch - all payments verified`,
   ORDER_DISPATCHED: (courier, trackingNumber) =>
     `Order dispatched via ${courier} - Tracking: ${trackingNumber}`,
 }
