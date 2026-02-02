@@ -10,7 +10,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Video, Calendar, User, ExternalLink, MessageSquare } from "lucide-react"
+import { Video, Calendar, User, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
 import ReVideoUploadModal from "./ReVideoUploadModal"
 
@@ -57,14 +57,14 @@ export default function SalesRequestCard({ request }) {
           {previousVideo?.youtubeUrl && (
             <div className="bg-white rounded-lg p-3 border border-amber-200">
               <div className="text-xs text-gray-500 mb-1">Previous Video:</div>
-              
+              <a
                 href={previousVideo.youtubeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-blue-600 hover:underline flex items-center gap-1"
               >
-                {previousVideo.youtubeUrl}
-                <ExternalLink className="h-3 w-3" />
+                <span className="truncate">{previousVideo.youtubeUrl}</span>
+                <ExternalLink className="h-3 w-3 flex-shrink-0" />
               </a>
             </div>
           )}
@@ -87,7 +87,7 @@ export default function SalesRequestCard({ request }) {
           {/* Request Time */}
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <Calendar className="h-3 w-3" />
-            Requested: {format(new Date(requestedAt), "MMM dd, yyyy 'at' h:mm a")}
+            <span>Requested: {format(new Date(requestedAt), "MMM dd, yyyy 'at' h:mm a")}</span>
           </div>
 
           {/* Upload Button */}
