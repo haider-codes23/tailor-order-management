@@ -1,82 +1,80 @@
 /**
- * QA Dashboard Page
+ * QA Dashboard Page - Phase 14 Redesign
  * src/features/qa/pages/QADashboardPage.jsx
  *
- * Phase 14: QA + Client Approval + Dispatch
- * Dashboard for QA users to view and process sections awaiting video links
+ * Two tabs:
+ * 1. Production Queue - Order items with sections to approve/reject + video upload
+ * 2. Sales Requests - Re-video requests from Sales team
  */
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import {
-  Camera,
+  ClipboardCheck,
   Video,
-  Clock,
-  CheckCircle,
-  Calendar,
-  User,
-  Package,
+  MessageSquare,
   Search,
   Loader2,
   AlertCircle,
-  ExternalLink,
+  Package,
 } from "lucide-react"
-import { format, differenceInDays } from "date-fns"
-import { useQAQueue, useQAStats, useSectionsReadyForClient } from "../../../hooks/useQA"
-import { SECTION_STATUS_CONFIG } from "@/constants/orderConstants"
-import QASectionCard from "../components/QASectionCard"
+import { useQAProductionQueue, useQASalesRequests, useQAStats } from "@/hooks/useQA"
+import QAOrderItemCard from "../components/QAOrderItemCard"
+import SalesRequestCard from "../components/SalesRequestCard"
 
 export default function QADashboardPage() {
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState("pending")
+  const [activeTab, setActiveTab] = useState("production")
   const [searchQuery, setSearchQuery] = useState("")
 
   // Fetch data
-  const { data: queueData, isLoading: queueLoading, error: queueError } = useQAQueue()
-  const { data: stats, isLoading: statsLoading } = useQAStats()
-  const { data: readyForClient, isLoading: readyLoading } = useSectionsReadyForClient()
+  const {
+    data: productionQueue,
+    isLoading: productionLoading,
+    error: productionError,
+  } = useQAProductionQueue()
 
-  // Filter sections based on search
-  const filterSections = (sections) => {
-    if (!searchQuery.trim()) return sections || []
+  const { data: salesRequests, isLoading: salesLoading, error: salesError } = useQASalesRequests()
+
+  const { data: stats, isLoading: statsLoading } = useQAStats()
+
+  // Filter based on search
+  const filterItems = (items) => {
+    if (!searchQuery.trim()) return items || []
     const query = searchQuery.toLowerCase()
-    return (sections || []).filter(
-      (s) =>
-        s.orderNumber?.toLowerCase().includes(query) ||
-        s.customerName?.toLowerCase().includes(query) ||
-        s.productName?.toLowerCase().includes(query) ||
-        s.sectionDisplayName?.toLowerCase().includes(query)
+    return (items || []).filter(
+      (item) =>
+        item.orderNumber?.toLowerCase().includes(query) ||
+        item.customerName?.toLowerCase().includes(query) ||
+        item.productName?.toLowerCase().includes(query)
     )
   }
 
-  const filteredQueue = filterSections(queueData)
-  const filteredReady = filterSections(readyForClient)
+  const filteredProduction = filterItems(productionQueue)
+  const filteredSalesRequests = filterItems(salesRequests)
 
-  // Handle section click
-  const handleSectionClick = (section) => {
-    navigate(`/qa/section/${section.orderItemId}/${section.sectionName}`)
-  }
+  // Separate production queue into pending review and ready for video
+  const pendingReview = filteredProduction.filter(
+    (item) => !item.allSectionsApproved || item.pendingSections?.length > 0
+  )
+  const readyForVideo = filteredProduction.filter(
+    (item) => item.allSectionsApproved && !item.hasVideo
+  )
 
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">QA Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Review completed sections and add QA video links
-        </p>
+        <p className="text-gray-500 text-sm mt-1">Review sections and upload videos</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-3 mb-6">
         <Card className="bg-violet-50 border-violet-200">
-          <CardContent className="p-4 text-center">
-            <Camera className="h-5 w-5 text-violet-600 mx-auto mb-1" />
+          <CardContent className="p-3 text-center">
+            <ClipboardCheck className="h-5 w-5 text-violet-600 mx-auto mb-1" />
             <div className="text-2xl font-bold text-violet-700">
               {statsLoading ? "..." : stats?.pendingReview || 0}
             </div>
@@ -85,22 +83,22 @@ export default function QADashboardPage() {
         </Card>
 
         <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4 text-center">
+          <CardContent className="p-3 text-center">
             <Video className="h-5 w-5 text-blue-600 mx-auto mb-1" />
             <div className="text-2xl font-bold text-blue-700">
-              {statsLoading ? "..." : stats?.readyForClient || 0}
+              {statsLoading ? "..." : stats?.readyForVideo || 0}
             </div>
-            <div className="text-xs text-blue-600">Ready for Client</div>
+            <div className="text-xs text-blue-600">Ready for Video</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4 text-center">
-            <CheckCircle className="h-5 w-5 text-green-600 mx-auto mb-1" />
-            <div className="text-2xl font-bold text-green-700">
-              {statsLoading ? "..." : stats?.completedToday || 0}
+        <Card className="bg-amber-50 border-amber-200">
+          <CardContent className="p-3 text-center">
+            <MessageSquare className="h-5 w-5 text-amber-600 mx-auto mb-1" />
+            <div className="text-2xl font-bold text-amber-700">
+              {statsLoading ? "..." : stats?.salesRequests || 0}
             </div>
-            <div className="text-xs text-green-600">Completed Today</div>
+            <div className="text-xs text-amber-600">Sales Requests</div>
           </CardContent>
         </Card>
       </div>
@@ -121,76 +119,107 @@ export default function QADashboardPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            <Camera className="h-4 w-4" />
-            QA Pending ({filteredQueue.length})
+          <TabsTrigger value="production" className="flex items-center gap-2 text-sm">
+            <ClipboardCheck className="h-4 w-4" />
+            Production Queue ({filteredProduction.length})
           </TabsTrigger>
-          <TabsTrigger value="ready" className="flex items-center gap-2">
-            <Video className="h-4 w-4" />
-            Ready for Client ({filteredReady.length})
+          <TabsTrigger value="sales" className="flex items-center gap-2 text-sm">
+            <MessageSquare className="h-4 w-4" />
+            Sales Requests ({filteredSalesRequests.length})
           </TabsTrigger>
         </TabsList>
 
-        {/* QA Pending Tab */}
-        <TabsContent value="pending">
-          {queueLoading ? (
+        {/* Tab 1: Production Queue */}
+        <TabsContent value="production">
+          {productionLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
             </div>
-          ) : queueError ? (
+          ) : productionError ? (
             <Card className="border-red-200 bg-red-50">
               <CardContent className="p-6 text-center">
                 <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
                 <p className="text-red-700">Failed to load QA queue</p>
               </CardContent>
             </Card>
-          ) : filteredQueue.length === 0 ? (
+          ) : filteredProduction.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
-                <Camera className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">
-                  {searchQuery ? "No sections match your search" : "No sections pending QA review"}
+                  {searchQuery ? "No items match your search" : "No items pending QA review"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {filteredQueue.map((section) => (
-                <QASectionCard
-                  key={`${section.orderItemId}-${section.sectionName}`}
-                  section={section}
-                  onClick={() => handleSectionClick(section)}
-                  showVideoButton
-                />
-              ))}
+            <div className="space-y-4">
+              {/* Ready for Video Section */}
+              {readyForVideo.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-green-700 flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    Ready for Video Upload ({readyForVideo.length})
+                  </h3>
+                  {readyForVideo.map((item) => (
+                    <QAOrderItemCard
+                      key={item.orderItemId}
+                      orderItem={item}
+                      variant="ready-for-video"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Pending Review Section */}
+              {pendingReview.length > 0 && (
+                <div className="space-y-3">
+                  {readyForVideo.length > 0 && (
+                    <h3 className="text-sm font-medium text-violet-700 flex items-center gap-2 mt-6">
+                      <ClipboardCheck className="h-4 w-4" />
+                      Pending Section Review ({pendingReview.length})
+                    </h3>
+                  )}
+                  {pendingReview.map((item) => (
+                    <QAOrderItemCard
+                      key={item.orderItemId}
+                      orderItem={item}
+                      variant="pending-review"
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
 
-        {/* Ready for Client Tab */}
-        <TabsContent value="ready">
-          {readyLoading ? (
+        {/* Tab 2: Sales Requests */}
+        <TabsContent value="sales">
+          {salesLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-amber-600" />
             </div>
-          ) : filteredReady.length === 0 ? (
+          ) : salesError ? (
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="p-6 text-center">
+                <AlertCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                <p className="text-red-700">Failed to load sales requests</p>
+              </CardContent>
+            </Card>
+          ) : filteredSalesRequests.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
-                <Video className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">
-                  {searchQuery ? "No sections match your search" : "No sections ready for client"}
+                  {searchQuery
+                    ? "No requests match your search"
+                    : "No re-video requests from Sales"}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {filteredReady.map((section) => (
-                <QASectionCard
-                  key={`${section.orderItemId}-${section.sectionName}`}
-                  section={section}
-                  onClick={() => handleSectionClick(section)}
-                  showVideoLink
-                />
+            <div className="space-y-4">
+              {filteredSalesRequests.map((request) => (
+                <SalesRequestCard key={request.orderItemId} request={request} />
               ))}
             </div>
           )}
