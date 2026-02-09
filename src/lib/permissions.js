@@ -122,6 +122,28 @@ export const PERMISSION_GROUPS = {
       "qa.view": "View QA tasks",
       "qa.approve": "Approve quality checks",
       "qa.request_rework": "Request rework",
+      "qa.reject": "Reject sections in QA with reason",
+      "qa.upload_video": "Upload videos to YouTube",
+      "qa.send_to_sales": "Send orders to Sales department",
+      "qa.view_sales_requests": "View re-video requests from Sales",
+    },
+  },
+
+   SALES: {
+    label: "Sales & Client Approval",
+    description: "Manage client approvals and sales workflows",
+    permissions: {
+      "sales.view": "View sales approval dashboard",
+      "sales.view_approval_queue": "View approval queue",
+      "sales.send_to_client": "Send orders to client for approval",
+      "sales.mark_approved": "Mark orders as client approved",
+      "sales.mark_client_approved": "Confirm client approval",
+      "sales.upload_screenshots": "Upload approval screenshots",
+      "sales.request_revideo": "Request re-video from QA",
+      "sales.request_alteration": "Request alteration from production",
+      "sales.cancel_order": "Cancel order (client rejected)",
+      "sales.approve_payments": "Verify and approve payments",
+      "sales.start_from_scratch": "Reset order to start from scratch",
     },
   },
 
@@ -189,6 +211,17 @@ export const ROLE_TEMPLATES = {
       "orders.approve_customer_forms",
       "inventory.view",
       "products.view",
+      "sales.view",
+      "sales.view_approval_queue",
+      "sales.send_to_client",
+      "sales.mark_approved",
+      "sales.mark_client_approved",
+      "sales.upload_screenshots",
+      "sales.request_revideo",
+      "sales.request_alteration",
+      "sales.cancel_order",
+      "sales.approve_payments",
+      "sales.start_from_scratch",
     ],
   },
 
@@ -247,7 +280,10 @@ export const ROLE_TEMPLATES = {
 
   [USER_ROLES.QA]: {
     label: "Quality Assurance",
-    permissions: ["orders.view", "qa.view", "qa.approve", "qa.request_rework", "products.view"],
+    permissions: ["orders.view", "qa.view", "qa.approve", "qa.request_rework", "products.view", "qa.reject",
+      "qa.upload_video",
+      "qa.send_to_sales",
+      "qa.view_sales_requests",],
   },
 
   [USER_ROLES.PURCHASER]: {
