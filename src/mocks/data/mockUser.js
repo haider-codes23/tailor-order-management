@@ -121,6 +121,18 @@ export const mockUsers = [
       "sales.view_approval_queue", // NEW
       "sales.send_to_client", // NEW
       "sales.mark_client_approved",
+      "qa.reject",
+      "qa.upload_video",
+      "qa.send_to_sales",
+      "qa.view_sales_requests",
+      // Phase 14 Redesign - Sales
+      "sales.view",
+      "sales.upload_screenshots",
+      "sales.request_revideo",
+      "sales.request_alteration",
+      "sales.cancel_order",
+      "sales.approve_payments",
+      "sales.start_from_scratch",
     ],
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
@@ -143,6 +155,13 @@ export const mockUsers = [
       "sales.view_approval_queue", // NEW
       "sales.send_to_client", // NEW
       "sales.mark_client_approved",
+      "sales.view",
+      "sales.upload_screenshots",
+      "sales.request_revideo",
+      "sales.request_alteration",
+      "sales.cancel_order",
+      "sales.approve_payments",
+      "sales.start_from_scratch",
     ],
     created_at: "2024-01-15T00:00:00Z",
     updated_at: "2024-01-15T00:00:00Z",
@@ -218,6 +237,10 @@ export const mockUsers = [
       "qa.request_rework",
       "products.view",
       "qa.add_video_link",
+      "qa.reject",
+      "qa.upload_video",
+      "qa.send_to_sales",
+      "qa.view_sales_requests",
     ],
     created_at: "2024-03-01T00:00:00Z",
     updated_at: "2024-03-01T00:00:00Z",
