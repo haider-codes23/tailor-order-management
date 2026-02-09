@@ -1,9 +1,11 @@
 /**
- * QA API Service
+ * QA API Service - Phase 14 Redesign
  * src/services/api/qaApi.js
  *
- * Phase 14: QA + Client Approval + Dispatch
- * Handles all API calls related to the QA module
+ * Complete rewrite for new QA workflow:
+ * - Section-level approval/rejection with round tracking
+ * - Order Item-level video uploads
+ * - Sales re-video request handling
  */
 
 import { httpClient } from "@/services/http/httpClient"
@@ -11,21 +13,32 @@ import { httpClient } from "@/services/http/httpClient"
 const BASE_URL = "/qa"
 
 // ============================================================================
-// QA QUEUE
+// QA QUEUE & STATS
 // ============================================================================
 
 /**
- * Get all sections in QA_PENDING status (QA Queue)
- * @returns {Promise} List of sections awaiting QA video link
+ * Get QA Production Queue
+ * Returns order items with sections in QA_PENDING status, grouped by order item
+ * @returns {Promise} List of order items with their sections awaiting QA review
  */
-export const getQAQueue = async () => {
+export const getQAProductionQueue = async () => {
   const response = await httpClient.get(`${BASE_URL}/queue`)
   return response.data
 }
 
 /**
- * Get QA queue statistics
- * @returns {Promise} Stats: pending count, ready for client count, completed today
+ * Get Sales Re-video Requests
+ * Returns order items that have re-video requests from Sales
+ * @returns {Promise} List of order items with re-video requests
+ */
+export const getSalesRequests = async () => {
+  const response = await httpClient.get(`${BASE_URL}/sales-requests`)
+  return response.data
+}
+
+/**
+ * Get QA Dashboard Statistics
+ * @returns {Promise} Stats: pendingReview, readyForVideo, salesRequests
  */
 export const getQAStats = async () => {
   const response = await httpClient.get(`${BASE_URL}/stats`)
@@ -33,71 +46,112 @@ export const getQAStats = async () => {
 }
 
 // ============================================================================
-// SECTION DETAILS
+// SECTION APPROVAL/REJECTION
 // ============================================================================
 
 /**
- * Get section details for QA review
+ * Approve a section in QA
+ * Moves section from QA_PENDING to QA_APPROVED
+ * Increments the round and stores approval data
+ *
  * @param {string} orderItemId - The order item ID
  * @param {string} sectionName - Section name (e.g., "shirt", "dupatta")
- * @returns {Promise} Section details with production summary
+ * @param {Object} data - { approvedBy: userId }
+ * @returns {Promise} Updated section with approval status
  */
-export const getQASectionDetails = async (orderItemId, sectionName) => {
-  const response = await httpClient.get(
-    `${BASE_URL}/order-item/${orderItemId}/section/${sectionName}`
-  )
-  return response.data
-}
-
-// ============================================================================
-// VIDEO LINK MANAGEMENT
-// ============================================================================
-
-/**
- * Add YouTube video link to a section
- * Moves section from QA_PENDING to READY_FOR_CLIENT_APPROVAL
- *
- * @param {string} orderItemId - The order item ID
- * @param {string} sectionName - Section name
- * @param {Object} data - { youtubeUrl: string, uploadedBy: userId }
- * @returns {Promise} Updated section status
- */
-export const addSectionVideoLink = async (orderItemId, sectionName, data) => {
+export const approveSection = async (orderItemId, sectionName, data) => {
   const response = await httpClient.post(
-    `${BASE_URL}/order-item/${orderItemId}/section/${sectionName}/add-video-link`,
+    `${BASE_URL}/section/${orderItemId}/${sectionName}/approve`,
     data
   )
   return response.data
 }
 
 /**
- * Update YouTube video link for a section
- * Only allowed if section is still in READY_FOR_CLIENT_APPROVAL
+ * Reject a section in QA
+ * Moves section from QA_PENDING to QA_REJECTED
+ * Increments the round and stores rejection reason + notes
+ * Section will be sent back to Production Head
  *
  * @param {string} orderItemId - The order item ID
  * @param {string} sectionName - Section name
- * @param {Object} data - { youtubeUrl: string, updatedBy: userId }
- * @returns {Promise} Updated section status
+ * @param {Object} data - { rejectedBy: userId, reasonCode: string, notes: string }
+ * @returns {Promise} Updated section with rejection status
  */
-export const updateSectionVideoLink = async (orderItemId, sectionName, data) => {
-  const response = await httpClient.put(
-    `${BASE_URL}/order-item/${orderItemId}/section/${sectionName}/video-link`,
+export const rejectSection = async (orderItemId, sectionName, data) => {
+  const response = await httpClient.post(
+    `${BASE_URL}/section/${orderItemId}/${sectionName}/reject`,
     data
   )
   return response.data
 }
 
 // ============================================================================
-// SECTIONS READY FOR CLIENT (for Sales to see)
+// VIDEO UPLOAD (Order Item Level)
 // ============================================================================
 
 /**
- * Get all sections that have video links added (READY_FOR_CLIENT_APPROVAL)
- * This is used by Sales to see what's ready to send to clients
- * @returns {Promise} List of sections with video links
+ * Upload video for an Order Item
+ * Called after ALL sections of an order item are QA_APPROVED
+ * For MSW simulation, accepts YouTube URL directly
+ * In production, this would handle actual file upload to YouTube
+ *
+ * @param {string} orderItemId - The order item ID
+ * @param {Object} data - { youtubeUrl: string, uploadedBy: userId }
+ * @returns {Promise} Updated order item with video data
  */
-export const getSectionsReadyForClient = async () => {
-  const response = await httpClient.get(`${BASE_URL}/ready-for-client`)
+export const uploadOrderItemVideo = async (orderItemId, data) => {
+  const response = await httpClient.post(`${BASE_URL}/order-item/${orderItemId}/upload-video`, data)
+  return response.data
+}
+
+/**
+ * Upload re-video for a Sales request
+ * Clears the re-video request and stores new video
+ *
+ * @param {string} orderItemId - The order item ID
+ * @param {Object} data - { youtubeUrl: string, uploadedBy: userId }
+ * @returns {Promise} Updated order item with new video data
+ */
+export const uploadReVideo = async (orderItemId, data) => {
+  const response = await httpClient.post(
+    `${BASE_URL}/order-item/${orderItemId}/upload-revideo`,
+    data
+  )
+  return response.data
+}
+
+// ============================================================================
+// SEND TO SALES
+// ============================================================================
+
+/**
+ * Send order to Sales for client approval
+ * Called when ALL order items in an order have videos uploaded
+ * Moves order status to READY_FOR_CLIENT_APPROVAL
+ *
+ * @param {string} orderId - The order ID
+ * @param {Object} data - { sentBy: userId }
+ * @returns {Promise} Updated order ready for Sales
+ */
+export const sendOrderToSales = async (orderId, data) => {
+  const response = await httpClient.post(`${BASE_URL}/order/${orderId}/send-to-sales`, data)
+  return response.data
+}
+
+// ============================================================================
+// ORDER ITEM DETAILS (for QA review)
+// ============================================================================
+
+/**
+ * Get Order Item details for QA review
+ * Returns all sections with their current statuses, round history, etc.
+ *
+ * @param {string} orderItemId - The order item ID
+ * @returns {Promise} Complete order item data with section statuses
+ */
+export const getOrderItemForQA = async (orderItemId) => {
+  const response = await httpClient.get(`${BASE_URL}/order-item/${orderItemId}`)
   return response.data
 }
 
@@ -159,19 +213,24 @@ export const getYouTubeEmbedUrl = (url) => {
 // ============================================================================
 
 export const qaApi = {
-  // Queue
-  getQAQueue,
+  // Queue & Stats
+  getQAProductionQueue,
+  getSalesRequests,
   getQAStats,
 
-  // Section Details
-  getQASectionDetails,
+  // Section Actions
+  approveSection,
+  rejectSection,
 
-  // Video Link Management
-  addSectionVideoLink,
-  updateSectionVideoLink,
+  // Video Upload
+  uploadOrderItemVideo,
+  uploadReVideo,
 
-  // For Sales
-  getSectionsReadyForClient,
+  // Send to Sales
+  sendOrderToSales,
+
+  // Order Item Details
+  getOrderItemForQA,
 
   // Helpers
   isValidYouTubeUrl,
