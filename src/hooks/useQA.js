@@ -37,10 +37,7 @@ export const qaKeys = {
 export function useQAProductionQueue() {
   return useQuery({
     queryKey: qaKeys.productionQueue(),
-    queryFn: async () => {
-      const response = await qaApi.getQAProductionQueue()
-      return response.data
-    },
+    queryFn: qaApi.getQAProductionQueue,
     staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
   })
@@ -52,10 +49,7 @@ export function useQAProductionQueue() {
 export function useQASalesRequests() {
   return useQuery({
     queryKey: qaKeys.salesRequests(),
-    queryFn: async () => {
-      const response = await qaApi.getSalesRequests()
-      return response.data
-    },
+    queryFn: qaApi.getSalesRequests,
     staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
   })
@@ -67,10 +61,7 @@ export function useQASalesRequests() {
 export function useQAStats() {
   return useQuery({
     queryKey: qaKeys.stats(),
-    queryFn: async () => {
-      const response = await qaApi.getQAStats()
-      return response.data
-    },
+    queryFn: qaApi.getQAStats,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: true,
   })
@@ -83,10 +74,7 @@ export function useQAStats() {
 export function useQAOrderItem(orderItemId) {
   return useQuery({
     queryKey: qaKeys.orderItem(orderItemId),
-    queryFn: async () => {
-      const response = await qaApi.getOrderItemForQA(orderItemId)
-      return response.data
-    },
+    queryFn: qaApi.getOrderItemForQA(orderItemId),
     enabled: !!orderItemId,
     staleTime: 30 * 1000,
   })
