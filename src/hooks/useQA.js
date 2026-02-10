@@ -160,20 +160,24 @@ export function useRejectSection() {
   })
 }
 
+
 /**
- * Hook to upload video for an order item
+ * Hook to upload video FILE for an order item
+ * Changed from { youtubeUrl, uploadedBy } to { videoFile, uploadedBy }
+ * MSW handler simulates YouTube upload and returns generated URL
  * Forced refetch for immediate UI update
  */
 export function useUploadOrderItemVideo() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ orderItemId, youtubeUrl, uploadedBy }) =>
-      qaApi.uploadOrderItemVideo(orderItemId, { youtubeUrl, uploadedBy }),
+    mutationFn: ({ orderItemId, videoFile, uploadedBy }) =>
+      qaApi.uploadOrderItemVideo(orderItemId, { videoFile, uploadedBy }),
 
     onSuccess: (data, variables) => {
-      toast.success("Video uploaded successfully", {
-        description: "Order item is now ready for client approval",
+      const youtubeUrl = data?.data?.videoData?.youtubeUrl || ""
+      toast.success("Video uploaded to YouTube", {
+        description: `Order item is now ready for client approval`,
       })
 
       // Invalidate and force refetch
@@ -195,19 +199,21 @@ export function useUploadOrderItemVideo() {
 }
 
 /**
- * Hook to upload re-video for a Sales request
+ * Hook to upload re-video FILE for a Sales request
+ * Changed from { youtubeUrl, uploadedBy } to { videoFile, uploadedBy }
+ * MSW handler simulates YouTube upload and returns generated URL
  * Forced refetch for immediate UI update
  */
 export function useUploadReVideo() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ orderItemId, youtubeUrl, uploadedBy }) =>
-      qaApi.uploadReVideo(orderItemId, { youtubeUrl, uploadedBy }),
+    mutationFn: ({ orderItemId, videoFile, uploadedBy }) =>
+      qaApi.uploadReVideo(orderItemId, { videoFile, uploadedBy }),
 
     onSuccess: (data, variables) => {
-      toast.success("Re-video uploaded successfully", {
-        description: "Sales request has been fulfilled",
+      toast.success("New video uploaded to YouTube", {
+        description: "Sales re-video request has been fulfilled",
       })
 
       // Invalidate and force refetch
@@ -223,7 +229,7 @@ export function useUploadReVideo() {
     },
 
     onError: (error) => {
-      toast.error("Failed to upload re-video", {
+      toast.error("Failed to upload video", {
         description: error.response?.data?.error || error.message,
       })
     },

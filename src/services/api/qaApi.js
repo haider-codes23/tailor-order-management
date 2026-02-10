@@ -90,33 +90,129 @@ export const rejectSection = async (orderItemId, sectionName, data) => {
 // VIDEO UPLOAD (Order Item Level)
 // ============================================================================
 
+// ============================================================================
+// VIDEO FILE VALIDATION HELPERS
+// ============================================================================
+
+const ALLOWED_VIDEO_TYPES = [
+  "video/mp4",
+  "video/quicktime", // .mov
+  "video/x-msvideo", // .avi
+  "video/webm",
+]
+
+const ALLOWED_VIDEO_EXTENSIONS = [".mp4", ".mov", ".avi", ".webm"]
+
+const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
+
 /**
- * Upload video for an Order Item
+ * Validate a video file before upload
+ * @param {File} file - The file to validate
+ * @returns {{ valid: boolean, error?: string }} Validation result
+ */
+export const validateVideoFile = (file) => {
+  if (!file) {
+    return { valid: false, error: "No file selected" }
+  }
+
+  if (!(file instanceof File)) {
+    return { valid: false, error: "Invalid file object" }
+  }
+
+  // Check file type
+  if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+    const ext = file.name.split(".").pop()?.toLowerCase()
+    // Fallback: check extension if MIME type is generic
+    if (!ALLOWED_VIDEO_EXTENSIONS.includes(`.${ext}`)) {
+      return {
+        valid: false,
+        error: `Invalid file type. Allowed formats: ${ALLOWED_VIDEO_EXTENSIONS.join(", ")}`,
+      }
+    }
+  }
+
+  // Check file size
+  if (file.size > MAX_VIDEO_SIZE) {
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(0)
+    return {
+      valid: false,
+      error: `File too large (${sizeMB}MB). Maximum size is 2GB.`,
+    }
+  }
+
+  // Check minimum size (likely corrupt if < 1KB)
+  if (file.size < 1024) {
+    return { valid: false, error: "File appears to be empty or corrupt" }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Format file size for display
+ * @param {number} bytes - File size in bytes
+ * @returns {string} Formatted size string (e.g. "24.5 MB")
+ */
+export const formatFileSize = (bytes) => {
+  if (bytes === 0) return "0 Bytes"
+  const k = 1024
+  const sizes = ["Bytes", "KB", "MB", "GB"]
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i]
+}
+
+// ============================================================================
+// VIDEO UPLOAD (Order Item Level) — Now sends FormData with video file
+// ============================================================================
+
+/**
+ * Upload video file for an Order Item
  * Called after ALL sections of an order item are QA_APPROVED
- * For MSW simulation, accepts YouTube URL directly
- * In production, this would handle actual file upload to YouTube
+ * Sends the video file as FormData — MSW simulates YouTube upload
+ * In production, backend will upload to YouTube via OAuth and return the URL
  *
  * @param {string} orderItemId - The order item ID
- * @param {Object} data - { youtubeUrl: string, uploadedBy: userId }
- * @returns {Promise} Updated order item with video data
+ * @param {Object} data - { videoFile: File, uploadedBy: userId }
+ * @returns {Promise} Updated order item with video data (including simulated YouTube URL)
  */
 export const uploadOrderItemVideo = async (orderItemId, data) => {
-  const response = await httpClient.post(`${BASE_URL}/order-item/${orderItemId}/upload-video`, data)
+  const formData = new FormData()
+  formData.append("videoFile", data.videoFile)
+  formData.append("uploadedBy", data.uploadedBy)
+
+  const response = await httpClient.post(
+    `${BASE_URL}/order-item/${orderItemId}/upload-video`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  )
   return response.data
 }
 
 /**
- * Upload re-video for a Sales request
+ * Upload re-video file for a Sales request
  * Clears the re-video request and stores new video
  *
  * @param {string} orderItemId - The order item ID
- * @param {Object} data - { youtubeUrl: string, uploadedBy: userId }
+ * @param {Object} data - { videoFile: File, uploadedBy: userId }
  * @returns {Promise} Updated order item with new video data
  */
 export const uploadReVideo = async (orderItemId, data) => {
+  const formData = new FormData()
+  formData.append("videoFile", data.videoFile)
+  formData.append("uploadedBy", data.uploadedBy)
+
   const response = await httpClient.post(
     `${BASE_URL}/order-item/${orderItemId}/upload-revideo`,
-    data
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   )
   return response.data
 }
@@ -222,9 +318,13 @@ export const qaApi = {
   approveSection,
   rejectSection,
 
-  // Video Upload
+  // Video Upload (now file-based)
   uploadOrderItemVideo,
   uploadReVideo,
+
+  // Video File Validation
+  validateVideoFile,
+  formatFileSize,
 
   // Send to Sales
   sendOrderToSales,
@@ -232,7 +332,7 @@ export const qaApi = {
   // Order Item Details
   getOrderItemForQA,
 
-  // Helpers
+  // YouTube URL Helpers (for display, not upload)
   isValidYouTubeUrl,
   extractYouTubeVideoId,
   getYouTubeEmbedUrl,

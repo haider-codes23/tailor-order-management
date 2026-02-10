@@ -1,12 +1,15 @@
 /**
- * YouTube Upload Modal - Phase 14 Redesign
+ * YouTube Upload Modal - Phase 14 Redesign (Corrected)
  * src/features/qa/components/YouTubeUploadModal.jsx
  *
- * Modal for uploading video to YouTube for an order item
- * For MSW simulation, accepts YouTube URL directly
+ * Modal for uploading a video FILE directly to YouTube for an order item.
+ * User selects a video file from their device → file is "uploaded to YouTube"
+ * (simulated by MSW, real OAuth upload in production).
+ *
+ * Matches the wireframe: file chooser, drag-drop, supported formats, max 2GB.
  */
 
-import { useState } from "react"
+import { useState, useRef, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -15,71 +18,109 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Video, Upload, Loader2, Info, ExternalLink } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
+import { Video, Upload, Loader2, Info, X, FileVideo, CheckCircle2 } from "lucide-react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { useUploadOrderItemVideo } from "@/hooks/useQA"
 import { qaApi } from "@/services/api/qaApi"
 
+const ACCEPTED_TYPES = ".mp4,.mov,.avi,.webm"
+
 export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
   const { user } = useAuth()
-  const [youtubeUrl, setYoutubeUrl] = useState("")
-  const [urlError, setUrlError] = useState("")
+  const fileInputRef = useRef(null)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [fileError, setFileError] = useState("")
+  const [isDragging, setIsDragging] = useState(false)
 
   const uploadMutation = useUploadOrderItemVideo()
 
   const { orderItemId, orderNumber, productName, approvedSections = [] } = orderItem
 
-  const validateUrl = (url) => {
-    if (!url.trim()) {
-      setUrlError("")
-      return false
+  // ── File selection & validation ──────────────────────────────────────────
+  const handleFileSelect = useCallback((file) => {
+    setFileError("")
+
+    if (!file) return
+
+    const validation = qaApi.validateVideoFile(file)
+    if (!validation.valid) {
+      setFileError(validation.error)
+      setSelectedFile(null)
+      return
     }
-    if (!qaApi.isValidYouTubeUrl(url)) {
-      setUrlError("Please enter a valid YouTube URL")
-      return false
-    }
-    setUrlError("")
-    return true
+
+    setSelectedFile(file)
+  }, [])
+
+  const handleInputChange = (e) => {
+    const file = e.target.files?.[0]
+    handleFileSelect(file)
+    // Reset input so same file can be re-selected
+    e.target.value = ""
   }
 
-  const handleUrlChange = (e) => {
-    const url = e.target.value
-    setYoutubeUrl(url)
-    if (url.trim()) {
-      validateUrl(url)
-    } else {
-      setUrlError("")
+  const handleChooseFile = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null)
+    setFileError("")
+  }
+
+  // ── Drag & Drop ──────────────────────────────────────────────────────────
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const file = e.dataTransfer.files?.[0]
+    if (file) {
+      handleFileSelect(file)
     }
   }
 
+  // ── Upload ───────────────────────────────────────────────────────────────
   const handleSubmit = () => {
-    if (!validateUrl(youtubeUrl)) return
+    if (!selectedFile) return
 
     uploadMutation.mutate(
       {
         orderItemId,
-        youtubeUrl: youtubeUrl.trim(),
+        videoFile: selectedFile,
         uploadedBy: user?.id,
       },
       {
         onSuccess: () => {
           onOpenChange(false)
-          setYoutubeUrl("")
-          setUrlError("")
+          setSelectedFile(null)
+          setFileError("")
         },
       }
     )
   }
 
   const handleClose = () => {
+    if (uploadMutation.isPending) return // Prevent closing during upload
     onOpenChange(false)
-    setYoutubeUrl("")
-    setUrlError("")
+    setSelectedFile(null)
+    setFileError("")
   }
 
-  const isValid = youtubeUrl.trim() && !urlError
+  const isValid = selectedFile && !fileError
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -106,41 +147,99 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
             </div>
           </div>
 
-          {/* YouTube URL Input */}
-          <div className="space-y-2">
-            <Label htmlFor="youtubeUrl">YouTube Video URL *</Label>
-            <Input
-              id="youtubeUrl"
-              placeholder="https://youtube.com/watch?v=..."
-              value={youtubeUrl}
-              onChange={handleUrlChange}
-              className={urlError ? "border-red-500" : ""}
-            />
-            {urlError && <p className="text-xs text-red-500">{urlError}</p>}
-          </div>
+          {/* File Drop Zone / Selected File */}
+          {!selectedFile ? (
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
+                isDragging
+                  ? "border-blue-500 bg-blue-50"
+                  : fileError
+                    ? "border-red-300 bg-red-50"
+                    : "border-gray-300 hover:border-gray-400"
+              }`}
+              onClick={handleChooseFile}
+            >
+              <FileVideo className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+              <div className="text-sm text-gray-600 mb-2">
+                {isDragging ? "Drop video file here" : "Select video file to upload"}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleChooseFile()
+                }}
+              >
+                Choose File
+              </Button>
+              <div className="text-xs text-gray-400 mt-2">MP4, MOV, AVI, WebM • Max 2GB</div>
+            </div>
+          ) : (
+            <div className="border rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileVideo className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium truncate">{selectedFile.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {qaApi.formatFileSize(selectedFile.size)}
+                    </div>
+                  </div>
+                </div>
+                {!uploadMutation.isPending && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                    onClick={handleRemoveFile}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Upload progress (shown during upload) */}
+              {uploadMutation.isPending && (
+                <div className="mt-3 space-y-1">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>Uploading to YouTube...</span>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  </div>
+                  <Progress value={undefined} className="h-1.5" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* File error */}
+          {fileError && <p className="text-xs text-red-500">{fileError}</p>}
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_TYPES}
+            onChange={handleInputChange}
+            className="hidden"
+          />
 
           {/* Info Box */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2">
             <Info className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-blue-700">
-              Upload the video to YouTube first (as "Unlisted"), then paste the
-              link here. The link will be shared with the Sales team for client
-              approval.
+              Video will be uploaded directly to the company YouTube channel as "Unlisted". The link
+              will be shared with the Sales team for client approval.
             </p>
-          </div>
-
-          {/* Supported Formats */}
-          <div className="text-xs text-gray-500">
-            Supported formats:
-            <ul className="mt-1 ml-4 list-disc">
-              <li>youtube.com/watch?v=VIDEO_ID</li>
-              <li>youtu.be/VIDEO_ID</li>
-            </ul>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={handleClose} disabled={uploadMutation.isPending}>
             Cancel
           </Button>
           <Button
@@ -151,12 +250,12 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
             {uploadMutation.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Uploading...
+                Uploading to YouTube...
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4 mr-2" />
-                Save Video Link
+                Upload to YouTube
               </>
             )}
           </Button>

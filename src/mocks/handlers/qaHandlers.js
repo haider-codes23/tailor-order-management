@@ -441,13 +441,45 @@ const rejectSection = http.post(
 // ============================================================================
 // POST /api/qa/order-item/:orderItemId/upload-video - Upload video for order item
 // ============================================================================
+
+// Changed from JSON { youtubeUrl } to FormData { videoFile, uploadedBy }
 const uploadOrderItemVideo = http.post(
   `${BASE_URL}/order-item/:orderItemId/upload-video`,
   async ({ params, request }) => {
     const { orderItemId } = params
-    const { youtubeUrl, uploadedBy } = await request.json()
 
     console.log(`🎬 POST /api/qa/order-item/${orderItemId}/upload-video`)
+
+    // Parse FormData instead of JSON
+    const formData = await request.formData()
+    const videoFile = formData.get("videoFile")
+    const uploadedBy = Number(formData.get("uploadedBy"))
+
+    // Validate video file exists
+    if (!videoFile || !(videoFile instanceof File)) {
+      return HttpResponse.json({ success: false, error: "Video file is required" }, { status: 400 })
+    }
+
+    // Validate file type
+    const allowedTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"]
+    if (!allowedTypes.includes(videoFile.type)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: `Invalid file type: ${videoFile.type}. Allowed: MP4, MOV, AVI, WebM`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate file size (max 2GB)
+    const maxSize = 2 * 1024 * 1024 * 1024 // 2GB in bytes
+    if (videoFile.size > maxSize) {
+      return HttpResponse.json(
+        { success: false, error: "File size exceeds 2GB limit" },
+        { status: 400 }
+      )
+    }
 
     const orderItemIndex = findOrderItemIndex(orderItemId)
     if (orderItemIndex === -1) {
@@ -459,34 +491,34 @@ const uploadOrderItemVideo = http.post(
     // Validate all sections are QA_APPROVED
     if (!areAllSectionsQAApproved(orderItem)) {
       return HttpResponse.json(
-        { success: false, error: "All sections must be QA_APPROVED before uploading video" },
+        {
+          success: false,
+          error: "All sections must be QA_APPROVED before uploading video",
+        },
         { status: 400 }
       )
     }
 
-    // Validate YouTube URL
-    const youtubePattern = /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/
-    if (!youtubePattern.test(youtubeUrl)) {
-      return HttpResponse.json(
-        { success: false, error: "Invalid YouTube URL format" },
-        { status: 400 }
-      )
-    }
+    // Simulate YouTube upload delay (1-2 seconds)
+    await new Promise((resolve) => setTimeout(resolve, 1500))
 
     const now = new Date().toISOString()
     const uploadedByUser = findUser(uploadedBy)
 
-    // Extract video ID
-    const videoIdMatch = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
-    const youtubeVideoId = videoIdMatch ? videoIdMatch[1] : null
+    // Generate simulated YouTube URL (as if uploaded to YouTube)
+    const mockVideoId = `mock-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+    const simulatedYouTubeUrl = `https://youtube.com/watch?v=${mockVideoId}`
 
     // Store video data
     mockOrderItems[orderItemIndex].videoData = {
-      youtubeUrl,
-      youtubeVideoId,
+      youtubeUrl: simulatedYouTubeUrl,
+      youtubeVideoId: mockVideoId,
       uploadedBy,
       uploadedByName: uploadedByUser?.name || "Unknown",
       uploadedAt: now,
+      originalFileName: videoFile.name,
+      originalFileSize: videoFile.size,
+      originalFileType: videoFile.type,
       videoHistory: orderItem.videoData?.videoHistory || [],
     }
 
@@ -497,17 +529,23 @@ const uploadOrderItemVideo = http.post(
     if (!orderItem.timeline) orderItem.timeline = []
     orderItem.timeline.push({
       id: `log-${Date.now()}`,
-      action: `YouTube video uploaded`,
+      action: `YouTube video uploaded (${videoFile.name})`,
       user: uploadedByUser?.name || "QA User",
       timestamp: now,
-      metadata: { youtubeUrl },
+      metadata: {
+        youtubeUrl: simulatedYouTubeUrl,
+        fileName: videoFile.name,
+        fileSize: videoFile.size,
+      },
     })
 
-    console.log(`✅ Video uploaded for order item ${orderItemId}`)
+    console.log(
+      `✅ Video uploaded for order item ${orderItemId} → simulated URL: ${simulatedYouTubeUrl}`
+    )
 
     return HttpResponse.json({
       success: true,
-      message: "Video uploaded successfully",
+      message: "Video uploaded to YouTube successfully",
       data: {
         orderItemId,
         videoData: mockOrderItems[orderItemIndex].videoData,
@@ -524,9 +562,39 @@ const uploadReVideo = http.post(
   `${BASE_URL}/order-item/:orderItemId/upload-revideo`,
   async ({ params, request }) => {
     const { orderItemId } = params
-    const { youtubeUrl, uploadedBy } = await request.json()
 
     console.log(`🎬 POST /api/qa/order-item/${orderItemId}/upload-revideo`)
+
+    // Parse FormData instead of JSON
+    const formData = await request.formData()
+    const videoFile = formData.get("videoFile")
+    const uploadedBy = Number(formData.get("uploadedBy"))
+
+    // Validate video file exists
+    if (!videoFile || !(videoFile instanceof File)) {
+      return HttpResponse.json({ success: false, error: "Video file is required" }, { status: 400 })
+    }
+
+    // Validate file type
+    const allowedTypes = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"]
+    if (!allowedTypes.includes(videoFile.type)) {
+      return HttpResponse.json(
+        {
+          success: false,
+          error: `Invalid file type: ${videoFile.type}. Allowed: MP4, MOV, AVI, WebM`,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate file size (max 2GB)
+    const maxSize = 2 * 1024 * 1024 * 1024
+    if (videoFile.size > maxSize) {
+      return HttpResponse.json(
+        { success: false, error: "File size exceeds 2GB limit" },
+        { status: 400 }
+      )
+    }
 
     const orderItemIndex = findOrderItemIndex(orderItemId)
     if (orderItemIndex === -1) {
@@ -543,12 +611,15 @@ const uploadReVideo = http.post(
       )
     }
 
+    // Simulate YouTube upload delay (1-2 seconds)
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
     const now = new Date().toISOString()
     const uploadedByUser = findUser(uploadedBy)
 
-    // Extract video ID
-    const videoIdMatch = youtubeUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/)
-    const youtubeVideoId = videoIdMatch ? videoIdMatch[1] : null
+    // Generate simulated YouTube URL
+    const mockVideoId = `mock-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+    const simulatedYouTubeUrl = `https://youtube.com/watch?v=${mockVideoId}`
 
     // Move old video to history
     const videoHistory = orderItem.videoData?.videoHistory || []
@@ -564,11 +635,14 @@ const uploadReVideo = http.post(
 
     // Store new video data
     mockOrderItems[orderItemIndex].videoData = {
-      youtubeUrl,
-      youtubeVideoId,
+      youtubeUrl: simulatedYouTubeUrl,
+      youtubeVideoId: mockVideoId,
       uploadedBy,
       uploadedByName: uploadedByUser?.name || "Unknown",
       uploadedAt: now,
+      originalFileName: videoFile.name,
+      originalFileSize: videoFile.size,
+      originalFileType: videoFile.type,
       videoHistory,
     }
 
@@ -582,17 +656,21 @@ const uploadReVideo = http.post(
     if (!orderItem.timeline) orderItem.timeline = []
     orderItem.timeline.push({
       id: `log-${Date.now()}`,
-      action: `New video uploaded (re-video request fulfilled)`,
+      action: `New video uploaded - re-video request fulfilled (${videoFile.name})`,
       user: uploadedByUser?.name || "QA User",
       timestamp: now,
-      metadata: { youtubeUrl },
+      metadata: {
+        youtubeUrl: simulatedYouTubeUrl,
+        fileName: videoFile.name,
+        fileSize: videoFile.size,
+      },
     })
 
     console.log(`✅ Re-video uploaded for order item ${orderItemId}`)
 
     return HttpResponse.json({
       success: true,
-      message: "Re-video uploaded successfully",
+      message: "Re-video uploaded to YouTube successfully",
       data: {
         orderItemId,
         videoData: mockOrderItems[orderItemIndex].videoData,
