@@ -53,9 +53,9 @@ export const assignProductionHead = async (orderItemId, data) => {
  * @returns {Promise} List of assigned order items with section details
  */
 export const getMyAssignments = async (userId) => {
-  const response = await httpClient.get(`${BASE_URL}/my-assignments`, {
-    params: { userId },
-  })
+  // Only pass userId param if it's defined - backend uses JWT for current user
+  const params = userId ? { userId } : {}
+  const response = await httpClient.get(`${BASE_URL}/my-assignments`, { params })
   return response.data
 }
 

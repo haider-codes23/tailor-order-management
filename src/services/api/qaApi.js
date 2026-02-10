@@ -182,12 +182,7 @@ export const uploadOrderItemVideo = async (orderItemId, data) => {
 
   const response = await httpClient.post(
     `${BASE_URL}/order-item/${orderItemId}/upload-video`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    formData
   )
   return response.data
 }
@@ -207,12 +202,7 @@ export const uploadReVideo = async (orderItemId, data) => {
 
   const response = await httpClient.post(
     `${BASE_URL}/order-item/${orderItemId}/upload-revideo`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    formData
   )
   return response.data
 }

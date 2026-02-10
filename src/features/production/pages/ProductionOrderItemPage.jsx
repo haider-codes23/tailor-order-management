@@ -200,6 +200,7 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
   const isReadyForTasks = section.status === "READY_FOR_PRODUCTION"
   const isInProduction = section.status === "IN_PRODUCTION"
   const isProductionCompleted = section.status === "PRODUCTION_COMPLETED"
+  const isQARejected = section.status === "QA_REJECTED"
   const hasTasks = tasks.length > 0
 
   // Calculate progress
@@ -212,6 +213,7 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
       ${isReadyForTasks ? "border-amber-200" : ""}
       ${isInProduction ? "border-blue-200" : ""}
       ${isProductionCompleted ? "border-green-200" : ""}
+      ${isQARejected ? "border-red-300 bg-red-50" : ""}
     `}
     >
       <CardHeader>
@@ -223,6 +225,7 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
               ${isReadyForTasks ? "bg-amber-100" : ""}
               ${isInProduction ? "bg-blue-100" : ""}
               ${isProductionCompleted ? "bg-green-100" : ""}
+              ${isQARejected ? "bg-red-100" : ""}
               ${!isReadyForTasks && !isInProduction && !isProductionCompleted ? "bg-slate-100" : ""}
             `}
             >
@@ -232,6 +235,7 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
                 ${isReadyForTasks ? "text-amber-600" : ""}
                 ${isInProduction ? "text-blue-600" : ""}
                 ${isProductionCompleted ? "text-green-600" : ""}
+                ${isQARejected ? "text-red-600" : ""}
                 ${!isReadyForTasks && !isInProduction && !isProductionCompleted ? "text-slate-600" : ""}
               `}
               />
@@ -261,11 +265,48 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
           </div>
         )}
 
+        {/* QA Rejection Info */}
+        {isQARejected && (
+          <div className="mb-4 p-3 bg-white border border-red-200 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium text-sm text-red-800">QA Rejection Details</span>
+              {section.qaData?.currentRound > 1 && (
+                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded">
+                  Round {section.qaData.currentRound}
+                </span>
+              )}
+            </div>
+
+            {section.qaRejectionReason && (
+              <div className="text-sm text-red-700 bg-red-50 p-2 rounded mb-2">
+                <strong>Reason:</strong> {section.qaRejectionReason}
+              </div>
+            )}
+
+            {section.qaRejectionNotes && (
+              <div className="text-sm text-gray-700 mb-2">
+                <strong>Notes:</strong> {section.qaRejectionNotes}
+              </div>
+            )}
+
+            {section.qaRejectedAt && (
+              <div className="text-xs text-gray-500">
+                Rejected by: {section.qaRejectedByName || "QA"} •{" "}
+                {new Date(section.qaRejectedAt).toLocaleDateString()}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Actions based on status */}
         <div className="flex flex-wrap gap-2">
           {/* Ready for tasks - show create tasks button */}
-          {isReadyForTasks && !hasTasks && (
-            <Button onClick={() => onCreateTasks(section.name)}>
+          {(isReadyForTasks || isQARejected) && !hasTasks && (
+            <Button
+              onClick={() => onCreateTasks(section.name)}
+              className={isQARejected ? "bg-violet-600 hover:bg-violet-700" : ""}
+            >
+              {isQARejected ? "Create Rework Tasks" : "Create Tasks"}
               <ClipboardList className="h-4 w-4 mr-2" />
               Create Tasks
             </Button>

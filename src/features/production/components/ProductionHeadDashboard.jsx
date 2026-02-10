@@ -48,7 +48,8 @@ export default function ProductionHeadDashboard() {
       (s) =>
         s.status === "READY_FOR_PRODUCTION" ||
         s.status === "IN_PRODUCTION" ||
-        s.status === "PRODUCTION_COMPLETED"
+        s.status === "PRODUCTION_COMPLETED" ||
+        s.status === "QA_REJECTED"
     )
     return hasActiveWork
   })
@@ -130,6 +131,15 @@ export default function ProductionHeadDashboard() {
           )}
           icon={CheckCircle}
           color="green"
+        />
+        <StatsCard
+          title="Needs Rework"
+          value={assignments.reduce(
+            (sum, a) => sum + (a.sections?.filter((s) => s.status === "QA_REJECTED").length || 0),
+            0
+          )}
+          icon={AlertCircle}
+          color="red"
         />
       </div>
 

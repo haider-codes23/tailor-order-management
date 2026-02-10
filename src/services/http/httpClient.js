@@ -64,6 +64,25 @@ function buildHeaders(customHeaders = {}) {
 }
 
 /**
+ * Build headers for FormData requests (no Content-Type - browser sets it with boundary)
+ */
+function buildHeadersForFormData(customHeaders = {}) {
+  const token = getAuthToken()
+
+  const headers = {
+    ...customHeaders,
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  // NOTE: Do NOT set Content-Type for FormData
+  // The browser will automatically set it with the correct boundary
+  return headers
+}
+
+/**
  * Refresh token function
  * Returns new access token or null if refresh fails
  */
@@ -254,17 +273,23 @@ async function request(method, endpoint, options = {}) {
     url += `?${queryString}`
   }
 
+  // Check if body is FormData
+  const isFormData = body instanceof FormData
+
   // Build fetch options
   const fetchConfig = {
     method,
-    headers: buildHeaders(customHeaders),
-    credentials: "include", // Important: include cookies for refresh token
+    headers: isFormData
+      ? buildHeadersForFormData(customHeaders) // Don't set Content-Type for FormData
+      : buildHeaders(customHeaders),
+    credentials: "include",
     ...fetchOptions,
   }
 
   // Add body if present
   if (body && !["GET", "HEAD"].includes(method)) {
-    fetchConfig.body = JSON.stringify(body)
+    // Don't stringify FormData - pass it directly
+    fetchConfig.body = isFormData ? body : JSON.stringify(body)
   }
 
   try {
