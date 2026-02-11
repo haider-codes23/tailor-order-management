@@ -1162,18 +1162,38 @@ export const ordersHandlers = [
       )
 
       if (awaitingSections.length === 0 && passedSections.length > 0) {
-        // All sections are now ready - determine appropriate status
-        // If packet exists and was updated, it needs to go through packet flow again
         if (updatedPacket) {
-          newStatus = ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET // Or CREATE_PACKET if all ready
+          // Check if other sections are in advanced stages (dyeing, production, QA)
+          const hasAdvancedSections = allSectionStatuses.some((s) =>
+            [
+              SECTION_STATUS.READY_FOR_DYEING,
+              SECTION_STATUS.DYEING_ACCEPTED,
+              SECTION_STATUS.DYEING_IN_PROGRESS,
+              SECTION_STATUS.DYEING_COMPLETED,
+              SECTION_STATUS.READY_FOR_PRODUCTION,
+              SECTION_STATUS.IN_PRODUCTION,
+              SECTION_STATUS.PRODUCTION_COMPLETED,
+              SECTION_STATUS.QA_PENDING,
+              SECTION_STATUS.QA_APPROVED,
+              SECTION_STATUS.QA_REJECTED,
+            ].includes(s.status)
+          )
+          // Don't regress the overall status if sections are in advanced stages
+          // Keep the current status - the packet system handles its own flow
+          if (!hasAdvancedSections) {
+            newStatus = ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET
+          }
+          // else: keep newStatus = item.status (don't regress)
           timelineAction = `All sections now have materials. Packet updated with ${passedSections.join(", ")}. Ready for packet completion.`
         }
       } else if (passedSections.length > 0) {
-        // Some sections passed, some still awaiting
         timelineAction = `Rerun inventory check: ${passedSections.join(", ")} passed. ${stillFailedSections.join(", ")} still awaiting material.`
       } else {
         timelineAction = `Rerun inventory check: No sections passed. ${stillFailedSections.join(", ")} still awaiting material.`
       }
+
+      // Actually write the status
+      mockOrderItems[itemIndex].status = newStatus
 
       // Update order item
       mockOrderItems[itemIndex].lastInventoryCheck = now

@@ -109,7 +109,11 @@ const getQAProductionQueue = http.get(`${BASE_URL}/queue`, async () => {
     const allApproved = areAllSectionsQAApproved(orderItem)
     const hasPending = pendingSections.length > 0
 
-    if (hasPending || (allApproved && !hasVideoUploaded(orderItem))) {
+    if (
+      hasPending ||
+      (allApproved && !hasVideoUploaded(orderItem)) ||
+      rejectedSections.length > 0
+    ) {
       orderItemsMap.set(orderItem.id, {
         orderItemId: orderItem.id,
         orderId: order.id,
