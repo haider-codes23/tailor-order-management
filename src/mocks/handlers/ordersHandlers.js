@@ -1182,6 +1182,12 @@ export const ordersHandlers = [
           // Keep the current status - the packet system handles its own flow
           if (!hasAdvancedSections) {
             newStatus = ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET
+          } else {
+            // Keep current status, but if it's undefined/null, calculate from sections
+            if (!item.status) {
+              newStatus = calculateOrderItemStatus(mockOrderItems[itemIndex])
+            }
+            // else newStatus already = item.status from initialization
           }
           // else: keep newStatus = item.status (don't regress)
           timelineAction = `All sections now have materials. Packet updated with ${passedSections.join(", ")}. Ready for packet completion.`
@@ -1193,7 +1199,9 @@ export const ordersHandlers = [
       }
 
       // Actually write the status
-      mockOrderItems[itemIndex].status = newStatus
+      if (newStatus) {
+        mockOrderItems[itemIndex].status = newStatus
+      }
 
       // Update order item
       mockOrderItems[itemIndex].lastInventoryCheck = now

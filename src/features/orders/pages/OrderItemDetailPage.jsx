@@ -440,7 +440,8 @@ export default function OrderItemDetailPage() {
             item?.status === ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION ||
             item?.status === ORDER_ITEM_STATUS.IN_PRODUCTION ||
             item?.status === ORDER_ITEM_STATUS.PRODUCTION_COMPLETED ||
-            item?.status === ORDER_ITEM_STATUS.ALL_SECTIONS_QA_APPROVED) && (
+            item?.status === ORDER_ITEM_STATUS.ALL_SECTIONS_QA_APPROVED ||
+            item?.packetId) && (
             <TabsTrigger value="packet">Packet</TabsTrigger>
           )}
           <TabsTrigger value="timeline">Timeline</TabsTrigger>

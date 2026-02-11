@@ -21,6 +21,8 @@ import {
 
 const BASE_URL = `${appConfig.apiBaseUrl}/qa`
 
+import { calculateOrderItemStatus } from "./dyeingHandlers"
+
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -297,6 +299,7 @@ const approveSection = http.post(
 
     // Update section status
     sectionData.status = SECTION_STATUS.QA_APPROVED
+    orderItem.status = calculateOrderItemStatus(orderItem)
     sectionData.qaApprovedAt = now
     sectionData.qaApprovedBy = approvedBy
     sectionData.updatedAt = now
@@ -410,6 +413,7 @@ const rejectSection = http.post(
 
     // Update section status to QA_REJECTED (will be sent back to production)
     sectionData.status = SECTION_STATUS.QA_REJECTED
+    orderItem.status = calculateOrderItemStatus(orderItem)
     sectionData.qaRejectedAt = now
     sectionData.qaRejectedBy = rejectedBy
     sectionData.qaRejectionReason = reasonCode
