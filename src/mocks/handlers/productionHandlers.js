@@ -482,6 +482,47 @@ const createSectionTasks = http.post(
     const now = new Date().toISOString()
     const createdTasks = []
 
+    // Handle rework for QA_REJECTED sections
+    const sectionKey = sectionName.toLowerCase()
+    if (orderItem.sectionStatuses?.[sectionKey]) {
+      const sectionData = orderItem.sectionStatuses[sectionKey]
+
+      if (sectionData.status === SECTION_STATUS.QA_REJECTED) {
+        // Mark old tasks as previous round
+        const oldTasks = mockProductionTasks.filter(
+          (t) =>
+            t.orderItemId === orderItemId &&
+            t.sectionName.toLowerCase() === sectionName.toLowerCase()
+        )
+        oldTasks.forEach((t) => {
+          t.isReworkRound = (sectionData.qaData?.currentRound || 2) - 1
+        })
+
+        // Remove old tasks from active list (or keep for history)
+        // For simplicity, remove them so getSectionTasks returns only new ones
+        const oldTaskIds = oldTasks.map((t) => t.id)
+        for (let i = mockProductionTasks.length - 1; i >= 0; i--) {
+          if (oldTaskIds.includes(mockProductionTasks[i].id)) {
+            mockProductionTasks.splice(i, 1)
+          }
+        }
+
+        // Update section status back to READY_FOR_PRODUCTION
+        sectionData.status = SECTION_STATUS.READY_FOR_PRODUCTION
+        sectionData.reworkStartedAt = now
+        sectionData.updatedAt = now
+
+        // Add timeline entry
+        if (!orderItem.timeline) orderItem.timeline = []
+        orderItem.timeline.push({
+          id: `log-${Date.now()}`,
+          action: `Rework tasks created for ${sectionName} (Round ${sectionData.qaData?.currentRound || 2})`,
+          user: "Production Head",
+          timestamp: now,
+        })
+      }
+    }
+
     tasks.forEach((task, index) => {
       const worker = getUserById(task.workerId)
       const newTask = {

@@ -205,6 +205,7 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
 
   // Calculate progress
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length
+  const allTasksCompleted = hasTasks && tasks.every((t) => t.status === "COMPLETED")
   const totalTasks = tasks.length
 
   return (
@@ -300,17 +301,16 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
 
         {/* Actions based on status */}
         <div className="flex flex-wrap gap-2">
-          {/* Ready for tasks - show create tasks button */}
-          {(isReadyForTasks || isQARejected) && !hasTasks && (
+          {/* Ready for tasks OR QA Rejected (rework) */}
+          {(isReadyForTasks && !hasTasks) || (isQARejected && allTasksCompleted) ? (
             <Button
               onClick={() => onCreateTasks(section.name)}
               className={isQARejected ? "bg-violet-600 hover:bg-violet-700" : ""}
             >
-              {isQARejected ? "Create Rework Tasks" : "Create Tasks"}
               <ClipboardList className="h-4 w-4 mr-2" />
-              Create Tasks
+              {isQARejected ? "Create Rework Tasks" : "Create Tasks"}
             </Button>
-          )}
+          ) : null}
 
           {/* Has tasks - show view timeline button */}
           {hasTasks && (
