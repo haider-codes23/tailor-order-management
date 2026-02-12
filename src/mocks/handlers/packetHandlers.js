@@ -552,7 +552,34 @@ const completePacket = http.post(
     // Update order item status to PACKET_CHECK
     const orderItemIndex = mockOrderItems.findIndex((oi) => oi.id === id)
     if (orderItemIndex !== -1) {
-      mockOrderItems[orderItemIndex].status = ORDER_ITEM_STATUS.PACKET_CHECK
+      // FIX: Check if other sections are in more advanced stages
+      const orderItem = mockOrderItems[orderItemIndex]
+      if (orderItem.sectionStatuses) {
+        const sectionStatuses = Object.values(orderItem.sectionStatuses)
+        const hasAdvancedSections = sectionStatuses.some((s) =>
+          [
+            SECTION_STATUS.READY_FOR_DYEING,
+            SECTION_STATUS.DYEING_ACCEPTED,
+            SECTION_STATUS.DYEING_IN_PROGRESS,
+            SECTION_STATUS.DYEING_COMPLETED,
+            SECTION_STATUS.READY_FOR_PRODUCTION,
+            SECTION_STATUS.IN_PRODUCTION,
+            SECTION_STATUS.PRODUCTION_COMPLETED,
+            SECTION_STATUS.QA_PENDING,
+            SECTION_STATUS.QA_APPROVED,
+            SECTION_STATUS.QA_REJECTED,
+          ].includes(s.status)
+        )
+
+        if (!hasAdvancedSections) {
+          mockOrderItems[orderItemIndex].status = packet.isPartial
+            ? ORDER_ITEM_STATUS.PARTIAL_PACKET_CHECK
+            : ORDER_ITEM_STATUS.PACKET_CHECK
+        }
+        // else: don't change status - keep whatever advanced status it already has
+      } else {
+        mockOrderItems[orderItemIndex].status = ORDER_ITEM_STATUS.PACKET_CHECK
+      }
       mockOrderItems[orderItemIndex].updatedAt = now
       mockOrderItems[orderItemIndex].timeline.push({
         id: `log-${Date.now()}`,
@@ -686,6 +713,42 @@ const approvePacket = http.post(
           }
         })
       }
+
+      // Determine nextStatus for partial packet with pending sections
+      // Must check what stages other sections are in to avoid regressing
+      const allSectionStatuses = orderItem ? Object.values(orderItem.sectionStatuses || {}) : []
+
+      const hasQAOrBeyond = allSectionStatuses.some((s) =>
+        [
+          SECTION_STATUS.QA_PENDING,
+          SECTION_STATUS.QA_APPROVED,
+          SECTION_STATUS.QA_REJECTED,
+          SECTION_STATUS.PRODUCTION_COMPLETED,
+        ].includes(s.status)
+      )
+      const hasInProduction = allSectionStatuses.some((s) =>
+        [SECTION_STATUS.IN_PRODUCTION, SECTION_STATUS.READY_FOR_PRODUCTION].includes(s.status)
+      )
+      const hasInDyeing = allSectionStatuses.some((s) =>
+        [
+          SECTION_STATUS.READY_FOR_DYEING,
+          SECTION_STATUS.DYEING_ACCEPTED,
+          SECTION_STATUS.DYEING_IN_PROGRESS,
+          SECTION_STATUS.DYEING_COMPLETED,
+        ].includes(s.status)
+      )
+
+      if (hasQAOrBeyond || hasInProduction) {
+        // Don't regress - keep current status
+        nextStatus = orderItem?.status || ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION
+        timelineMessage = `Partial packet approved for ${packet.currentRoundSections?.join(", ") || "sections"}. Sections still pending: ${packet.sectionsPending.join(", ")}`
+      } else if (hasInDyeing) {
+        nextStatus = ORDER_ITEM_STATUS.PARTIALLY_IN_DYEING
+        timelineMessage = `Partial packet approved for ${packet.currentRoundSections?.join(", ") || "sections"}. Some sections in dyeing. Pending: ${packet.sectionsPending.join(", ")}`
+      } else {
+        nextStatus = ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET
+        timelineMessage = `Partial packet approved for ${packet.currentRoundSections?.join(", ") || "sections"}. Pending: ${packet.sectionsPending.join(", ")}`
+      }
     } else {
       // Full packet OR partial packet with all sections now complete
       // IMPORTANT: Only update sections that need updating - don't reset sections
@@ -729,11 +792,23 @@ const approvePacket = http.post(
         nextStatus = ORDER_ITEM_STATUS.QUALITY_ASSURANCE
         timelineMessage = "Packet approved - Moving to Quality Assurance for client photos/videos"
       } else {
-        // Changed from READY_FOR_PRODUCTION to READY_FOR_DYEING
-        // But we need to check if some sections are already beyond dyeing
-        // to determine the correct overall status
         if (orderItem && orderItem.sectionStatuses) {
           const sectionStatuses = Object.values(orderItem.sectionStatuses)
+
+          // Check for QA and production states FIRST (highest priority)
+          const hasQAOrBeyond = sectionStatuses.some((s) =>
+            [
+              SECTION_STATUS.QA_PENDING,
+              SECTION_STATUS.QA_APPROVED,
+              SECTION_STATUS.QA_REJECTED,
+              SECTION_STATUS.PRODUCTION_COMPLETED,
+            ].includes(s.status)
+          )
+          const hasInProduction = sectionStatuses.some((s) =>
+            [SECTION_STATUS.IN_PRODUCTION, SECTION_STATUS.READY_FOR_PRODUCTION].includes(s.status)
+          )
+
+          // Then check dyeing states
           const hasDyeingCompleted = sectionStatuses.some(
             (s) => s.status === SECTION_STATUS.DYEING_COMPLETED
           )
@@ -744,12 +819,14 @@ const approvePacket = http.post(
             (s) => s.status === SECTION_STATUS.READY_FOR_DYEING
           )
 
-          if (hasDyeingCompleted && !hasReadyForDyeing && !hasInDyeing) {
-            // All sections completed dyeing
+          if (hasQAOrBeyond || hasInProduction) {
+            // Sections are in production/QA - don't regress
+            nextStatus = orderItem.status || ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION
+            timelineMessage = `Packet approved for ${packet.currentRoundSections?.join(", ") || "remaining sections"}. Some sections already in production/QA.`
+          } else if (hasDyeingCompleted && !hasReadyForDyeing && !hasInDyeing) {
             nextStatus = ORDER_ITEM_STATUS.DYEING_COMPLETED
             timelineMessage = "Packet approved - All sections completed dyeing"
           } else if (hasInDyeing || hasDyeingCompleted) {
-            // Mixed state - some in dyeing, some ready for dyeing
             nextStatus = ORDER_ITEM_STATUS.PARTIALLY_IN_DYEING
             timelineMessage = `Packet approved for ${packet.currentRoundSections?.join(", ") || "remaining sections"}. Some sections already in/completed dyeing.`
           } else {
