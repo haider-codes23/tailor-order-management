@@ -102,7 +102,7 @@ export default function ReVideoRequestModal({ open, order, userId, onClose }) {
 
     reVideoMutation.mutate(
       {
-        orderId: order.id,
+        orderId: order.orderId,
         orderItemId: selectedItemId,
         sections,
         requestedBy: userId,

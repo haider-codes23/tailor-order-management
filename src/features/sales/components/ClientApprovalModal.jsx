@@ -146,7 +146,7 @@ export default function ClientApprovalModal({ open, order, userId, onClose }) {
 
     approvedMutation.mutate(
       {
-        orderId: order.id,
+        orderId: order.orderId,
         screenshots: screenshots.map((s) => ({ name: s.name, dataUrl: s.dataUrl })),
         notes: notes.trim() || null,
         approvedBy: userId,

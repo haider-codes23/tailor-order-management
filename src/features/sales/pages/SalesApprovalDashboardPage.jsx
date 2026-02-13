@@ -97,7 +97,7 @@ export default function SalesApprovalDashboardPage() {
 
   // ── Handlers ─────────────────────────────────────────────────────────
   const handleSendToClient = (order) => {
-    sendToClientMutation.mutate({ orderId: order.id, sentBy: user?.id })
+    sendToClientMutation.mutate({ orderId: order.orderId, sentBy: user?.id })
   }
 
   const handleClientApproved = (order) => {
@@ -118,7 +118,7 @@ export default function SalesApprovalDashboardPage() {
   }
 
   const handleApprovePayments = (order) => {
-    approvePaymentsMutation.mutate({ orderId: order.id, approvedBy: user?.id })
+    approvePaymentsMutation.mutate({ orderId: order.orderId, approvedBy: user?.id })
   }
 
   // ── Render helpers ───────────────────────────────────────────────────
@@ -150,7 +150,7 @@ export default function SalesApprovalDashboardPage() {
   // TAB 1: Ready for Client — Order cards with video links
   // ════════════════════════════════════════════════════════════════════════
   const renderReadyCard = (order) => (
-    <Card key={order.id} className="overflow-hidden">
+    <Card key={order.orderId} className="overflow-hidden">
       {/* Header */}
       <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
         <div>
@@ -162,13 +162,12 @@ export default function SalesApprovalDashboardPage() {
 
       <CardContent className="p-4">
         <div className="text-sm text-gray-600 mb-3">
-          {order.orderItems?.length || 0} Order Items • Total: PKR{" "}
-          {order.totalAmount?.toLocaleString()}
+          {order.items?.length || 0} Order Items • Total: PKR {order.totalAmount?.toLocaleString()}
         </div>
 
         {/* Order Items with Videos */}
         <div className="space-y-2 mb-4">
-          {(order.orderItems || []).map((item) => (
+          {(order.items || []).map((item) => (
             <div key={item.id} className="bg-gray-50 rounded p-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">{item.productName}</span>
@@ -215,7 +214,7 @@ export default function SalesApprovalDashboardPage() {
     const timeAgo = sentAt ? formatDistanceToNow(new Date(sentAt), { addSuffix: true }) : null
 
     return (
-      <Card key={order.id} className="overflow-hidden border-2 border-amber-300 bg-amber-50">
+      <Card key={order.orderId} className="overflow-hidden border-2 border-amber-300 bg-amber-50">
         {/* Header */}
         <div className="bg-amber-100 px-4 py-3 flex justify-between items-center">
           <div>
@@ -235,7 +234,7 @@ export default function SalesApprovalDashboardPage() {
           {/* Video Links */}
           <div className="bg-white rounded p-3 mb-4 border">
             <div className="text-xs text-gray-500 mb-1">Videos sent to client:</div>
-            {(order.orderItems || []).map((item) => (
+            {(order.items || []).map((item) => (
               <div key={item.id} className="text-sm">
                 <span className="font-medium">{item.productName}: </span>
                 {item.videoData?.youtubeUrl && (
@@ -287,7 +286,7 @@ export default function SalesApprovalDashboardPage() {
     const canApprove = remaining <= 0
 
     return (
-      <Card key={order.id} className="overflow-hidden border-2 border-purple-300 bg-purple-50">
+      <Card key={order.orderId} className="overflow-hidden border-2 border-purple-300 bg-purple-50">
         {/* Header */}
         <div className="bg-purple-100 px-4 py-3 flex justify-between items-center">
           <div>
