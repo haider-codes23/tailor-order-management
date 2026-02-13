@@ -36,7 +36,7 @@ export default function AlterationRequestModal({ open, order, userId, onClose })
 
   const alterationMutation = useRequestAlteration()
 
-  const orderItems = order?.orderItems || []
+  const orderItems = order?.items || []
 
   // Build flat list of all sections across all order items
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function AlterationRequestModal({ open, order, userId, onClose })
 
     alterationMutation.mutate(
       {
-        orderId: order.id,
+        orderId: order.orderId,
         sections,
         requestedBy: userId,
       },

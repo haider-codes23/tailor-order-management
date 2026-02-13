@@ -485,10 +485,11 @@ const requestAlteration = http.post(
       // Reset section to PRODUCTION_COMPLETED (ready for rework by production head)
       mockOrderItems[oiIndex].sectionStatuses[sectionKey] = {
         ...mockOrderItems[oiIndex].sectionStatuses[sectionKey],
-        status: SECTION_STATUS.PRODUCTION_COMPLETED,
+        status: SECTION_STATUS.READY_FOR_PRODUCTION, // ← CORRECT
         alterationNotes: notes || "",
         alterationRequestedBy: requestedBy,
         alterationRequestedAt: now,
+        isAlteration: true, // Flag for production to know this is an alteration
         updatedAt: now,
       }
 

@@ -772,6 +772,7 @@ const approvePacket = http.post(
           SECTION_STATUS.PRODUCTION_COMPLETED,
           SECTION_STATUS.QA_PENDING,
           SECTION_STATUS.QA_APPROVED,
+          SECTION_STATUS.QA_REJECTED,
           SECTION_STATUS.COMPLETED,
         ]
 

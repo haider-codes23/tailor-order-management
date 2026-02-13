@@ -487,7 +487,7 @@ const createSectionTasks = http.post(
     if (orderItem.sectionStatuses?.[sectionKey]) {
       const sectionData = orderItem.sectionStatuses[sectionKey]
 
-      if (sectionData.status === SECTION_STATUS.QA_REJECTED) {
+      if (sectionData.status === SECTION_STATUS.QA_REJECTED || sectionData.isAlteration) {
         // Mark old tasks as previous round
         const oldTasks = mockProductionTasks.filter(
           (t) =>
@@ -505,6 +505,11 @@ const createSectionTasks = http.post(
           if (oldTaskIds.includes(mockProductionTasks[i].id)) {
             mockProductionTasks.splice(i, 1)
           }
+        }
+
+        // Clear the alteration flag after processing
+        if (sectionData.isAlteration) {
+          delete sectionData.isAlteration
         }
 
         // Update section status back to READY_FOR_PRODUCTION

@@ -44,7 +44,7 @@ export default function ReVideoRequestModal({ open, order, userId, onClose }) {
 
   const reVideoMutation = useRequestReVideo()
 
-  const orderItems = order?.orderItems || []
+  const orderItems = order?.items || []
 
   // Get the currently selected order item
   const selectedItem = orderItems.find((i) => i.id === selectedItemId)

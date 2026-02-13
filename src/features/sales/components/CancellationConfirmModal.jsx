@@ -40,7 +40,7 @@ export default function CancellationConfirmModal({ open, order, userId, onClose 
 
     cancelMutation.mutate(
       {
-        orderId: order.id,
+        orderId: order.orderId,
         reason: reason.trim(),
         cancelledBy: userId,
       },

@@ -37,7 +37,7 @@ export default function StartFromScratchModal({ open, order, userId, onClose }) 
   const handleSubmit = () => {
     scratchMutation.mutate(
       {
-        orderId: order.id,
+        orderId: order.orderId,
         confirmedBy: userId,
         reason: reason.trim() || "Client wants redo",
       },

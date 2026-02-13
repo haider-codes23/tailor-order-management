@@ -32,6 +32,7 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  Scissors,
 } from "lucide-react"
 import { format, formatDistanceToNow } from "date-fns"
 import { useAuth } from "@/features/auth/hooks/useAuth"
@@ -252,26 +253,63 @@ export default function SalesApprovalDashboardPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="text-xs text-gray-500 mb-2">Client Response:</div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => handleClientApproved(order)}
-            >
-              <CheckCircle className="h-3.5 w-3.5 mr-1" />
-              Client Approved
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-red-200 text-red-600 hover:bg-red-50"
-              onClick={() => handleClientNotSatisfied(order)}
-            >
-              <XCircle className="h-3.5 w-3.5 mr-1" />
-              Client Not Satisfied
-            </Button>
-          </div>
+          {/* Action Buttons — or waiting state if re-video pending */}
+          {(() => {
+            const pendingReVideoItems = (order.items || []).filter((item) => item.reVideoRequest)
+            const pendingAlterationItems = (order.items || []).filter(
+              (item) => item.status === "ALTERATION_REQUIRED"
+            )
+
+            if (pendingReVideoItems.length > 0) {
+              return (
+                <div className="bg-amber-100 border border-amber-300 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Video className="h-4 w-4 text-amber-600 animate-pulse" />
+                    <span className="text-sm font-medium text-amber-800">
+                      Waiting for Re-Video from QA
+                    </span>
+                  </div>
+                  {pendingReVideoItems.map((item) => (
+                    <div key={item.id} className="text-xs text-amber-700 ml-6">
+                      <span className="font-medium">{item.productName}</span>
+                      {" — Sections: "}
+                      {item.reVideoRequest.sections?.join(", ") || "All"}
+                    </div>
+                  ))}
+                </div>
+              )
+            }
+
+            if (pendingAlterationItems.length > 0) {
+              return (
+                <div className="bg-orange-100 border border-orange-300 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Scissors className="h-4 w-4 text-orange-600" />
+                    <span className="text-sm font-medium text-orange-800">
+                      Alteration in Progress — Sent to Production
+                    </span>
+                  </div>
+                  {pendingAlterationItems.map((item) => (
+                    <div key={item.id} className="text-xs text-orange-700 ml-6">
+                      <span className="font-medium">{item.productName}</span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-orange-600 mt-2 ml-6">
+                    Buttons will reappear once production completes the alteration and QA uploads a
+                    new video.
+                  </p>
+                </div>
+              )
+            }
+
+            // Normal state — show action buttons
+            return (
+              <>
+                <div className="text-xs text-gray-500 mb-2">Client Response:</div>
+                <div className="grid grid-cols-2 gap-2">{/* ... existing buttons ... */}</div>
+              </>
+            )
+          })()}
         </CardContent>
       </Card>
     )
