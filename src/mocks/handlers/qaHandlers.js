@@ -107,13 +107,26 @@ const getQAProductionQueue = http.get(`${BASE_URL}/queue`, async () => {
       }
     })
 
-    // Only include if there are pending sections OR all sections approved (ready for video)
+    // Only include if:
+    // 1. Has pending sections (needs QA review)
+    // 2. All approved but no video yet (ready for video upload)
+    // 3. Has rejected sections (needs re-review)
+    // 4. Has video but order NOT yet sent to Sales (needs "Send to Sales" action)
     const allApproved = areAllSectionsQAApproved(orderItem)
     const hasPending = pendingSections.length > 0
+    const hasVideo = hasVideoUploaded(orderItem)
+    const orderSentToSales =
+      order.status === "READY_FOR_CLIENT_APPROVAL" ||
+      order.status === "AWAITING_CLIENT_APPROVAL" ||
+      order.status === "CLIENT_APPROVED" ||
+      order.status === "READY_FOR_DISPATCH" ||
+      order.status === "DISPATCHED" ||
+      order.status === "COMPLETED"
 
     if (
       hasPending ||
-      (allApproved && !hasVideoUploaded(orderItem)) ||
+      (allApproved && !hasVideo) ||
+      (allApproved && hasVideo && !orderSentToSales) ||
       rejectedSections.length > 0
     ) {
       orderItemsMap.set(orderItem.id, {
@@ -132,6 +145,8 @@ const getQAProductionQueue = http.get(`${BASE_URL}/queue`, async () => {
         hasVideo: hasVideoUploaded(orderItem),
         videoData: orderItem.videoData || null,
         reVideoRequest: orderItem.reVideoRequest || null,
+        orderStatus: order.status,
+        allOrderItemsHaveVideos: allOrderItemsHaveVideos(order),
       })
     }
   })
@@ -206,6 +221,7 @@ const getQAStats = http.get(`${BASE_URL}/stats`, async () => {
   let pendingReviewCount = 0
   let readyForVideoCount = 0
   let salesRequestsCount = 0
+  let videoUploadedCount = 0
 
   mockOrderItems.forEach((orderItem) => {
     if (!orderItem.sectionStatuses) return
@@ -221,6 +237,22 @@ const getQAStats = http.get(`${BASE_URL}/stats`, async () => {
       readyForVideoCount++
     }
 
+    // Count items with video uploaded but not yet sent to Sales
+    if (areAllSectionsQAApproved(orderItem) && hasVideoUploaded(orderItem)) {
+      const order = findOrderByOrderItem(orderItem)
+      if (
+        order &&
+        order.status !== "READY_FOR_CLIENT_APPROVAL" &&
+        order.status !== "AWAITING_CLIENT_APPROVAL" &&
+        order.status !== "CLIENT_APPROVED" &&
+        order.status !== "READY_FOR_DISPATCH" &&
+        order.status !== "DISPATCHED" &&
+        order.status !== "COMPLETED"
+      ) {
+        videoUploadedCount++
+      }
+    }
+
     // Count re-video requests
     if (orderItem.reVideoRequest) {
       salesRequestsCount++
@@ -228,7 +260,7 @@ const getQAStats = http.get(`${BASE_URL}/stats`, async () => {
   })
 
   console.log(
-    `✅ QA Stats: ${pendingReviewCount} pending, ${readyForVideoCount} ready for video, ${salesRequestsCount} sales requests`
+    `✅ QA Stats: ${pendingReviewCount} pending, ${readyForVideoCount} ready for video, ${videoUploadedCount} video uploaded, ${salesRequestsCount} sales requests`
   )
 
   return HttpResponse.json({
@@ -236,6 +268,7 @@ const getQAStats = http.get(`${BASE_URL}/stats`, async () => {
     data: {
       pendingReview: pendingReviewCount,
       readyForVideo: readyForVideoCount,
+      videoUploaded: videoUploadedCount,
       salesRequests: salesRequestsCount,
     },
   })

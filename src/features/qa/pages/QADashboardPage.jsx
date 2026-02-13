@@ -19,6 +19,7 @@ import {
   Loader2,
   AlertCircle,
   Package,
+  Send,
 } from "lucide-react"
 import { useQAProductionQueue, useQASalesRequests, useQAStats } from "@/hooks/useQA"
 import QAOrderItemCard from "../components/QAOrderItemCard"
@@ -55,11 +56,15 @@ export default function QADashboardPage() {
   const filteredSalesRequests = filterItems(salesRequests)
 
   // Separate production queue into pending review and ready for video
+  // Separate production queue into 3 groups
   const pendingReview = filteredProduction.filter(
     (item) => !item.allSectionsApproved || item.pendingSections?.length > 0
   )
   const readyForVideo = filteredProduction.filter(
     (item) => item.allSectionsApproved && !item.hasVideo
+  )
+  const videoUploaded = filteredProduction.filter(
+    (item) => item.allSectionsApproved && item.hasVideo
   )
 
   return (
@@ -153,6 +158,23 @@ export default function QADashboardPage() {
             </Card>
           ) : (
             <div className="space-y-4">
+              {/* Video Uploaded — Ready to Send to Sales */}
+              {videoUploaded.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-blue-700 flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Ready to Send to Sales ({videoUploaded.length})
+                  </h3>
+                  {videoUploaded.map((item) => (
+                    <QAOrderItemCard
+                      key={item.orderItemId}
+                      orderItem={item}
+                      variant="video-uploaded"
+                    />
+                  ))}
+                </div>
+              )}
+
               {/* Ready for Video Section */}
               {readyForVideo.length > 0 && (
                 <div className="space-y-3">
