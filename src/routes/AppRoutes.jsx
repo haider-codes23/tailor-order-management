@@ -60,8 +60,7 @@ import ProductionOrderItemPage from "@/features/production/pages/ProductionOrder
 
 import QADashboardPage from "@/features/qa/pages/QADashboardPage"
 
-// import SalesApprovalDashboardPage from "@/features/sales/pages/SalesApprovalDashboardPage"
-// import ClientApprovalPage from "@/features/sales/pages/ClientApprovalPage"
+import SalesApprovalDashboardPage from "@/features/sales/pages/SalesApprovalDashboardPage"
 
 /**
  * AppRoutes - Central routing configuration
@@ -352,27 +351,16 @@ export default function AppRoutes() {
         </Route>
 
         {/* ==================== SALES APPROVAL ROUTES (Phase 14) ==================== */}
-        {/* <Route path="/sales"> */}
-        {/* Sales Approval Dashboard */}
-        {/* <Route
+        <Route path="/sales">
+          <Route
             path="approval"
             element={
               <ProtectedRoute requiredPermissions={["orders.view"]}>
                 <SalesApprovalDashboardPage />
               </ProtectedRoute>
             }
-          /> */}
-
-        {/* Client Approval Detail Page */}
-        {/* <Route
-            path="approval/:orderItemId"
-            element={
-              <ProtectedRoute requiredPermissions={["orders.view"]}>
-                <ClientApprovalPage />
-              </ProtectedRoute>
-            }
-          /> */}
-        {/* </Route> */}
+          />
+        </Route>
 
         {/* ==================== ADMIN ROUTES ==================== */}
         <Route path="/admin">
