@@ -34,6 +34,7 @@ import { appConfig } from "@/config/appConfig"
 import { mockOrders, mockOrderItems } from "../data/mockOrders"
 import { mockUsers } from "../data/mockUser"
 import { ORDER_STATUS, ORDER_ITEM_STATUS, SECTION_STATUS } from "@/constants/orderConstants"
+import { mockProductionTasks, mockProductionAssignments } from "../data/mockProductionTasks"
 
 const BASE_URL = `${appConfig.apiBaseUrl}/sales`
 
@@ -500,6 +501,17 @@ const requestAlteration = http.post(
       updatedItems.push({ orderItemId, sectionName: sectionKey })
     })
 
+    const affectedOrderItemIds = [...new Set(sections.map((s) => s.orderItemId))]
+    affectedOrderItemIds.forEach((oiId) => {
+      const oiIdx = mockOrderItems.findIndex((oi) => oi.id === oiId && oi.orderId === orderId)
+      if (oiIdx !== -1) {
+        // Clear video data — QA must re-upload after alteration completes
+        delete mockOrderItems[oiIdx].videoData
+        // Also clear any lingering reVideoRequest
+        delete mockOrderItems[oiIdx].reVideoRequest
+      }
+    })
+
     // Update order status - goes back to a state where production can see it
     // Keep it in AWAITING_CLIENT_APPROVAL or set a specific alteration status
     // Per the data flow doc, we keep the order in AWAITING_CLIENT_APPROVAL
@@ -639,12 +651,31 @@ const startFromScratch = http.post(
     delete mockOrders[orderIndex].clientApprovalData
 
     // Reset all order items
+    // ── Step 1: Collect order item IDs for this order ──
+    const orderItemIds = mockOrderItems.filter((oi) => oi.orderId === orderId).map((oi) => oi.id)
+
+    // ── Step 2: Remove all production tasks for these order items ──
+    // (In a real backend, you'd mark as SUPERSEDED; in MSW, we remove them)
+    for (let i = mockProductionTasks.length - 1; i >= 0; i--) {
+      if (orderItemIds.includes(mockProductionTasks[i].orderItemId)) {
+        mockProductionTasks.splice(i, 1)
+      }
+    }
+
+    // ── Step 3: Remove production head assignments for these order items ──
+    for (let i = mockProductionAssignments.length - 1; i >= 0; i--) {
+      if (orderItemIds.includes(mockProductionAssignments[i].orderItemId)) {
+        mockProductionAssignments.splice(i, 1)
+      }
+    }
+
+    // ── Step 4: Reset all order items ──
     mockOrderItems.forEach((oi, idx) => {
       if (oi.orderId === orderId) {
         mockOrderItems[idx].status = ORDER_ITEM_STATUS.INVENTORY_CHECK
         mockOrderItems[idx].updatedAt = now
 
-        // Clear video data (archive it)
+        // Archive and clear video data
         if (oi.videoData) {
           mockOrderItems[idx].archivedVideoData = oi.videoData
           delete mockOrderItems[idx].videoData
@@ -653,16 +684,32 @@ const startFromScratch = http.post(
         // Clear re-video request
         delete mockOrderItems[idx].reVideoRequest
 
-        // Reset all section statuses to PENDING_INVENTORY_CHECK
+        // Clear packet-level data
+        delete mockOrderItems[idx].packetId
+        delete mockOrderItems[idx].packetCreatedAt
+        delete mockOrderItems[idx].packetVerifiedAt
+
+        // Reset all section statuses — CLEAN reset, no stale properties
         if (oi.sectionStatuses) {
           Object.keys(oi.sectionStatuses).forEach((sectionKey) => {
+            const oldSection = oi.sectionStatuses[sectionKey]
+
+            // Archive QA data before clearing
+            const archivedQaData = oldSection.qaData || null
+
+            // Build a CLEAN section object — only keep BOM/inventory-related base data
             mockOrderItems[idx].sectionStatuses[sectionKey] = {
-              ...mockOrderItems[idx].sectionStatuses[sectionKey],
+              // Preserve structural identity
+              name: oldSection.name,
+              // Reset status
               status: SECTION_STATUS.PENDING_INVENTORY_CHECK,
-              // Clear QA data (archive it)
-              archivedQaData: mockOrderItems[idx].sectionStatuses[sectionKey].qaData,
-              qaData: null,
               updatedAt: now,
+              // Archive old QA data
+              archivedQaData,
+              // ── Everything else is intentionally NOT carried over ──
+              // NO: pickList, packetId, dyeingAcceptedBy, dyeingCompletedAt,
+              //     productionStartedAt, isAlteration, alterationNotes,
+              //     qaData, qaRejectionReason, qaRejectionNotes, etc.
             }
           })
         }
@@ -672,7 +719,7 @@ const startFromScratch = http.post(
         mockOrderItems[idx].timeline.push({
           id: `log-${Date.now()}-${idx}`,
           action:
-            "Order reset to start from scratch - all sections reset to PENDING_INVENTORY_CHECK",
+            "Order reset to start from scratch - all sections, tasks, and assignments cleared",
           user: confirmedByUser?.name || "Sales User",
           timestamp: now,
         })

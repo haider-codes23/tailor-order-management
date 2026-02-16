@@ -339,6 +339,14 @@ const getMyAssignments = http.get(`${BASE_URL}/my-assignments`, async ({ request
 
     // Count tasks for each section
     const sectionsWithTaskCounts = sections.map((section) => {
+      // ── NEW: If section is pending alteration rework, reset task counts ──
+      if (section.isAlteration && section.status === SECTION_STATUS.READY_FOR_PRODUCTION) {
+        return {
+          ...section,
+          tasksCount: 0,
+          completedTasks: 0,
+        }
+      }
       const sectionTasks = mockProductionTasks.filter(
         (t) => t.orderItemId === assignment.orderItemId && t.sectionName === section.name
       )
@@ -572,6 +580,20 @@ const getSectionTasks = http.get(
   `${BASE_URL}/order-item/:orderItemId/section/:sectionName/tasks`,
   async ({ params }) => {
     const { orderItemId, sectionName } = params
+
+    // ── NEW: If section is pending alteration rework, hide old tasks ──
+    const orderItem = findOrderItem(orderItemId)
+    const sectionKey = sectionName.toLowerCase()
+    const sectionData = orderItem?.sectionStatuses?.[sectionKey]
+
+    if (sectionData?.isAlteration && sectionData?.status === SECTION_STATUS.READY_FOR_PRODUCTION) {
+      // Old tasks from pre-alteration round should not be shown.
+      // They will be cleaned up when createSectionTasks runs.
+      return HttpResponse.json({
+        success: true,
+        data: { tasks: [], count: 0 },
+      })
+    }
 
     const tasks = mockProductionTasks
       .filter(

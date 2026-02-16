@@ -303,10 +303,29 @@ export default function SalesApprovalDashboardPage() {
             }
 
             // Normal state — show action buttons
+            // Normal state — show action buttons
             return (
               <>
                 <div className="text-xs text-gray-500 mb-2">Client Response:</div>
-                <div className="grid grid-cols-2 gap-2">{/* ... existing buttons ... */}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => handleClientApproved(order)}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5 mr-1" />
+                    Client Approved
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-200 text-red-600 hover:bg-red-50"
+                    onClick={() => handleClientNotSatisfied(order)}
+                  >
+                    <XCircle className="h-3.5 w-3.5 mr-1" />
+                    Client Not Satisfied
+                  </Button>
+                </div>
               </>
             )
           })()}
