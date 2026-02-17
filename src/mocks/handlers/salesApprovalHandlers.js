@@ -35,6 +35,7 @@ import { mockOrders, mockOrderItems } from "../data/mockOrders"
 import { mockUsers } from "../data/mockUser"
 import { ORDER_STATUS, ORDER_ITEM_STATUS, SECTION_STATUS } from "@/constants/orderConstants"
 import { mockProductionTasks, mockProductionAssignments } from "../data/mockProductionTasks"
+import { mockProcurementDemands } from "../data/mockProcurementDemands"
 
 const BASE_URL = `${appConfig.apiBaseUrl}/sales`
 
@@ -654,6 +655,12 @@ const startFromScratch = http.post(
     // ── Step 1: Collect order item IDs for this order ──
     const orderItemIds = mockOrderItems.filter((oi) => oi.orderId === orderId).map((oi) => oi.id)
 
+    for (let i = mockProcurementDemands.length - 1; i >= 0; i--) {
+      if (orderItemIds.includes(mockProcurementDemands[i].orderItemId)) {
+        mockProcurementDemands.splice(i, 1)
+      }
+    }
+
     // ── Step 2: Remove all production tasks for these order items ──
     // (In a real backend, you'd mark as SUPERSEDED; in MSW, we remove them)
     for (let i = mockProductionTasks.length - 1; i >= 0; i--) {
@@ -691,28 +698,29 @@ const startFromScratch = http.post(
 
         // Reset all section statuses — CLEAN reset, no stale properties
         if (oi.sectionStatuses) {
+          const cleanStatuses = {}
           Object.keys(oi.sectionStatuses).forEach((sectionKey) => {
-            const oldSection = oi.sectionStatuses[sectionKey]
-
-            // Archive QA data before clearing
-            const archivedQaData = oldSection.qaData || null
-
-            // Build a CLEAN section object — only keep BOM/inventory-related base data
-            mockOrderItems[idx].sectionStatuses[sectionKey] = {
-              // Preserve structural identity
-              name: oldSection.name,
-              // Reset status
-              status: SECTION_STATUS.PENDING_INVENTORY_CHECK,
-              updatedAt: now,
-              // Archive old QA data
-              archivedQaData,
-              // ── Everything else is intentionally NOT carried over ──
-              // NO: pickList, packetId, dyeingAcceptedBy, dyeingCompletedAt,
-              //     productionStartedAt, isAlteration, alterationNotes,
-              //     qaData, qaRejectionReason, qaRejectionNotes, etc.
+            const normalized = sectionKey.toLowerCase()
+            // Skip duplicates — keep only one entry per normalized key
+            if (!cleanStatuses[normalized]) {
+              const oldSection = oi.sectionStatuses[sectionKey]
+              const archivedQaData = oldSection.qaData || null
+              cleanStatuses[normalized] = {
+                name: oldSection.name || sectionKey,
+                status: SECTION_STATUS.PENDING_INVENTORY_CHECK,
+                updatedAt: now,
+                archivedQaData,
+              }
             }
           })
+          mockOrderItems[idx].sectionStatuses = cleanStatuses
         }
+
+        // Clear stale inventory check data from previous lifecycle
+        delete mockOrderItems[idx].materialRequirements
+        delete mockOrderItems[idx].stockDeductions
+        delete mockOrderItems[idx].lastInventoryCheck
+        delete mockOrderItems[idx].sectionsInventoryChecked
 
         // Timeline on order item
         if (!oi.timeline) mockOrderItems[idx].timeline = []

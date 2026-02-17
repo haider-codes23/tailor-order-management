@@ -564,9 +564,7 @@ export const ordersHandlers = [
     )
 
     // Initialize sectionStatuses if not exists
-    if (!item.sectionStatuses) {
-      mockOrderItems[itemIndex].sectionStatuses = {}
-    }
+    mockOrderItems[itemIndex].sectionStatuses = {}
 
     // Get BOM items (from standard BOM or custom BOM)
     let allBOMItems = []
@@ -683,7 +681,7 @@ export const ordersHandlers = [
       }
 
       sectionResults.push({
-        piece: section.piece,
+        piece: sectionPiece,
         type: section.type,
         passed: sectionPassed,
         requirements: sectionRequirements,
@@ -691,7 +689,7 @@ export const ordersHandlers = [
       })
 
       if (sectionPassed) {
-        passedSections.push(section.piece)
+        passedSections.push(sectionPiece)
 
         // Deduct stock for passed sections
         sectionRequirements.forEach((req) => {
@@ -728,7 +726,7 @@ export const ordersHandlers = [
           }
         })
       } else {
-        failedSections.push(section.piece)
+        failedSections.push(sectionPiece)
 
         // Create procurement demands for failed sections
         sectionShortages.forEach((shortage) => {
@@ -743,7 +741,7 @@ export const ordersHandlers = [
             availableQty: shortage.availableQty,
             shortageQty: shortage.shortageQty,
             unit: shortage.unit,
-            affectedSection: section.piece, // NEW: Track which section
+            affectedSection: sectionPiece, // NEW: Track which section
             status: "OPEN",
             createdAt: now,
             updatedAt: now,
@@ -1094,7 +1092,7 @@ export const ordersHandlers = [
             })
 
           sectionResults.push({
-            piece: sectionName,
+            piece: sectionPiece,
             passed: true,
             requirements: sectionRequirements,
           })
@@ -1115,7 +1113,7 @@ export const ordersHandlers = [
           }
 
           sectionResults.push({
-            piece: sectionName,
+            piece: sectionPiece,
             passed: false,
             requirements: sectionRequirements,
             shortages: sectionShortages,
