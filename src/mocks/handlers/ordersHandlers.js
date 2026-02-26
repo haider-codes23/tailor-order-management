@@ -134,6 +134,7 @@ export const ordersHandlers = [
       currency: data.currency,
       paymentMethod: data.paymentMethod,
       discount: data.discount || 0,
+      extraPayment: data.extraPayment || 0,
       totalAmount: data.totalAmount || 0,
       payments: [],
       paymentStatus: "PENDING",
@@ -237,6 +238,12 @@ export const ordersHandlers = [
       receiptUrl: data.receiptUrl || null,
       createdAt: new Date().toISOString(),
     }
+
+    // Safety: Initialize payments array if it doesn't exist (legacy seed data)
+    if (!mockOrders[orderIndex].payments) {
+      mockOrders[orderIndex].payments = []
+    }
+
     mockOrders[orderIndex].payments.push(newPayment)
     mockOrders[orderIndex].updatedAt = new Date().toISOString()
     const totalPaid = mockOrders[orderIndex].payments.reduce((sum, p) => sum + p.amount, 0)
@@ -252,6 +259,11 @@ export const ordersHandlers = [
     if (orderIndex === -1) {
       return HttpResponse.json({ error: "Order not found" }, { status: 404 })
     }
+
+    if (!mockOrders[orderIndex].payments) {
+      return HttpResponse.json({ error: "No payments found" }, { status: 404 })
+    }
+
     const paymentIndex = mockOrders[orderIndex].payments.findIndex((p) => p.id === params.paymentId)
     if (paymentIndex === -1) {
       return HttpResponse.json({ error: "Payment not found" }, { status: 404 })

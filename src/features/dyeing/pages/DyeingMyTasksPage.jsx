@@ -24,16 +24,14 @@ import DyeingStartDialog from "../components/DyeingStartDialog"
 import DyeingCompleteDialog from "../components/DyeingCompleteDialog"
 import DyeingRejectionDialog from "../components/DyeingRejectionDialog"
 import { SECTION_STATUS } from "@/constants/orderConstants"
+import SortControl from "@/components/ui/SortControl"
+import { applySortToTasks } from "@/utils/sortHelper"
 
 export default function DyeingMyTasksPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const [filters, setFilters] = useState({
-    search: "",
-    sortBy: "fwd_asc",
-    priority: null,
-  })
+  const [sortBy, setSortBy] = useState("fwd_asc")
 
   // Dialog states
   const [startDialog, setStartDialog] = useState({ open: false, task: null, sections: [] })
@@ -47,7 +45,7 @@ export default function DyeingMyTasksPage() {
     isError,
     error,
     refetch,
-  } = useDyeingMyTasks(user?.id, filters)
+  } = useDyeingMyTasks(user?.id)
 
   // Mutations
   const startMutation = useStartDyeing()
@@ -56,34 +54,8 @@ export default function DyeingMyTasksPage() {
 
   const tasks = tasksData || tasksData?.data || []
 
-  // Filter tasks client-side
-  const filteredTasks = tasks.filter((task) => {
-    if (!filters.search) return true
-    const search = filters.search.toLowerCase()
-    return (
-      task.orderNumber?.toLowerCase().includes(search) ||
-      task.customerName?.toLowerCase().includes(search) ||
-      task.productName?.toLowerCase().includes(search)
-    )
-  })
-
   // Sort tasks
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    switch (filters.sortBy) {
-      case "fwd_asc":
-        return new Date(a.fwdDate || 0) - new Date(b.fwdDate || 0)
-      case "fwd_desc":
-        return new Date(b.fwdDate || 0) - new Date(a.fwdDate || 0)
-      case "priority_desc":
-        return (b.priority ? 1 : 0) - (a.priority ? 1 : 0)
-      case "accepted_asc":
-        return new Date(a.acceptedAt || 0) - new Date(b.acceptedAt || 0)
-      case "accepted_desc":
-        return new Date(b.acceptedAt || 0) - new Date(a.acceptedAt || 0)
-      default:
-        return 0
-    }
-  })
+  const sortedTasks = applySortToTasks(tasks, sortBy)
 
   const handleViewDetails = (task) => {
     navigate(`/dyeing/task/${task.orderItemId}`)
@@ -208,17 +180,7 @@ export default function DyeingMyTasksPage() {
       </div>
 
       {/* Filters */}
-      <DyeingFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        sortOptions={[
-          { value: "fwd_asc", label: "FWD Date (Earliest First)" },
-          { value: "fwd_desc", label: "FWD Date (Latest First)" },
-          { value: "priority_desc", label: "Priority (High First)" },
-          { value: "accepted_asc", label: "Date Accepted (Oldest First)" },
-          { value: "accepted_desc", label: "Date Accepted (Newest First)" },
-        ]}
-      />
+      <SortControl value={sortBy} onChange={setSortBy} />
 
       {/* Tasks List */}
       {isError ? (

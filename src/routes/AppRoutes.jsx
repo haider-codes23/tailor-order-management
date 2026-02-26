@@ -62,6 +62,8 @@ import QADashboardPage from "@/features/qa/pages/QADashboardPage"
 
 import SalesApprovalDashboardPage from "@/features/sales/pages/SalesApprovalDashboardPage"
 
+import DispatchDashboardPage from "@/features/dispatch/pages/DispatchDashboardPage"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -357,6 +359,18 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute requiredPermissions={["orders.view"]}>
                 <SalesApprovalDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== DISPATCH ROUTES (Phase 15) ==================== */}
+        <Route path="/dispatch">
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={["dispatch.view"]}>
+                <DispatchDashboardPage />
               </ProtectedRoute>
             }
           />

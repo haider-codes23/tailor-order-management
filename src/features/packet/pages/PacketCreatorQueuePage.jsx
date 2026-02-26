@@ -9,21 +9,9 @@ import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import SortControl from "@/components/ui/SortControl"
+import { applySortToTasks } from "@/utils/sortHelper"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import {
   Package,
   Clock,
@@ -55,23 +43,10 @@ export default function PacketCreatorQueuePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("assigned")
-  
-  // Date filter state
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [filterType, setFilterType] = useState("created")
-  const [dateFrom, setDateFrom] = useState("")
-  const [dateTo, setDateTo] = useState("")
-  
-  // Build date filters object for the hook
-  const dateFilters = {
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
-    filterType: (dateFrom || dateTo) ? filterType : undefined,
-  }
-  
-  const hasActiveFilters = dateFrom || dateTo
 
-  const { data, isLoading, isError } = useMyPacketTasks(user?.id, null, dateFilters)
+  const [sortBy, setSortBy] = useState("fwd_asc")
+
+  const { data, isLoading, isError } = useMyPacketTasks(user?.id)
   const startPacket = useStartPacket()
 
   const packets = data?.data || []
@@ -88,6 +63,35 @@ export default function PacketCreatorQueuePage() {
         return packet.status === PACKET_STATUS.COMPLETED || packet.status === PACKET_STATUS.APPROVED
       default:
         return true
+    }
+  })
+
+  const sortedPackets = [...filteredPackets].sort((a, b) => {
+    switch (sortBy) {
+      case "product_asc":
+        return (a.orderItemDetails?.productName || "").localeCompare(
+          b.orderItemDetails?.productName || ""
+        )
+      case "product_desc":
+        return (b.orderItemDetails?.productName || "").localeCompare(
+          a.orderItemDetails?.productName || ""
+        )
+      case "productionDate_asc":
+        return (
+          new Date(a.orderDetails?.productionShippingDate || 0) -
+          new Date(b.orderDetails?.productionShippingDate || 0)
+        )
+      case "productionDate_desc":
+        return (
+          new Date(b.orderDetails?.productionShippingDate || 0) -
+          new Date(a.orderDetails?.productionShippingDate || 0)
+        )
+      case "fwd_asc":
+        return new Date(a.orderDetails?.fwdDate || 0) - new Date(b.orderDetails?.fwdDate || 0)
+      case "fwd_desc":
+        return new Date(b.orderDetails?.fwdDate || 0) - new Date(a.orderDetails?.fwdDate || 0)
+      default:
+        return 0
     }
   })
 
@@ -134,110 +138,13 @@ export default function PacketCreatorQueuePage() {
       {/* Header */}
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold">My Packet Tasks</h1>
-        <p className="text-muted-foreground">
-          Packets assigned to you for material picking
-        </p>
+        <p className="text-muted-foreground">Packets assigned to you for material picking</p>
       </div>
 
       {/* Date Filter Section */}
-      <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-        <Card>
-          <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
-                  <CardTitle className="text-base font-medium">
-                    Filter by Date
-                  </CardTitle>
-                  {hasActiveFilters && (
-                    <Badge variant="secondary" className="ml-2">
-                      Active
-                    </Badge>
-                  )}
-                </div>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${
-                    isFilterOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
-            </CardHeader>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent>
-            <CardContent className="pt-0 pb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Filter Type */}
-                <div className="space-y-2">
-                  <Label htmlFor="filterType">Filter By</Label>
-                  <Select value={filterType} onValueChange={setFilterType}>
-                    <SelectTrigger id="filterType">
-                      <SelectValue placeholder="Select date type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DATE_FILTER_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Date From */}
-                <div className="space-y-2">
-                  <Label htmlFor="dateFrom">From Date</Label>
-                  <Input
-                    id="dateFrom"
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                  />
-                </div>
-
-                {/* Date To */}
-                <div className="space-y-2">
-                  <Label htmlFor="dateTo">To Date</Label>
-                  <Input
-                    id="dateTo"
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                  />
-                </div>
-
-                {/* Clear Button */}
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={handleClearFilters}
-                    disabled={!hasActiveFilters}
-                    className="w-full sm:w-auto"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Clear Filters
-                  </Button>
-                </div>
-              </div>
-
-              {/* Active Filter Summary */}
-              {hasActiveFilters && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">Active filter:</span>{" "}
-                    {DATE_FILTER_TYPES.find((t) => t.value === filterType)?.label}
-                    {dateFrom && ` from ${format(new Date(dateFrom), "MMM d, yyyy")}`}
-                    {dateTo && ` to ${format(new Date(dateTo), "MMM d, yyyy")}`}
-                    {" · "}
-                    <span className="font-medium">{packets.length}</span> packets found
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
+      <div className="flex justify-end">
+        <SortControl value={sortBy} onChange={setSortBy} />
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -285,23 +192,21 @@ export default function PacketCreatorQueuePage() {
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
-          {filteredPackets.length === 0 ? (
+          {sortedPackets.length === 0 ? (
             <Card>
               <CardContent className="pt-6">
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="font-medium text-lg">No packets found</h3>
                   <p className="text-muted-foreground text-sm mt-1">
-                    {hasActiveFilters
-                      ? "Try adjusting your date filters"
-                      : `No ${activeTab} packets at the moment`}
+                    No assigned packets at the moment
                   </p>
                 </div>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
-              {filteredPackets.map((packet) => (
+              {sortedPackets.map((packet) => (
                 <PacketCard
                   key={packet.id}
                   packet={packet}
@@ -340,8 +245,7 @@ function PacketCard({ packet, onStart, onView, isStarting }) {
                 <PacketStatusBadge status={packet.status} />
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                {packet.orderItemDetails?.productSku} · Size:{" "}
-                {packet.orderItemDetails?.size}
+                {packet.orderItemDetails?.productSku} · Size: {packet.orderItemDetails?.size}
               </p>
             </div>
             {packet.packetRound > 1 && (
@@ -406,12 +310,7 @@ function PacketCard({ packet, onStart, onView, isStarting }) {
           {/* Actions */}
           <div className="flex gap-2 pt-1">
             {canStart && (
-              <Button
-                size="sm"
-                onClick={onStart}
-                disabled={isStarting}
-                className="flex-1"
-              >
+              <Button size="sm" onClick={onStart} disabled={isStarting} className="flex-1">
                 {isStarting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (

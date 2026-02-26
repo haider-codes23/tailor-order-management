@@ -30,19 +30,14 @@ import {
 import { format } from "date-fns"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { useDyeingCompletedTasks } from "../../../hooks/usedyeing"
-import DyeingFilters from "../components/DyeingFilters"
+import SortControl from "@/components/ui/SortControl"
+import { applySortToTasks } from "@/utils/sortHelper"
 
 export default function DyeingCompletedTasksPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const [filters, setFilters] = useState({
-    search: "",
-    sortBy: "completed_desc",
-    priority: null,
-    dateFrom: null,
-    dateTo: null,
-  })
+  const [sortBy, setSortBy] = useState("fwd_desc")
 
   const [page, setPage] = useState(1)
   const pageSize = 10
@@ -56,7 +51,6 @@ export default function DyeingCompletedTasksPage() {
     refetch,
   } = useDyeingCompletedTasks({
     userId: user?.id,
-    ...filters,
     page,
     limit: pageSize,
   })
@@ -64,6 +58,7 @@ export default function DyeingCompletedTasksPage() {
   // Handle both wrapped and unwrapped responses
   // API might return { tasks: [...], meta: {...} } or just [...]
   const tasks = Array.isArray(tasksData) ? tasksData : tasksData?.tasks || tasksData?.data || []
+  const sortedTasks = applySortToTasks(tasks, sortBy)
   const totalCount = tasksData?.meta?.total || tasks.length
   const totalPages = tasksData?.meta?.totalPages || Math.ceil(totalCount / pageSize)
 
@@ -128,20 +123,9 @@ export default function DyeingCompletedTasksPage() {
       </div>
 
       {/* Filters */}
-      <DyeingFilters
-        filters={filters}
-        onFiltersChange={(newFilters) => {
-          setFilters(newFilters)
-          setPage(1) // Reset to first page when filters change
-        }}
-        showDateRange={true}
-        sortOptions={[
-          { value: "completed_desc", label: "Date Completed (Recent First)" },
-          { value: "completed_asc", label: "Date Completed (Oldest First)" },
-          { value: "fwd_asc", label: "FWD Date (Earliest First)" },
-          { value: "fwd_desc", label: "FWD Date (Latest First)" },
-        ]}
-      />
+      <div className="flex justify-end">
+        <SortControl value={sortBy} onChange={setSortBy} />
+      </div>
 
       {/* Tasks Table */}
       {isError ? (
@@ -150,17 +134,13 @@ export default function DyeingCompletedTasksPage() {
             <p className="text-red-800">Error loading tasks: {error?.message}</p>
           </CardContent>
         </Card>
-      ) : tasks.length === 0 ? (
+      ) : sortedTasks.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
               <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No completed tasks</h3>
-              <p className="text-muted-foreground">
-                {filters.search || filters.dateFrom || filters.dateTo
-                  ? "No tasks match your filter criteria"
-                  : "You haven't completed any dyeing tasks yet"}
-              </p>
+              <p className="text-muted-foreground">You haven't completed any dyeing tasks yet</p>
             </div>
           </CardContent>
         </Card>
@@ -185,7 +165,7 @@ export default function DyeingCompletedTasksPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((task, index) => (
+                {sortedTasks.map((task, index) => (
                   <TableRow key={`${task.orderItemId}-${task.completedAt || index}`}>
                     <TableCell>
                       <div>

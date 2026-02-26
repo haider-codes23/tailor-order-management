@@ -34,10 +34,14 @@ import { useMyAssignments, useSendSectionToQA } from "@/hooks/useProduction"
 import { formatDate } from "../../../utils/formatters"
 import { SECTION_STATUS_CONFIG } from "@/constants/orderConstants"
 import TaskTimelineView from "./TaskTimelineView"
+import SortControl from "@/components/ui/SortControl"
+import { applySortToTasks } from "@/utils/sortHelper"
 
 export default function ProductionHeadDashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState("active")
+  const [activeSortBy, setActiveSortBy] = useState("fwd_asc")
+  const [completedSortBy, setCompletedSortBy] = useState("fwd_desc")
 
   // Fetch assigned order items
   const { data: assignments = [], isLoading, error } = useMyAssignments()
@@ -60,6 +64,9 @@ export default function ProductionHeadDashboard() {
     )
     return allQAOrBeyond
   })
+
+  const sortedActiveAssignments = applySortToTasks(activeAssignments, activeSortBy)
+  const sortedCompletedAssignments = applySortToTasks(completedAssignments, completedSortBy)
 
   // Loading state
   if (isLoading) {
@@ -157,7 +164,10 @@ export default function ProductionHeadDashboard() {
         </TabsList>
 
         <TabsContent value="active" className="mt-4">
-          {activeAssignments.length === 0 ? (
+          <div className="flex justify-end mb-4">
+            <SortControl value={activeSortBy} onChange={setActiveSortBy} />
+          </div>
+          {sortedActiveAssignments.length === 0 ? (
             <EmptyState
               icon={Factory}
               title="No Active Assignments"
@@ -165,7 +175,7 @@ export default function ProductionHeadDashboard() {
             />
           ) : (
             <div className="space-y-4">
-              {activeAssignments.map((assignment) => (
+              {sortedActiveAssignments.map((assignment) => (
                 <AssignmentCard
                   key={assignment.id}
                   assignment={assignment}
@@ -177,7 +187,10 @@ export default function ProductionHeadDashboard() {
         </TabsContent>
 
         <TabsContent value="completed" className="mt-4">
-          {completedAssignments.length === 0 ? (
+          <div className="flex justify-end mb-4">
+            <SortControl value={completedSortBy} onChange={setCompletedSortBy} />
+          </div>
+          {sortedCompletedAssignments.length === 0 ? (
             <EmptyState
               icon={CheckCircle}
               title="No Completed Items"
@@ -185,7 +198,7 @@ export default function ProductionHeadDashboard() {
             />
           ) : (
             <div className="space-y-4">
-              {completedAssignments.map((assignment) => (
+              {sortedCompletedAssignments.map((assignment) => (
                 <AssignmentCard
                   key={assignment.id}
                   assignment={assignment}

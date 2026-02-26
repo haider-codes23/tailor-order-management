@@ -19,24 +19,35 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Loader2, Search, Scissors, Eye, Package } from "lucide-react"
+import SortControl from "@/components/ui/SortControl"
+import { applySortToTasks } from "@/utils/sortHelper"
 
 export default function FabricationOrdersListPage() {
   const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState("fwd_asc")
 
   const { data: ordersData, isLoading, isError, error } = useFabricationOrders()
 
-  const orders = Array.isArray(ordersData) ? ordersData : (ordersData?.data || [])
+  const orders = Array.isArray(ordersData) ? ordersData : ordersData?.data || []
 
-
-  // Filter orders based on search
-  const filteredOrders = orders.filter((order) => {
-    const search = searchTerm.toLowerCase()
-    return (
-      order.orderNumber?.toLowerCase().includes(search) ||
-      order.customerName?.toLowerCase().includes(search) ||
-      order.consultantName?.toLowerCase().includes(search)
-    )
+  const sortedOrders = [...orders].sort((a, b) => {
+    switch (sortBy) {
+      case "product_asc":
+        // For fabrication, orders have multiple items, sort by order number or first item
+        return (a.orderNumber || "").localeCompare(b.orderNumber || "")
+      case "product_desc":
+        return (b.orderNumber || "").localeCompare(a.orderNumber || "")
+      case "productionDate_asc":
+        return new Date(a.productionShippingDate || 0) - new Date(b.productionShippingDate || 0)
+      case "productionDate_desc":
+        return new Date(b.productionShippingDate || 0) - new Date(a.productionShippingDate || 0)
+      case "fwd_asc":
+        return new Date(a.fwdDate || 0) - new Date(b.fwdDate || 0)
+      case "fwd_desc":
+        return new Date(b.fwdDate || 0) - new Date(a.fwdDate || 0)
+      default:
+        return 0
+    }
   })
 
   const formatDate = (dateString) => {
@@ -88,20 +99,9 @@ export default function FabricationOrdersListPage() {
         </Badge>
       </div>
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by order number, customer, or consultant..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex justify-end">
+        <SortControl value={sortBy} onChange={setSortBy} />
+      </div>
 
       {/* Orders Table */}
       <Card>
@@ -112,15 +112,11 @@ export default function FabricationOrdersListPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {filteredOrders.length === 0 ? (
+          {sortedOrders.length === 0 ? (
             <div className="text-center py-12">
               <Scissors className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No orders in queue</h3>
-              <p className="text-muted-foreground">
-                {searchTerm
-                  ? "No orders match your search criteria"
-                  : "All custom size items have their BOMs created"}
-              </p>
+              <p className="text-muted-foreground">All custom size items have their BOMs created</p>
             </div>
           ) : (
             <Table>
@@ -135,7 +131,7 @@ export default function FabricationOrdersListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredOrders.map((order) => (
+                {sortedOrders.map((order) => (
                   <TableRow key={order.id} className="cursor-pointer hover:bg-slate-50">
                     <TableCell className="font-medium">{order.orderNumber}</TableCell>
                     <TableCell>{order.customerName}</TableCell>

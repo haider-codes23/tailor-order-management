@@ -72,6 +72,7 @@ export default function CreateOrderPage() {
       currency: "USD",
       paymentMethod: "",
       discount: "",
+      extraPayment: "",
       fwdDate: new Date().toISOString().split("T")[0],
       productionShippingDate: "",
       urgent: "none",
@@ -81,6 +82,7 @@ export default function CreateOrderPage() {
 
   // Watch discount for real-time calculation
   const discountValue = watch("discount")
+  const extraPaymentValue = watch("extraPayment")
 
   // Calculate subtotal from order items
   const calculatedSubtotal = useMemo(() => {
@@ -94,8 +96,9 @@ export default function CreateOrderPage() {
   // Calculate final total after discount
   const calculatedTotal = useMemo(() => {
     const discount = parseFloat(discountValue) || 0
-    return Math.max(0, calculatedSubtotal - discount)
-  }, [calculatedSubtotal, discountValue])
+    const extraPayment = parseFloat(extraPaymentValue) || 0
+    return Math.max(0, calculatedSubtotal - discount + extraPayment)
+  }, [calculatedSubtotal, discountValue, extraPaymentValue])
 
   // Handle adding new item
   const handleAddItem = () => {
@@ -162,6 +165,7 @@ export default function CreateOrderPage() {
         ...data,
         urgent: data.urgent === "none" ? "" : data.urgent,
         discount: parseFloat(data.discount) || 0,
+        extraPayment: parseFloat(data.extraPayment) || 0,
         totalAmount: calculatedTotal,
         items: orderItems.map((item) => ({
           productId: item.productId,
@@ -280,7 +284,7 @@ export default function CreateOrderPage() {
           <CardHeader>
             <CardTitle>Payment Information</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <Label>Currency</Label>
               <Controller
@@ -337,6 +341,17 @@ export default function CreateOrderPage() {
             </div>
 
             <div>
+              <Label>Extra Payment</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                {...register("extraPayment")}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
               <Label>Total Amount</Label>
               <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted flex items-center">
                 <span className="font-semibold">
@@ -350,6 +365,9 @@ export default function CreateOrderPage() {
                 <p className="text-xs text-muted-foreground mt-1">
                   Subtotal: {calculatedSubtotal.toLocaleString()} - Discount:{" "}
                   {parseFloat(discountValue) || 0}
+                  {parseFloat(extraPaymentValue) > 0 && (
+                    <> + Extra: {parseFloat(extraPaymentValue) || 0}</>
+                  )}
                 </p>
               )}
             </div>

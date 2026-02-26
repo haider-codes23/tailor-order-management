@@ -14,26 +14,23 @@ import { Loader2, Droplets, ClipboardList, ArrowLeft, RefreshCcw } from "lucide-
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { useDyeingAvailableTasks, useAcceptDyeingSections, useRejectDyeingSections } from "../../../hooks/usedyeing"
 import DyeingTaskCard from "../components/DyeingTaskCard"
-import DyeingFilters from "../components/DyeingFilters"
 import DyeingAcceptDialog from "../components/DyeingAcceptDialog"
 import DyeingRejectionDialog from "../components/DyeingRejectionDialog"
+import SortControl from "@/components/ui/SortControl"
+import { applySortToTasks } from "@/utils/sortHelper"
 
 export default function DyeingAvailableTasksPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const [filters, setFilters] = useState({
-    search: "",
-    sortBy: "fwd_asc",
-    priority: null,
-  })
+  const [sortBy, setSortBy] = useState("fwd_asc")
 
   // Dialog states
   const [acceptDialog, setAcceptDialog] = useState({ open: false, task: null, sections: [] })
   const [rejectDialog, setRejectDialog] = useState({ open: false, task: null, sections: [] })
 
   // Fetch available tasks
-  const { data: tasksData, isLoading, isError, error, refetch } = useDyeingAvailableTasks(filters)
+  const { data: tasksData, isLoading, isError, error, refetch } = useDyeingAvailableTasks()
 
   // Mutations
   const acceptMutation = useAcceptDyeingSections()
@@ -41,30 +38,8 @@ export default function DyeingAvailableTasksPage() {
 
   const tasks = tasksData || tasksData?.data || []
 
-  // Filter and sort tasks client-side (for now)
-  const filteredTasks = tasks.filter((task) => {
-    if (!filters.search) return true
-    const search = filters.search.toLowerCase()
-    return (
-      task.orderNumber?.toLowerCase().includes(search) ||
-      task.customerName?.toLowerCase().includes(search) ||
-      task.productName?.toLowerCase().includes(search)
-    )
-  })
-
   // Sort tasks
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    switch (filters.sortBy) {
-      case "fwd_asc":
-        return new Date(a.fwdDate || 0) - new Date(b.fwdDate || 0)
-      case "fwd_desc":
-        return new Date(b.fwdDate || 0) - new Date(a.fwdDate || 0)
-      case "priority_desc":
-        return (b.priority ? 1 : 0) - (a.priority ? 1 : 0)
-      default:
-        return 0
-    }
-  })
+  const sortedTasks = applySortToTasks(tasks, sortBy)
 
   const handleAcceptAll = (task, sections) => {
     setAcceptDialog({ open: true, task, sections })
@@ -127,15 +102,7 @@ export default function DyeingAvailableTasksPage() {
       </div>
 
       {/* Filters */}
-      <DyeingFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        sortOptions={[
-          { value: "fwd_asc", label: "FWD Date (Earliest First)" },
-          { value: "fwd_desc", label: "FWD Date (Latest First)" },
-          { value: "priority_desc", label: "Priority (High First)" },
-        ]}
-      />
+      <SortControl value={sortBy} onChange={setSortBy} />
 
       {/* Tasks List */}
       {isError ? (
@@ -151,9 +118,7 @@ export default function DyeingAvailableTasksPage() {
               <Droplets className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-slate-900 mb-2">No tasks available</h3>
               <p className="text-muted-foreground">
-                {filters.search
-                  ? "No tasks match your search criteria"
-                  : "All sections are either being worked on or completed"}
+                All sections are either being worked on or completed
               </p>
             </div>
           </CardContent>
