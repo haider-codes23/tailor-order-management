@@ -396,7 +396,7 @@ export default function OrdersListPage() {
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-t">
                 <p className="text-sm text-slate-500">
                   Showing {(pagination.page - 1) * limit + 1} to{" "}
                   {Math.min(pagination.page * limit, pagination.total)} of {pagination.total} orders

@@ -192,7 +192,7 @@ export default function CreateOrderPage() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -511,11 +511,16 @@ export default function CreateOrderPage() {
         </Card>
 
         {/* Submit Buttons */}
-        <div className="flex gap-4 justify-end">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 sm:justify-end">
+          <Button
+            className="w-full sm:w-auto"
+            type="button"
+            variant="outline"
+            onClick={() => navigate(-1)}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={createOrder.isPending}>
+          <Button className="w-full sm:w-auto" type="submit" disabled={createOrder.isPending}>
             {createOrder.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -31,7 +31,8 @@ export const getOrders = async (params = {}) => {
  * Get single order by ID with items
  */
 export const getOrderById = async (orderId) => {
-  return httpClient.get(`/orders/${orderId}`)
+  const response = await httpClient.get(`/orders/${orderId}`)
+  return response.data
 }
 
 /**

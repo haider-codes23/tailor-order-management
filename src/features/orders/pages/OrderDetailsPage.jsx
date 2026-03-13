@@ -181,8 +181,8 @@ export default function OrderDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Button variant="outline" size="sm" onClick={() => navigate("/orders")}>
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
@@ -222,7 +222,7 @@ export default function OrderDetailPage() {
 
       {/* Main Content */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
+        <TabsList className="w-full overflow-x-auto flex-nowrap justify-start">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="items">Items ({order.items?.length || 0})</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -232,7 +232,7 @@ export default function OrderDetailPage() {
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Customer Info */}
-            <div className="bg-white rounded-lg border p-6 space-y-4">
+            <div className="bg-white rounded-lg border p-4 sm:p-6 space-y-4">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Customer Information

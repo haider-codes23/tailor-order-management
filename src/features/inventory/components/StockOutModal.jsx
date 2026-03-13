@@ -53,7 +53,7 @@ export function StockOutModal({ item, open, onClose }) {
    */
   const getCurrentStock = () => {
     if (item.has_variants && selectedVariantId) {
-      const variant = item.variants.find((v) => v.variant_id === parseInt(selectedVariantId))
+      const variant = item.variants.find((v) => String(v.variant_id) === String(selectedVariantId))
       return variant ? variant.remaining_stock : 0
     }
     return item.remaining_stock || 0
@@ -64,7 +64,7 @@ export function StockOutModal({ item, open, onClose }) {
    */
   const getReorderLevel = () => {
     if (item.has_variants && selectedVariantId) {
-      const variant = item.variants.find((v) => v.variant_id === parseInt(selectedVariantId))
+      const variant = item.variants.find((v) => String(v.variant_id) === String(selectedVariantId))
       return variant ? variant.reorder_level : 0
     }
     return item.reorder_level || 0
@@ -110,7 +110,7 @@ export function StockOutModal({ item, open, onClose }) {
     }
 
     if (item.has_variants && selectedVariantId) {
-      stockData.variant_id = parseInt(selectedVariantId)
+      stockData.variant_id = selectedVariantId
     }
 
     // Submit mutation
@@ -151,7 +151,7 @@ export function StockOutModal({ item, open, onClose }) {
 
   const selectedVariant =
     item.has_variants && selectedVariantId
-      ? item.variants.find((v) => v.variant_id === parseInt(selectedVariantId))
+      ? item.variants.find((v) => String(v.variant_id) === String(selectedVariantId))
       : null
 
   return (

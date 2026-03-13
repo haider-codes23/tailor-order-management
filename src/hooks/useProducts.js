@@ -93,8 +93,8 @@ export function useUpdateProduct() {
       queryClient.invalidateQueries({ queryKey: productKeys.lists() })
 
       // Refetch to update UI immediately
-      queryClient.refetchQueries({ queryKey: productKeys.detail(variables.productId) })
-      queryClient.refetchQueries({ queryKey: productKeys.lists() })
+      queryClient.refetchQueries({ queryKey: productKeys.detail(variables.productId), refetchType: "active" })
+      queryClient.refetchQueries({ queryKey: productKeys.lists(), refetchType: "active" })
 
       toast.success("Product updated successfully")
     },

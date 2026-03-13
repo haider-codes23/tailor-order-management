@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Loader2, Save, AlertCircle, UserPlus } from "lucide-react"
+import { ArrowLeft, Loader2, Save, AlertCircle, UserPlus, Eye, EyeOff } from "lucide-react"
 import PermissionSelector from "../components/PermissionSelector"
 
 export default function UserFormPage() {
@@ -30,6 +30,7 @@ export default function UserFormPage() {
 
   // Permissions state (managed separately from form)
   const [selectedPermissions, setSelectedPermissions] = useState([])
+  const [showPassword, setShowPassword] = useState(false)
 
   // Mutations
   const createUserMutation = useCreateUser()
@@ -47,6 +48,7 @@ export default function UserFormPage() {
     defaultValues: {
       name: "",
       email: "",
+      password: "",
       role: "",
       phone: "",
       is_active: true,
@@ -84,6 +86,11 @@ export default function UserFormPage() {
       const userData = {
         ...data,
         permissions: selectedPermissions, // Include permissions
+      }
+
+      // Don't send password on edit unless explicitly provided
+      if (isEditMode && !userData.password) {
+        delete userData.password
       }
 
       if (isEditMode) {
@@ -198,6 +205,51 @@ export default function UserFormPage() {
               />
               {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
             </div>
+
+            {/* Password - Only show on create, not edit */}
+            {!isEditMode && (
+              <div className="space-y-2">
+                <Label htmlFor="password">
+                  Password <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Minimum 6 characters"
+                    className="pr-10"
+                    {...register("password", {
+                      required: !isEditMode ? "Password is required" : false,
+                      minLength: {
+                        value: 6,
+                        message: "Password must be at least 6 characters",
+                      },
+                    })}
+                    disabled={isSubmitting}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-red-500">{errors.password.message}</p>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  The user will use this password to log in. Must be at least 6 characters.
+                </p>
+              </div>
+            )}
 
             {/* Role Label - WITH VALIDATION */}
             <div className="space-y-2">

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { useLogout } from "@/features/auth/hooks/useAuthMutations"
-import { Bell, LogOut, User } from "lucide-react"
+import { Bell, LogOut, Menu, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -16,81 +16,70 @@ import {
 
 /**
  * Topbar Component
- * 
- * Enhanced with logout confirmation dialog and React Query mutation.
- * 
- * The logout flow now works like this:
- * 1. User clicks logout button
- * 2. Confirmation dialog appears asking "Are you sure?"
- * 3. If user clicks Cancel, dialog closes and nothing happens
- * 4. If user clicks Logout, the logout mutation is triggered
- * 5. The mutation calls the API, clears local state, and redirects to login
- * 
- * This pattern of confirmation dialogs for destructive actions will be used
- * throughout the app for things like deleting orders, canceling production, etc.
+ *
+ * Props:
+ * - onMenuClick: () => void — triggers mobile sidebar drawer open
+ *
+ * The hamburger (Menu) icon is only visible below the lg breakpoint.
+ * On desktop (lg+), it's hidden because the sidebar is always visible.
  */
-export default function Topbar() {
+export default function Topbar({ onMenuClick }) {
   const { user } = useAuth()
   const logoutMutation = useLogout()
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
-  /**
-   * Handle logout button click
-   * 
-   * Instead of logging out immediately, we show a confirmation dialog.
-   * This prevents accidental logouts from misclicks.
-   */
   const handleLogoutClick = () => {
     setShowLogoutDialog(true)
   }
 
-  /**
-   * Handle confirmed logout
-   * 
-   * This is called when the user clicks "Logout" in the confirmation dialog.
-   * The mutation will call the API, clear auth state, and redirect to login.
-   */
   const handleConfirmedLogout = () => {
     logoutMutation.mutate()
-    // The mutation's onSuccess callback (defined in useLogout hook) will
-    // clear auth data and redirect to login, so we don't need to do it here
   }
 
   return (
     <>
-      <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white border-b border-slate-200">
-        <div className="flex-1 px-4 flex justify-between items-center">
-          {/* Left side - could add breadcrumbs or page title here later */}
-          <div className="flex-1">
-            {/* Empty for now - we'll add breadcrumbs in a future phase */}
+      <div className="sticky top-0 z-10 flex-shrink-0 flex h-14 sm:h-16 bg-white border-b border-slate-200">
+        <div className="flex-1 px-3 sm:px-4 flex justify-between items-center">
+          {/* Left side — Hamburger on mobile + breadcrumbs area */}
+          <div className="flex items-center gap-2">
+            {/* Hamburger menu — visible only on mobile (below lg) */}
+            <button
+              type="button"
+              className="lg:hidden -ml-1 p-2 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              onClick={onMenuClick}
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            {/* Breadcrumbs / page title area — empty for now */}
+            <div className="flex-1" />
           </div>
 
           {/* Right side - user info and actions */}
-          <div className="ml-4 flex items-center gap-3">
-            {/* Notifications - placeholder for future feature */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Notifications */}
             <button
               className="p-2 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors relative"
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
-              {/* Notification badge - uncomment when you have real notifications */}
-              {/* <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500" /> */}
             </button>
 
             {/* User info */}
-            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-              {/* User avatar placeholder */}
+            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200">
+              {/* User avatar */}
               <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-200 text-slate-600">
                 <User className="h-4 w-4" />
               </div>
 
-              {/* User name and role */}
-              <div className="hidden md:block text-sm">
+              {/* User name and role — hidden on small mobile to save space */}
+              <div className="hidden sm:block text-sm">
                 <div className="font-medium text-slate-900">{user?.name || "User"}</div>
                 <div className="text-slate-500">{user?.role || "Role"}</div>
               </div>
 
-              {/* Logout button - now triggers confirmation dialog */}
+              {/* Logout button */}
               <Button
                 variant="ghost"
                 size="sm"

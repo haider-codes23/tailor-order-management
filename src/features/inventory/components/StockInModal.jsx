@@ -93,7 +93,7 @@ export function StockInModal({ item, open, onClose }) {
 
     // For variant items, include which variant is being updated
     if (item.has_variants && selectedVariantId) {
-      stockData.variant_id = parseInt(selectedVariantId)
+      stockData.variant_id = selectedVariantId
     }
 
     // Call the mutation with success and error handlers
@@ -147,7 +147,7 @@ export function StockInModal({ item, open, onClose }) {
    */
   const selectedVariant =
     item.has_variants && selectedVariantId
-      ? item.variants.find((v) => v.variant_id === parseInt(selectedVariantId))
+      ? item.variants.find((v) => String(v.variant_id) === String(selectedVariantId))
       : null
 
   return (

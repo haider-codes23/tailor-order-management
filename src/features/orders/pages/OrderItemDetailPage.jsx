@@ -423,7 +423,7 @@ export default function OrderItemDetailPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="w-full overflow-x-auto flex-nowrap justify-start">
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="form">Order Form</TabsTrigger>
           {/* Packet Tab - show whenever a packet exists for this order item */}
@@ -1161,7 +1161,7 @@ export default function OrderItemDetailPage() {
       {/* Form Preview Modal */}
       {/* Form Preview Modal */}
       <Dialog open={showFormPreview} onOpenChange={setShowFormPreview}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto sm:mx-4">
           <DialogHeader>
             <DialogTitle>Order Form Preview</DialogTitle>
           </DialogHeader>
@@ -1179,7 +1179,7 @@ export default function OrderItemDetailPage() {
                 <h3 className="font-semibold text-slate-900 mb-3 pb-2 border-b border-slate-200">
                   Basic Information
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 text-sm">
                   <div>
                     <span className="text-slate-600">Order No:</span>
                     <p className="font-semibold text-slate-900">{item.orderForm.orderNumber}</p>

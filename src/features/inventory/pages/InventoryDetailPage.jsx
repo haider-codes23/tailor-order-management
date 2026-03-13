@@ -51,14 +51,14 @@ export default function InventoryDetailPage() {
     isFetching: itemFetching,
     isError: itemError,
     error,
-  } = useInventoryItem(parseInt(id))
+  } = useInventoryItem(id)
 
   // Fetch stock movements with isFetching state
   const {
     data: movementsData,
     isLoading: movementsLoading,
     isFetching: movementsFetching,
-  } = useStockMovements(parseInt(id))
+  } = useStockMovements(id)
 
   /**
    * Loading State
@@ -261,11 +261,11 @@ export default function InventoryDetailPage() {
                 <div className="text-3xl font-bold">
                   {item.has_variants
                     ? item.variants
-                        .reduce(
-                          (sum, v) => sum + v.remaining_stock * (v.price || item.base_price || 0),
-                          0
-                        )
-                        .toLocaleString()
+                      .reduce(
+                        (sum, v) => sum + v.remaining_stock * (v.price || item.base_price || 0),
+                        0
+                      )
+                      .toLocaleString()
                     : ((item.remaining_stock || 0) * (item.unit_price || 0)).toLocaleString()}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">PKR</p>

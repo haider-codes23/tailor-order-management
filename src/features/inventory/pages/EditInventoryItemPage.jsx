@@ -160,7 +160,7 @@ export default function EditInventoryItemPage() {
 
     // Submit the mutation
     updateItem.mutate(
-      { itemId: parseInt(id), updates },
+      { itemId: id, updates },
       {
         onSuccess: () => {
           toast({

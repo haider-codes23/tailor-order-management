@@ -175,7 +175,7 @@ export const HEIGHT_CHART_FIELDS = [
 ]
 
 // ==================== PRODUCTS ====================
-
+Products
 export const mockProducts = [
   // 1. ROUGE LEGACY - Bridal (Peshwas, Lehnga, Dupatta + Pouch, Veil)
   {
@@ -1883,22 +1883,22 @@ function generateBOMs() {
       ...product.add_ons.map((a) => a.piece),
     ]
 
-    // Create BOMs for common sizes (M and L for each product)
-    ;["M", "L"].forEach((size, sizeIdx) => {
-      boms.push({
-        id: `bom_${bomId}`,
-        product_id: product.id,
-        size: size,
-        version: 1,
-        name: `Size ${size} - Version 1`,
-        is_active: true,
-        notes: `Standard BOM for ${product.name} - Size ${size}`,
-        pieces: allPieces, // Derived from product
-        created_at: product.created_at,
-        updated_at: product.updated_at,
+      // Create BOMs for common sizes (M and L for each product)
+      ;["M", "L"].forEach((size, sizeIdx) => {
+        boms.push({
+          id: `bom_${bomId}`,
+          product_id: product.id,
+          size: size,
+          version: 1,
+          name: `Size ${size} - Version 1`,
+          is_active: true,
+          notes: `Standard BOM for ${product.name} - Size ${size}`,
+          pieces: allPieces, // Derived from product
+          created_at: product.created_at,
+          updated_at: product.updated_at,
+        })
+        bomId++
       })
-      bomId++
-    })
   })
 
   return boms
