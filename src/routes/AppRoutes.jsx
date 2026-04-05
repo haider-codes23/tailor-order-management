@@ -355,9 +355,9 @@ export default function AppRoutes() {
         {/* ==================== SALES APPROVAL ROUTES (Phase 14) ==================== */}
         <Route path="/sales">
           <Route
-            path="approval"
+            index
             element={
-              <ProtectedRoute requiredPermissions={["orders.view"]}>
+              <ProtectedRoute requiredPermissions={["sales.view_approval_queue"]}>
                 <SalesApprovalDashboardPage />
               </ProtectedRoute>
             }

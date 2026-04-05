@@ -59,9 +59,8 @@ export default function ProcurementDashboardPage() {
   const [newStatus, setNewStatus] = useState("")
   const [notes, setNotes] = useState("")
 
-  const { data: demandsData, isLoading: demandsLoading } = useProcurementDemands(
-    statusFilter !== "all" ? { status: statusFilter } : {}
-  )
+  const demandsParams = statusFilter !== "all" ? { status: statusFilter } : undefined
+  const { data: demandsData, isLoading: demandsLoading } = useProcurementDemands(demandsParams)
   const { data: statsData } = useProcurementStats()
   const updateDemand = useUpdateProcurementDemand()
 

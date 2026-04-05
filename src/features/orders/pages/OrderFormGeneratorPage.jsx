@@ -209,7 +209,9 @@ export default function OrderFormGeneratorPage() {
 
   // Get product-specific size measurements from chart
   const sizeChartRows = sizeChartData?.rows || []
-  const sizeRow = sizeChartRows.find((row) => row.size_code === item?.size)
+  const sizeRow = sizeChartRows.find(
+    (row) => row.size_code?.toUpperCase() === item?.size?.toUpperCase()
+  )
 
   // Get enabled fields for this product
   const enabledSizeFields = productCharts?.enabled_size_fields || []
@@ -232,25 +234,25 @@ export default function OrderFormGeneratorPage() {
   const heightRow =
     order?.clientHeight && hasHeightChart
       ? heightChartRows.find((row) => {
-          if (row.height_range === order.clientHeight) return true
-          const normalizeHeight = (str) => {
-            if (!str) return ""
-            return str
-              .toLowerCase()
-              .replace(/ft/g, "'")
-              .replace(/in/g, "")
-              .replace(/['"\s-]/g, "")
-          }
-          const extractNumbers = (str) => {
-            if (!str) return ""
-            const numbers = str.match(/\d+/g)
-            return numbers ? numbers.join("") : ""
-          }
-          const normalizedRow = normalizeHeight(row.height_range)
-          const normalizedOrder = normalizeHeight(order.clientHeight)
-          if (normalizedRow === normalizedOrder) return true
-          return extractNumbers(row.height_range) === extractNumbers(order.clientHeight)
-        })
+        if (row.height_range === order.clientHeight) return true
+        const normalizeHeight = (str) => {
+          if (!str) return ""
+          return str
+            .toLowerCase()
+            .replace(/ft/g, "'")
+            .replace(/in/g, "")
+            .replace(/['"\s-]/g, "")
+        }
+        const extractNumbers = (str) => {
+          if (!str) return ""
+          const numbers = str.match(/\d+/g)
+          return numbers ? numbers.join("") : ""
+        }
+        const normalizedRow = normalizeHeight(row.height_range)
+        const normalizedOrder = normalizeHeight(order.clientHeight)
+        if (normalizedRow === normalizedOrder) return true
+        return extractNumbers(row.height_range) === extractNumbers(order.clientHeight)
+      })
       : null
 
   // Extract only enabled height measurement fields
@@ -277,8 +279,8 @@ export default function OrderFormGeneratorPage() {
       if (!hasSizeChart) {
         toast.warning(
           "This product doesn't have a measurement size chart configured. The order form will be generated without standard measurements. Please configure measurements in Products → " +
-            (product?.name || item?.productName) +
-            " → Measurements tab.",
+          (product?.name || item?.productName) +
+          " → Measurements tab.",
           { duration: 8000, id: "no-size-chart" }
         )
       }
@@ -527,19 +529,17 @@ export default function OrderFormGeneratorPage() {
           <div class="grid-2">
             <div class="field">
               <label>Included Items:</label>
-              ${
-                item?.includedItems && item.includedItems.length > 0
-                  ? `<div class="included-items">${item.includedItems.map((i) => `<span class="included-badge green">${i.piece}</span>`).join("")}</div>`
-                  : `<p>None specified</p>`
-              }
+              ${item?.includedItems && item.includedItems.length > 0
+        ? `<div class="included-items">${item.includedItems.map((i) => `<span class="included-badge green">${i.piece}</span>`).join("")}</div>`
+        : `<p>None specified</p>`
+      }
             </div>
             <div class="field">
               <label>Selected Add-ons:</label>
-              ${
-                item?.selectedAddOns && item.selectedAddOns.length > 0
-                  ? `<div class="included-items">${item.selectedAddOns.map((a) => `<span class="included-badge amber">${a.piece}</span>`).join("")}</div>`
-                  : `<p>No add-ons selected</p>`
-              }
+              ${item?.selectedAddOns && item.selectedAddOns.length > 0
+        ? `<div class="included-items">${item.selectedAddOns.map((a) => `<span class="included-badge amber">${a.piece}</span>`).join("")}</div>`
+        : `<p>No add-ons selected</p>`
+      }
             </div>
           </div>
         </div>
@@ -568,134 +568,128 @@ export default function OrderFormGeneratorPage() {
           </div>
         </div>
 
-        ${
-          printHasAnyCustomization
-            ? `
+        ${printHasAnyCustomization
+        ? `
         <div class="section">
           <div class="section-title">Garment Details</div>
           <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
             ${GARMENT_CATEGORIES.map((cat) => {
-              const notes = generatedFormData?.garmentNotes?.[cat]
-              let content = ""
-              if (printIsStyleCustomized) {
-                content += `<p style="font-weight:600;color:#7c3aed;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">Style</p>`
-                content += `<ul style="list-style-type:disc;padding-left:20px;font-size:11px;margin:0 0 6px 0;">`
-                content += `<li>Silhouette: <strong>${notes?.silhouette || "—"}</strong></li>`
-                content += `<li>Front: <strong>${notes?.front || "—"}</strong></li>`
-                content += `<li>Back: <strong>${notes?.back || "—"}</strong></li>`
-                content += `</ul>`
-              }
-              if (printIsColorCustomized) {
-                content += `<p style="font-weight:600;color:#e11d48;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">Color</p>`
-                content += `<ul style="list-style-type:disc;padding-left:20px;font-size:11px;margin:0 0 6px 0;">`
-                content += `<li>Dress Color: <strong>${notes?.dressColor || "—"}</strong></li>`
-                content += `</ul>`
-              }
-              if (printIsFabricCustomized) {
-                content += `<p style="font-weight:600;color:#d97706;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">Fabric</p>`
-                content += `<ul style="list-style-type:disc;padding-left:20px;font-size:11px;margin:0 0 6px 0;">`
-                if (!printIsStyleCustomized) {
-                  content += `<li>Front: <strong>${notes?.front || "—"}</strong></li>`
-                  content += `<li>Back: <strong>${notes?.back || "—"}</strong></li>`
-                }
-                content += `<li>Embroidery/Adda Work: <strong>${notes?.embroidery || "—"}</strong></li>`
-                content += `</ul>`
-              }
-              return `
+          const notes = generatedFormData?.garmentNotes?.[cat]
+          let content = ""
+          if (printIsStyleCustomized) {
+            content += `<p style="font-weight:600;color:#7c3aed;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">Style</p>`
+            content += `<ul style="list-style-type:disc;padding-left:20px;font-size:11px;margin:0 0 6px 0;">`
+            content += `<li>Silhouette: <strong>${notes?.silhouette || "—"}</strong></li>`
+            content += `<li>Front: <strong>${notes?.front || "—"}</strong></li>`
+            content += `<li>Back: <strong>${notes?.back || "—"}</strong></li>`
+            content += `</ul>`
+          }
+          if (printIsColorCustomized) {
+            content += `<p style="font-weight:600;color:#e11d48;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">Color</p>`
+            content += `<ul style="list-style-type:disc;padding-left:20px;font-size:11px;margin:0 0 6px 0;">`
+            content += `<li>Dress Color: <strong>${notes?.dressColor || "—"}</strong></li>`
+            content += `</ul>`
+          }
+          if (printIsFabricCustomized) {
+            content += `<p style="font-weight:600;color:#d97706;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">Fabric</p>`
+            content += `<ul style="list-style-type:disc;padding-left:20px;font-size:11px;margin:0 0 6px 0;">`
+            if (!printIsStyleCustomized) {
+              content += `<li>Front: <strong>${notes?.front || "—"}</strong></li>`
+              content += `<li>Back: <strong>${notes?.back || "—"}</strong></li>`
+            }
+            content += `<li>Embroidery/Adda Work: <strong>${notes?.embroidery || "—"}</strong></li>`
+            content += `</ul>`
+          }
+          return `
               <div class="field">
                 <label style="font-weight:600;font-size:13px;">${GARMENT_LABELS[cat]}</label>
                 ${content}
               </div>`
-            }).join("")}
+        }).join("")}
           </div>
         </div>
         `
-            : ""
-        }
+        : ""
+      }
 
-        ${
-          isStandardSize
-            ? `
+        ${isStandardSize
+        ? `
           <div class="section">
             <div class="section-title">Standard Size Measurements (${item?.size})</div>
-            ${
-              Object.keys(standardSizeMeasurements).length > 0
-                ? `
+            ${Object.keys(standardSizeMeasurements).length > 0
+          ? `
             <div class="measurements-grid">
               ${Object.entries(standardSizeMeasurements)
-                .map(
-                  ([key, value]) => `
+            .map(
+              ([key, value]) => `
                 <div class="measurement-item"><span>${key.replace(/_/g, " ")}</span><span>${value}"</span></div>
               `
-                )
-                .join("")}
+            )
+            .join("")}
             </div>`
-                : `<p style="color:#64748b;font-size:12px;">No size chart configured for this product</p>`
-            }
-            ${
-              heightMeasurements && Object.keys(heightMeasurements).length > 0
-                ? `
+          : `<p style="color:#64748b;font-size:12px;">No size chart configured for this product</p>`
+        }
+            ${heightMeasurements && Object.keys(heightMeasurements).length > 0
+          ? `
               <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e2e8f0;">
                 <div style="font-weight:500;margin-bottom:8px;">Height-Based Measurements (${order?.clientHeight})</div>
                 <div class="measurements-grid">
                   ${Object.entries(heightMeasurements)
-                    .map(
-                      ([key, value]) => `
+            .map(
+              ([key, value]) => `
                     <div class="measurement-item"><span>${key.replace(/_/g, " ")}</span><span>${value}"</span></div>
                   `
-                    )
-                    .join("")}
+            )
+            .join("")}
                 </div>
               </div>`
-                : ""
-            }
+          : ""
+        }
           </div>
         `
-            : `
-          ${
-            generatedFormData?.measurements &&
-            Object.keys(generatedFormData.measurements).length > 0
-              ? `
+        : `
+          ${generatedFormData?.measurements &&
+          Object.keys(generatedFormData.measurements).length > 0
+          ? `
             ${selectedCategories
-              .map((catId) => {
-                const category = getMeasurementCategoryById(catId)
-                if (!category) return ""
-                const categoryMeasurements = Object.entries(generatedFormData.measurements).filter(
-                  ([key]) => key.startsWith(catId + "_")
-                )
-                if (categoryMeasurements.length === 0) return ""
-                return `
+            .map((catId) => {
+              const category = getMeasurementCategoryById(catId)
+              if (!category) return ""
+              const categoryMeasurements = Object.entries(generatedFormData.measurements).filter(
+                ([key]) => key.startsWith(catId + "_")
+              )
+              if (categoryMeasurements.length === 0) return ""
+              return `
                 <div class="section">
                   <div class="section-title">${category.name}</div>
                   <div class="measurements-grid">
                     ${categoryMeasurements
-                      .map(([key, value]) => {
-                        const measurementId = key.replace(catId + "_", "")
-                        const measurement = category.groups
-                          .flatMap((g) => g.measurements)
-                          .find((m) => m.id === measurementId)
-                        return `<div class="measurement-item"><span>${measurement?.label || measurementId}</span><span>${value}"</span></div>`
-                      })
-                      .join("")}
+                  .map(([key, value]) => {
+                    const measurementId = key.replace(catId + "_", "")
+                    const measurement = category.groups
+                      .flatMap((g) => g.measurements)
+                      .find((m) => m.id === measurementId)
+                    return `<div class="measurement-item"><span>${measurement?.label || measurementId}</span><span>${value}"</span></div>`
+                  })
+                  .join("")}
                   </div>
                 </div>`
-              })
-              .join("")}
+            })
+            .join("")}
           `
-              : ""
-          }
-        `
+          : ""
         }
+        `
+      }
 
-        ${
-          generatedFormData?.sketchImage
-            ? `
+        ${generatedFormData?.sketchImage
+        ? `
           <div class="section sketch-section">
             <div class="section-title">Design Sketch</div>
             <img src="${generatedFormData.sketchImage}" alt="Design sketch" />
           </div>`
-            : ""
-        }
+        : ""
+      }
 
         <div class="section">
           <div class="section-title">Shipping Details</div>
@@ -706,16 +700,15 @@ export default function OrderFormGeneratorPage() {
           </div>
         </div>
 
-        ${
-          generatedFormData?.notes || order?.notes
-            ? `
+        ${generatedFormData?.notes || order?.notes
+        ? `
           <div class="notes-section">
             <div class="section-title" style="border:none;margin-bottom:8px;padding-bottom:0;">Additional Notes</div>
             <p style="font-size:13px;">${generatedFormData?.notes || ""}</p>
             ${order?.notes ? `<p style="font-size:12px;color:#92400e;margin-top:8px;"><strong>Order Notes:</strong> ${order.notes}</p>` : ""}
           </div>`
-            : ""
-        }
+        : ""
+      }
 
         <div class="footer">
           <p>Please confirm these details are correct.</p>

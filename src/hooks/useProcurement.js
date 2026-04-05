@@ -24,20 +24,12 @@ export const procurementKeys = {
   stats: () => [...procurementKeys.all, "stats"],
 }
 
-// Get all procurement demands
-export const useProcurementDemands = (params = {}) => {
-  return useQuery({
-    queryKey: procurementKeys.list(params),
-    queryFn: () => fetchProcurementDemands(params),
-  })
-}
 
 // Get single procurement demand
-export const useProcurementDemand = (id) => {
+export const useProcurementDemands = (params) => {
   return useQuery({
-    queryKey: procurementKeys.detail(id),
-    queryFn: () => fetchProcurementDemandById(id),
-    enabled: !!id,
+    queryKey: procurementKeys.list(params ?? "all"),
+    queryFn: () => fetchProcurementDemands(params ?? {}),
   })
 }
 

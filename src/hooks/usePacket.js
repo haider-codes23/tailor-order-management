@@ -8,7 +8,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-
+import { httpClient } from "@/services/http/httpClient"
 // ============================================================================
 // QUERY KEYS
 // ============================================================================
@@ -26,150 +26,76 @@ export const packetKeys = {
 // API FUNCTIONS
 // ============================================================================
 
+// ============================================================================
+// API FUNCTIONS (using httpClient instead of raw fetch)
+// ============================================================================
+
 const packetApi = {
-  /**
-   * Get all packets with optional filters
-   */
   getPackets: async (filters = {}) => {
-    const params = new URLSearchParams()
-    if (filters.status) params.append("status", filters.status)
-    if (filters.assignedTo) params.append("assignedTo", filters.assignedTo)
-
-    const response = await fetch(`/api/packets?${params}`)
-    if (!response.ok) throw new Error("Failed to fetch packets")
-    return response.json()
+    const params = {}
+    if (filters.status) params.status = filters.status
+    if (filters.assignedTo) params.assignedTo = filters.assignedTo
+    return httpClient.get("/packets", { params })
   },
 
-  /**
-   * Get packets assigned to current user (fabrication team)
-   */
-  /**
-   * Get packets assigned to current user (fabrication team)
-   * @param {string} userId - User ID
-   * @param {string|null} status - Optional status filter
-   * @param {Object} dateFilters - Optional date filters
-   * @param {string} dateFilters.dateFrom - Start date (ISO string)
-   * @param {string} dateFilters.dateTo - End date (ISO string)
-   * @param {string} dateFilters.filterType - Type of date filter ('created' | 'fwd' | 'productionShipping')
-   */
   getMyTasks: async (userId, status = null, dateFilters = {}) => {
-    const params = new URLSearchParams()
-    params.append("userId", userId)
-    if (status) params.append("status", status)
-
-    // Add date filter params
-    if (dateFilters.dateFrom) params.append("dateFrom", dateFilters.dateFrom)
-    if (dateFilters.dateTo) params.append("dateTo", dateFilters.dateTo)
-    if (dateFilters.filterType) params.append("filterType", dateFilters.filterType)
-
-    const response = await fetch(`/api/packets/my-tasks?${params}`)
-    if (!response.ok) throw new Error("Failed to fetch my packet tasks")
-    return response.json()
+    const params = { userId }
+    if (status) params.status = status
+    if (dateFilters.startDate) params.startDate = dateFilters.startDate
+    if (dateFilters.endDate) params.endDate = dateFilters.endDate
+    return httpClient.get("/packets/my-tasks", { params })
   },
 
-  /**
-   * Get packets awaiting verification (production head)
-   */
   getCheckQueue: async () => {
-    const response = await fetch("/api/packets/check-queue")
-    if (!response.ok) throw new Error("Failed to fetch packet check queue")
-    return response.json()
+    return httpClient.get("/packets/check-queue")
   },
 
-  /**
-   * Get packet for a specific order item
-   */
   getPacket: async (orderItemId) => {
-    const response = await fetch(`/api/order-items/${orderItemId}/packet`)
-    if (!response.ok) {
-      if (response.status === 404) return null
-      throw new Error("Failed to fetch packet")
-    }
-    return response.json()
+    return httpClient.get(`/order-items/${orderItemId}/packet`)
   },
 
-  /**
-   * Assign packet to fabrication team member
-   */
   assignPacket: async ({ orderItemId, assignToUserId, assignedByUserId }) => {
-    const response = await fetch(`/api/order-items/${orderItemId}/packet/assign`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignToUserId, assignedByUserId }),
+    return httpClient.post(`/order-items/${orderItemId}/packet/assign`, {
+      assignToUserId,
+      assignedByUserId,
     })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || "Failed to assign packet")
-    return data
   },
 
-  /**
-   * Start picking materials for packet
-   */
   startPacket: async ({ orderItemId, userId }) => {
-    const response = await fetch(`/api/order-items/${orderItemId}/packet/start`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || "Failed to start packet")
-    return data
+    return httpClient.post(`/order-items/${orderItemId}/packet/start`, { userId })
   },
 
-  /**
-   * Mark a pick list item as picked
-   */
   pickItem: async ({ orderItemId, pickItemId, pickedQty, userId, notes }) => {
-    const response = await fetch(`/api/order-items/${orderItemId}/packet/pick-item`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pickItemId, pickedQty, userId, notes }),
+    return httpClient.post(`/order-items/${orderItemId}/packet/pick-item`, {
+      pickItemId,
+      pickedQty,
+      userId,
+      notes,
     })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || "Failed to pick item")
-    return data
   },
 
-  /**
-   * Mark packet as complete
-   */
   completePacket: async ({ orderItemId, userId, notes }) => {
-    const response = await fetch(`/api/order-items/${orderItemId}/packet/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, notes }),
+    return httpClient.post(`/order-items/${orderItemId}/packet/complete`, {
+      userId,
+      notes,
     })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || "Failed to complete packet")
-    return data
   },
 
-  /**
-   * Approve packet (production head)
-   */
   approvePacket: async ({ orderItemId, userId, isReadyStock, notes }) => {
-    const response = await fetch(`/api/order-items/${orderItemId}/packet/approve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, isReadyStock, notes }),
+    return httpClient.post(`/order-items/${orderItemId}/packet/approve`, {
+      userId,
+      isReadyStock,
+      notes,
     })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || "Failed to approve packet")
-    return data
   },
 
-  /**
-   * Reject packet (production head)
-   */
   rejectPacket: async ({ orderItemId, userId, reasonCode, reason, notes }) => {
-    const response = await fetch(`/api/order-items/${orderItemId}/packet/reject`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, reasonCode, reason, notes }),
+    return httpClient.post(`/order-items/${orderItemId}/packet/reject`, {
+      userId,
+      reasonCode,
+      reason,
+      notes,
     })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.message || "Failed to reject packet")
-    return data
   },
 }
 

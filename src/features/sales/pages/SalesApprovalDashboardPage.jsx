@@ -147,6 +147,54 @@ export default function SalesApprovalDashboardPage() {
     </Card>
   )
 
+  // ── Shared: render previous video banner for an item ─────────────────
+  const renderPreviousVideoBanner = (item) => {
+    if (!item.videoData?.previousVideo) return null
+    return (
+      <div className="mt-1 p-2 bg-amber-50 border border-amber-200 rounded text-xs">
+        <div className="font-medium text-amber-800 flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" />
+          New video after re-video request
+        </div>
+        <div className="text-amber-700 mt-1">
+          {"Previous: "}
+          <a
+            href={item.videoData.previousVideo.youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            View previous video
+          </a>
+          {item.videoData.previousVideo.uploadedByName && (
+            <span> (by {item.videoData.previousVideo.uploadedByName})</span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Shared: render alteration banner for an item ─────────────────────
+  const renderAlterationBanner = (item) => {
+    const altered = Object.entries(item.sectionStatuses || {}).filter(
+      ([, s]) => s.isAlteration || s.alterationNotes
+    )
+    if (altered.length === 0) return null
+    return (
+      <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+        <div className="font-medium text-orange-800 flex items-center gap-1">
+          <Scissors className="h-3 w-3" />
+          Sections reworked after client alteration request
+        </div>
+        {altered.map(([key, s]) => (
+          <div key={key} className="text-orange-700 mt-1">
+            {key}: {s.alterationNotes || "No notes"}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   // ════════════════════════════════════════════════════════════════════════
   // TAB 1: Ready for Client — Order cards with video links
   // ════════════════════════════════════════════════════════════════════════
@@ -187,6 +235,8 @@ export default function SalesApprovalDashboardPage() {
                   <ExternalLink className="h-3 w-3" />
                 </a>
               )}
+              {renderPreviousVideoBanner(item)}
+              {renderAlterationBanner(item)}
             </div>
           ))}
         </div>
@@ -248,11 +298,12 @@ export default function SalesApprovalDashboardPage() {
                     {item.videoData.youtubeUrl}
                   </a>
                 )}
+                {renderPreviousVideoBanner(item)}
+                {renderAlterationBanner(item)}
               </div>
             ))}
           </div>
 
-          {/* Action Buttons */}
           {/* Action Buttons — or waiting state if re-video pending */}
           {(() => {
             const pendingReVideoItems = (order.items || []).filter((item) => item.reVideoRequest)
@@ -302,7 +353,6 @@ export default function SalesApprovalDashboardPage() {
               )
             }
 
-            // Normal state — show action buttons
             // Normal state — show action buttons
             return (
               <>

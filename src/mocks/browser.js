@@ -6,7 +6,7 @@ import { productsHandlers } from "./handlers/productsHandlers"
 import { usersHandlers } from "./handlers/usersHandlers"
 import { ordersHandlers } from "./handlers/ordersHandlers"
 import { fabricationHandlers } from "./handlers/fabricationHandlers"
-import { procurementHandlers } from "./handlers/procurementHandlers"
+// import { procurementHandlers } from "./handlers/procurementHandlers"
 import { packetHandlers } from "./handlers/packetHandlers"
 import { dyeingHandlers } from "./handlers/dyeingHandlers"
 import { productionHandlers } from "./handlers/productionHandlers"
@@ -23,7 +23,7 @@ const handlers = [
   ...usersHandlers,
   ...ordersHandlers,
   ...fabricationHandlers,
-  ...procurementHandlers,
+  // ...procurementHandlers,
   ...packetHandlers,
   ...dyeingHandlers,
   ...productionHandlers,

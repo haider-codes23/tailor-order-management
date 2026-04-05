@@ -25,7 +25,7 @@ import {
 import { Loader2 } from "lucide-react"
 
 // Allowed inventory categories for BOMs
-const BOM_ALLOWED_CATEGORIES = ["FABRIC", "RAW_MATERIAL", "MULTI_HEAD", "ADA_MATERIAL"]
+const BOM_ALLOWED_CATEGORIES = ["FABRIC", "RAW_MATERIAL", "MULTI_HEAD", "ADDA_MATERIAL"]
 
 // Garment pieces
 const GARMENT_PIECES = [
@@ -142,7 +142,7 @@ export default function BOMItemModal({
 
     try {
       const itemData = {
-        inventory_item_id: parseInt(data.inventory_item_id),
+        inventory_item_id: data.inventory_item_id,
         quantity_per_unit: parseFloat(data.quantity_per_unit),
         unit: data.unit || selectedItem?.unit || "Piece", // Use inventory item's unit
         piece: piece, // Use piece from props, not from form

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useOrder, useOrderItem, useApproveOrderForm } from "@/hooks/useOrders"
-import { useProduct } from "@/hooks/useProducts"
+import { useProduct, useActiveBOM } from "@/hooks/useProducts"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import {
   ORDER_ITEM_STATUS,
@@ -57,6 +57,7 @@ function SectionInventoryResults({
   orderItemId,
   procurementDemands = [],
   onRerunCheck,
+  hasBOM = true,
 }) {
   if (!sectionStatuses || Object.keys(sectionStatuses).length === 0) {
     return null
@@ -166,11 +167,10 @@ function SectionInventoryResults({
               {/* Procurement Status Banner for AWAITING_MATERIAL sections */}
               {isAwaiting && sectionDemands.length > 0 && (
                 <div
-                  className={`mb-3 p-3 rounded-lg ${
-                    allDemandsFulfilled
-                      ? "bg-green-50 border border-green-200"
-                      : "bg-amber-50 border border-amber-200"
-                  }`}
+                  className={`mb-3 p-3 rounded-lg ${allDemandsFulfilled
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-amber-50 border border-amber-200"
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -180,9 +180,8 @@ function SectionInventoryResults({
                         <Clock className="h-4 w-4 text-amber-600" />
                       )}
                       <span
-                        className={`text-sm font-medium ${
-                          allDemandsFulfilled ? "text-green-800" : "text-amber-800"
-                        }`}
+                        className={`text-sm font-medium ${allDemandsFulfilled ? "text-green-800" : "text-amber-800"
+                          }`}
                       >
                         {allDemandsFulfilled
                           ? "All procurement demands fulfilled!"
@@ -200,13 +199,12 @@ function SectionInventoryResults({
                         <span>{pd.inventoryItemName}:</span>
                         <Badge
                           variant="outline"
-                          className={`text-xs ${
-                            pd.status === "RECEIVED"
-                              ? "bg-green-50 text-green-700"
-                              : pd.status === "ORDERED"
-                                ? "bg-blue-50 text-blue-700"
-                                : "bg-gray-50 text-gray-700"
-                          }`}
+                          className={`text-xs ${pd.status === "RECEIVED"
+                            ? "bg-green-50 text-green-700"
+                            : pd.status === "ORDERED"
+                              ? "bg-blue-50 text-blue-700"
+                              : "bg-gray-50 text-gray-700"
+                            }`}
                         >
                           {pd.status}
                         </Badge>
@@ -268,6 +266,19 @@ function SectionInventoryResults({
           )
         })}
 
+        {!hasBOM && (
+          <div className="pt-4 border-t">
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertTitle className="text-red-900">No BOM Configured</AlertTitle>
+              <AlertDescription className="text-red-700">
+                This product does not have a Bill of Materials configured. Inventory check cannot
+                proceed until BOM is set up in the Products page.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {/* Re-run Inventory Check Button */}
         {sectionsReadyForRecheck.length > 0 && onRerunCheck && (
           <div className="pt-4 border-t">
@@ -305,19 +316,36 @@ export default function OrderItemDetailPage() {
   const { data: itemData, isLoading: itemLoading } = useOrderItem(itemId)
   const approveForm = useApproveOrderForm()
   const runInventoryCheck = useRunInventoryCheck()
-  const { data: procurementDemandsData } = useProcurementDemands({ orderItemId: itemId })
-  const procurementDemands = procurementDemandsData?.data || []
+
+  const item = itemData?.data
+
+  // Statuses that come BEFORE inventory check — don't fetch procurement demands for these
+  const PRE_INVENTORY_STATUSES = [
+    ORDER_ITEM_STATUS.RECEIVED,
+    ORDER_ITEM_STATUS.AWAITING_CUSTOMER_FORM_APPROVAL,
+    ORDER_ITEM_STATUS.FABRICATION_BESPOKE,
+  ]
+  const hasReachedInventoryCheck = item && !PRE_INVENTORY_STATUSES.includes(item.status)
+
+  const procurementParams = hasReachedInventoryCheck ? { orderItemId: itemId } : { skip: true }
+  const { data: procurementDemandsData } = useProcurementDemands(procurementParams)
+  const procurementDemands = hasReachedInventoryCheck ? (procurementDemandsData?.data || []) : []
 
   // Re-run section inventory check
   const rerunSectionCheck = useRerunSectionInventoryCheck()
 
   const order = orderData
-  const item = itemData?.data
 
   // Fetch product details to get the image - only when item is loaded
   const { data: productData } = useProduct(item?.productId, {
     enabled: !!item?.productId,
   })
+
+  // Check if product has an active BOM with items for this size
+  const { data: bomData } = useActiveBOM(item?.productId, item?.size, {
+    enabled: !!item?.productId,
+  })
+  const hasBOM = !!(bomData?.data?.items?.length > 0)
   const product = productData?.data
 
   const canManageForms = hasPermission(user, "orders.manage_customer_forms")
@@ -442,8 +470,8 @@ export default function OrderItemDetailPage() {
             item?.status === ORDER_ITEM_STATUS.PRODUCTION_COMPLETED ||
             item?.status === ORDER_ITEM_STATUS.ALL_SECTIONS_QA_APPROVED ||
             item?.packetId) && (
-            <TabsTrigger value="packet">Packet</TabsTrigger>
-          )}
+              <TabsTrigger value="packet">Packet</TabsTrigger>
+            )}
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
         </TabsList>
 
@@ -651,7 +679,7 @@ export default function OrderItemDetailPage() {
                       </p>
                     </div>
                   </div>
-                  <Button onClick={handleRunInventoryCheck} disabled={runInventoryCheck.isPending}>
+                  <Button onClick={handleRunInventoryCheck} disabled={runInventoryCheck.isPending || !hasBOM}>
                     {runInventoryCheck.isPending ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -666,6 +694,18 @@ export default function OrderItemDetailPage() {
                   </Button>
                 </div>
 
+                {!hasBOM && (
+                  <Alert className="border-red-200 bg-red-50 mt-3">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <AlertTitle className="text-red-900">No BOM Configured</AlertTitle>
+                    <AlertDescription className="text-red-700">
+                      Product "{item.productName}" does not have a Bill of Materials (BOM) configured
+                      {item.size ? ` for size ${item.size.toUpperCase()}` : ""}. Please configure the
+                      BOM in the Products page before running inventory check.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {/* Show last check results if available */}
                 {item.lastInventoryCheck && (
                   <p className="text-xs text-muted-foreground">
@@ -679,28 +719,32 @@ export default function OrderItemDetailPage() {
           {/* ============================================================ */}
           {/* NEW: Section-Level Inventory Results (for partial workflow) */}
           {/* ============================================================ */}
-          {item.sectionStatuses && Object.keys(item.sectionStatuses).length > 0 && (
-            <SectionInventoryResults
-              sectionStatuses={item.sectionStatuses}
-              orderItemId={itemId}
-              procurementDemands={procurementDemands}
-              onRerunCheck={handleRerunSectionInventoryCheck}
-            />
-          )}
+          {/* Only show section inventory results when item has reached INVENTORY_CHECK or later */}
+          {hasReachedInventoryCheck &&
+            item.sectionStatuses &&
+            Object.keys(item.sectionStatuses).length > 0 && (
+              <SectionInventoryResults
+                sectionStatuses={item.sectionStatuses}
+                orderItemId={itemId}
+                procurementDemands={procurementDemands}
+                onRerunCheck={hasBOM ? handleRerunSectionInventoryCheck : null}
+                hasBOM={hasBOM}
+              />
+            )}
 
           {/* Partial Workflow Status Banner */}
           {(item.status === ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET ||
             item.status === ORDER_ITEM_STATUS.PARTIAL_PACKET_CHECK ||
             item.status === ORDER_ITEM_STATUS.PARTIAL_IN_PRODUCTION) && (
-            <Alert className="border-amber-200 bg-amber-50">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertTitle className="text-amber-900">Partial Workflow Active</AlertTitle>
-              <AlertDescription className="text-amber-700">
-                Some sections are progressing while others await materials. Check section statuses
-                above for details.
-              </AlertDescription>
-            </Alert>
-          )}
+              <Alert className="border-amber-200 bg-amber-50">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-900">Partial Workflow Active</AlertTitle>
+                <AlertDescription className="text-amber-700">
+                  Some sections are progressing while others await materials. Check section statuses
+                  above for details.
+                </AlertDescription>
+              </Alert>
+            )}
 
           {/* Material Requirements Display (after inventory check) */}
           {item.materialRequirements && item.materialRequirements.length > 0 && (
