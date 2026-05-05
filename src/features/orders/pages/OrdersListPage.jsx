@@ -64,6 +64,7 @@ export default function OrdersListPage() {
     ...(statusFilter !== "all" && { status: statusFilter }),
     ...(sourceFilter !== "all" && { source: sourceFilter }),
     ...(urgentFilter !== "all" && { urgent: urgentFilter }),
+    ...(user?.role === "SALES" && { consultantId: user.id }),
   }
 
   const { data, isLoading, isError } = useOrders(queryParams)

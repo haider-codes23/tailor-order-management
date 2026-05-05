@@ -21,17 +21,15 @@ export default function ProductionDashboardPage() {
   console.log("User: ", user)
   
   // Determine which dashboard to show based on user role/permissions
+  // Determine which dashboard to show based on user role/permissions
+  // Sales users have production.manage only for packet operations — they don't need a production dashboard
+  const isSales = user?.role === USER_ROLES.SALES
   const isAdmin = user?.role === USER_ROLES.ADMIN || hasPermission(user, "production.assign_head")
-  console.log("Check Bool admin: ", isAdmin)
   const isProductionHead =
-    user?.role === USER_ROLES.PRODUCTION_HEAD || hasPermission(user, "production.manage")
-  console.log("Check Bool pro: ", isProductionHead)
+    user?.role === USER_ROLES.PRODUCTION_HEAD || (!isSales && hasPermission(user, "production.manage"))
   const isWorker = user?.role === USER_ROLES.WORKER || hasPermission(user, "production.start_task")
-  console.log("Check Bool worker: ", isWorker)
 
-  // Admin view - shows assignment panel + overview
-  // Admin can also see production head view if they have both permissions
-  // T ==> T             T=> F                    F
+  // Admin or Dyeing user with assign_head permission — shows assignment panel
   if (isAdmin && !isWorker) {
     return <ProductionAdminDashboard />
   }

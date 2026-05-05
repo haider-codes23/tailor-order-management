@@ -145,14 +145,6 @@ const navItems = [
     iconColor: "text-slate-600",
     iconBgColor: "bg-slate-100",
   },
-  {
-    name: "Measurement Charts",
-    href: "/admin/measurements",
-    icon: Ruler,
-    requiredPermissions: ["measurements.view"],
-    iconColor: "text-amber-600",
-    iconBgColor: "bg-amber-100",
-  },
 ]
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }) {

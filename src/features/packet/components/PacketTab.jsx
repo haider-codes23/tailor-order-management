@@ -19,7 +19,6 @@ import PacketStatusBadge from "./PacketStatusBadge"
 import PacketAssignmentPanel from "./PacketAssignmentPanel"
 import PacketPickList from "./PacketPickList"
 import PacketCreatorActions from "./PacketCreatorActions"
-import PacketCheckPanel from "./PacketCheckPanel"
 
 export default function PacketTab({ orderItem }) {
   const { user } = useAuth()
@@ -29,7 +28,6 @@ export default function PacketTab({ orderItem }) {
 
   // Check permissions
   const canAssignPackets = hasPermission(user, "production.assign_tasks")
-  const canApprovePackets = hasPermission(user, "production.approve_packets")
   const canWorkOnPackets =
     hasPermission(user, "fabrication.view") || hasPermission(user, "production.view")
 
@@ -149,22 +147,22 @@ export default function PacketTab({ orderItem }) {
         (packet.status === PACKET_STATUS.ASSIGNED ||
           packet.status === PACKET_STATUS.IN_PROGRESS) && <PacketCreatorActions packet={packet} />}
 
-      {/* Check Panel - For Production Head when packet is completed */}
-      {canApprovePackets && packet.status === PACKET_STATUS.COMPLETED && (
-        <PacketCheckPanel packet={packet} orderItem={orderItem} />
-      )}
-
-      {/* Completion Info for approved packets */}
+      {/* Completion Info — packet completed, sections sent to dyeing */}
       {packet.status === PACKET_STATUS.APPROVED && (
         <Card className="border-green-200 bg-green-50">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div>
-                <p className="font-medium text-green-800">Packet Approved</p>
+                <p className="font-medium text-green-800">
+                  Packet Completed — sections sent to dyeing
+                </p>
                 <p className="text-sm text-green-700">
-                  Approved by {packet.checkedByName} on{" "}
-                  {format(new Date(packet.checkedAt), "MMM d, yyyy 'at' h:mm a")}
+                  Completed by {packet.assignedToName || packet.checkedByName} on{" "}
+                  {format(
+                    new Date(packet.completedAt || packet.checkedAt),
+                    "MMM d, yyyy 'at' h:mm a"
+                  )}
                 </p>
               </div>
             </div>

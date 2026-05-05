@@ -9,6 +9,7 @@
  */
 
 import { httpClient } from "@/services/http/httpClient"
+import { appConfig } from "@/config/appConfig"
 
 const BASE_URL = "/qa"
 
@@ -87,10 +88,6 @@ export const rejectSection = async (orderItemId, sectionName, data) => {
 }
 
 // ============================================================================
-// VIDEO UPLOAD (Order Item Level)
-// ============================================================================
-
-// ============================================================================
 // VIDEO FILE VALIDATION HELPERS
 // ============================================================================
 
@@ -162,37 +159,130 @@ export const formatFileSize = (bytes) => {
 }
 
 // ============================================================================
-// VIDEO UPLOAD (Order Item Level) — Now sends FormData with video file
+// XHR-BASED UPLOAD HELPER (supports real upload progress)
+// ============================================================================
+
+/**
+ * Upload a file via XMLHttpRequest.
+ *
+ * We use raw XHR instead of the fetch-based httpClient because the fetch API
+ * does not support upload progress events at all. XHR's upload.onprogress is
+ * the only browser-native way to get real-time "% uploaded" updates.
+ *
+ * This helper preserves the same auth + error handling as httpClient:
+ *  - Sends Bearer token from localStorage
+ *  - Sends cookies (credentials: include)
+ *  - Throws an Error with .status / .body on non-2xx responses
+ *  - Returns parsed JSON on success
+ *
+ * @param {string} endpoint - e.g. "/qa/order-item/abc/upload-video"
+ * @param {FormData} formData - The request body
+ * @param {(percent: number) => void} [onProgress] - Progress callback (0-100)
+ * @returns {Promise<any>} Parsed JSON response
+ */
+function xhrUpload(endpoint, formData, onProgress) {
+  return new Promise((resolve, reject) => {
+    const url = `${appConfig.apiBaseUrl}${endpoint}`
+    const token = localStorage.getItem("authToken")
+
+    const xhr = new XMLHttpRequest()
+    xhr.open("POST", url, true)
+    xhr.withCredentials = true // send cookies (mirrors fetch credentials:"include")
+
+    if (token) {
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`)
+    }
+    // NOTE: do NOT set Content-Type for FormData — the browser sets it
+    // automatically with the correct multipart boundary.
+
+    // Real upload progress events
+    if (onProgress && xhr.upload) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded * 100) / event.total)
+          onProgress(percent)
+        }
+      }
+    }
+
+    xhr.onload = () => {
+      // Parse response body (JSON if possible, else raw text)
+      let body = null
+      try {
+        body = xhr.responseText ? JSON.parse(xhr.responseText) : null
+      } catch {
+        body = xhr.responseText
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(body)
+      } else {
+        const message =
+          (body && (body.message || body.error)) || `HTTP Error ${xhr.status}`
+        const error = new Error(message)
+        error.status = xhr.status
+        error.statusText = xhr.statusText
+        error.body = body
+        // Shape the error like axios so hook onError handlers still work:
+        // error.response?.data?.error
+        error.response = { data: body, status: xhr.status }
+        reject(error)
+      }
+    }
+
+    xhr.onerror = () => {
+      const error = new Error("Network error during upload")
+      error.status = 0
+      reject(error)
+    }
+
+    xhr.onabort = () => {
+      const error = new Error("Upload cancelled")
+      error.status = 0
+      reject(error)
+    }
+
+    xhr.send(formData)
+  })
+}
+
+// ============================================================================
+// VIDEO UPLOAD (Order Item Level) — XHR-based for real progress events
 // ============================================================================
 
 /**
  * Upload video file for an Order Item
  * Called after ALL sections of an order item are QA_APPROVED
- * Sends the video file as FormData — MSW simulates YouTube upload
- * In production, backend will upload to YouTube via OAuth and return the URL
+ * Uses XHR directly so the upload progress bar can animate in real time.
  *
  * @param {string} orderItemId - The order item ID
- * @param {Object} data - { videoFile: File, uploadedBy: userId }
- * @returns {Promise} Updated order item with video data (including simulated YouTube URL)
+ * @param {Object} data - { videoFile: File, uploadedBy: userId, onProgress?: (percent) => void }
+ * @returns {Promise} Updated order item with video data (including YouTube URL)
  */
 export const uploadOrderItemVideo = async (orderItemId, data) => {
   const formData = new FormData()
   formData.append("videoFile", data.videoFile)
   formData.append("uploadedBy", data.uploadedBy)
 
-  const response = await httpClient.post(
+  const body = await xhrUpload(
     `${BASE_URL}/order-item/${orderItemId}/upload-video`,
-    formData
+    formData,
+    data.onProgress
   )
-  return response.data
+
+  // Match the shape previously returned by httpClient.post(...).data
+  // httpClient returned `response.data` which was already the parsed JSON,
+  // so callers expect the parsed body here directly.
+  return body
 }
 
 /**
  * Upload re-video file for a Sales request
- * Clears the re-video request and stores new video
+ * Clears the re-video request and stores new video.
+ * Uses XHR directly so the upload progress bar can animate in real time.
  *
  * @param {string} orderItemId - The order item ID
- * @param {Object} data - { videoFile: File, uploadedBy: userId }
+ * @param {Object} data - { videoFile: File, uploadedBy: userId, onProgress?: (percent) => void }
  * @returns {Promise} Updated order item with new video data
  */
 export const uploadReVideo = async (orderItemId, data) => {
@@ -200,11 +290,13 @@ export const uploadReVideo = async (orderItemId, data) => {
   formData.append("videoFile", data.videoFile)
   formData.append("uploadedBy", data.uploadedBy)
 
-  const response = await httpClient.post(
+  const body = await xhrUpload(
     `${BASE_URL}/order-item/${orderItemId}/upload-revideo`,
-    formData
+    formData,
+    data.onProgress
   )
-  return response.data
+
+  return body
 }
 
 // ============================================================================
@@ -308,7 +400,7 @@ export const qaApi = {
   approveSection,
   rejectSection,
 
-  // Video Upload (now file-based)
+  // Video Upload (XHR-based with progress)
   uploadOrderItemVideo,
   uploadReVideo,
 

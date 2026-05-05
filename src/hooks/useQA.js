@@ -171,8 +171,8 @@ export function useUploadOrderItemVideo() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ orderItemId, videoFile, uploadedBy }) =>
-      qaApi.uploadOrderItemVideo(orderItemId, { videoFile, uploadedBy }),
+    mutationFn: ({ orderItemId, videoFile, uploadedBy, onProgress }) =>
+      qaApi.uploadOrderItemVideo(orderItemId, { videoFile, uploadedBy, onProgress }),
 
     onSuccess: (data, variables) => {
       const youtubeUrl = data?.data?.videoData?.youtubeUrl || ""
@@ -208,8 +208,8 @@ export function useUploadReVideo() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ orderItemId, videoFile, uploadedBy }) =>
-      qaApi.uploadReVideo(orderItemId, { videoFile, uploadedBy }),
+    mutationFn: ({ orderItemId, videoFile, uploadedBy, onProgress }) =>
+      qaApi.uploadReVideo(orderItemId, { videoFile, uploadedBy, onProgress }),
 
     onSuccess: (data, variables) => {
       toast.success("New video uploaded to YouTube", {

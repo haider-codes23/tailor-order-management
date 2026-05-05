@@ -75,6 +75,7 @@ export default function CreateOrderPage() {
       extraPayment: "",
       fwdDate: new Date().toISOString().split("T")[0],
       productionShippingDate: "",
+      actualShippingDate: "",
       urgent: "none",
       notes: "",
     },
@@ -87,11 +88,19 @@ export default function CreateOrderPage() {
   // Calculate subtotal from order items
   const calculatedSubtotal = useMemo(() => {
     return orderItems.reduce((sum, item) => {
-      const product = products.find((p) => p.id.toString() === item.productId)
-      const productPrice = product?.total_price || 0
-      return sum + productPrice * (item.quantity || 1)
+      // Unit price = included items + selected add-ons only
+      const includedTotal = (item.includedItems || []).reduce(
+        (s, i) => s + (parseFloat(i.price) || 0),
+        0
+      )
+      const addOnsTotal = (item.selectedAddOns || []).reduce(
+        (s, a) => s + (parseFloat(a.price) || 0),
+        0
+      )
+      const unitPrice = includedTotal + addOnsTotal
+      return sum + unitPrice * (item.quantity || 1)
     }, 0)
-  }, [orderItems, products])
+  }, [orderItems])
 
   // Calculate final total after discount
   const calculatedTotal = useMemo(() => {
@@ -139,7 +148,9 @@ export default function CreateOrderPage() {
         productImage:
           selectedProduct?.primary_image || selectedProduct?.image || currentItem.productImage,
         productSku: selectedProduct?.sku || currentItem.productSku,
-        unitPrice: selectedProduct?.total_price || 0,
+        unitPrice:
+          (currentItem.includedItems || []).reduce((s, i) => s + (parseFloat(i.price) || 0), 0) +
+          (currentItem.selectedAddOns || []).reduce((s, a) => s + (parseFloat(a.price) || 0), 0),
         // Ensure these are included
         includedItems: currentItem.includedItems || [],
         selectedAddOns: currentItem.selectedAddOns || [],
@@ -276,6 +287,14 @@ export default function CreateOrderPage() {
                 )}
               />
             </div>
+
+            <div>
+              <Label>Fashion Consultant</Label>
+              <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted flex items-center">
+                <span className="font-medium text-sm">{user?.name || "—"}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Auto-assigned to logged-in user</p>
+            </div>
           </CardContent>
         </Card>
 
@@ -393,6 +412,19 @@ export default function CreateOrderPage() {
             <div>
               <Label>Production Shipping Date</Label>
               <Input type="date" {...register("productionShippingDate")} />
+            </div>
+
+            <div>
+              <Label>Actual Shipping Date *</Label>
+              <Input
+                type="date"
+                {...register("actualShippingDate", {
+                  required: "Actual shipping date is required",
+                })}
+              />
+              {errors.actualShippingDate && (
+                <p className="text-sm text-red-500 mt-1">{errors.actualShippingDate.message}</p>
+              )}
             </div>
 
             <div>

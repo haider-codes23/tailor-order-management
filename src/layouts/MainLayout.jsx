@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Outlet } from "react-router-dom"
 import Sidebar from "@/components/navigation/Sidebar"
 import Topbar from "@/components/navigation/Topbar"
+import { useSocket } from "@/hooks/useSocket"
 
 /**
  * MainLayout - Used for all authenticated pages
@@ -14,6 +15,9 @@ import Topbar from "@/components/navigation/Topbar"
  */
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Connect to Socket.IO for real-time notifications
+  useSocket()
 
   return (
     <div className="min-h-screen bg-slate-100">

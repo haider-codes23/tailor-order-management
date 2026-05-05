@@ -64,6 +64,10 @@ import SalesApprovalDashboardPage from "@/features/sales/pages/SalesApprovalDash
 
 import DispatchDashboardPage from "@/features/dispatch/pages/DispatchDashboardPage"
 
+import ShopifyDashboardPage from "@/features/shopify/pages/ShopifyDashboardPage"
+
+import NotificationsPage from "@/features/notifications/pages/NotificationsPage"
+
 /**
  * AppRoutes - Central routing configuration
  */
@@ -371,6 +375,30 @@ export default function AppRoutes() {
             element={
               <ProtectedRoute requiredPermissions={["dispatch.view"]}>
                 <DispatchDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== SHOPIFY ROUTES (Phase 15) ==================== */}
+        <Route path="/shopify">
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={["orders.view"]}>
+                <ShopifyDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* ==================== NOTIFICATIONS (Phase 16) ==================== */}
+        <Route path="/notifications">
+          <Route
+            index
+            element={
+              <ProtectedRoute requiredPermissions={[]}>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

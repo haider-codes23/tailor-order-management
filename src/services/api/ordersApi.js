@@ -62,7 +62,15 @@ export const deleteOrder = async (orderId) => {
  * Add payment to order
  */
 export const addPayment = async (orderId, paymentData) => {
-  return httpClient.post(`/orders/${orderId}/payments`, paymentData)
+  const formData = new FormData()
+  formData.append("amount", paymentData.amount)
+  if (paymentData.notes) formData.append("notes", paymentData.notes)
+  if (paymentData.method) formData.append("method", paymentData.method)
+  if (paymentData.receiptFile) {
+    formData.append("receiptFile", paymentData.receiptFile)
+  }
+  // DO NOT manually set Content-Type — axios auto-sets multipart boundary
+  return httpClient.post(`/orders/${orderId}/payments`, formData)
 }
 
 /**

@@ -51,7 +51,7 @@ const OrderFormPreview = forwardRef(({ order, item, formData }, ref) => {
           </div>
           <div>
             <span className="text-slate-500">Expected Ship Date:</span>
-            <span className="ml-2 font-medium">{formatDate(order?.productionShippingDate)}</span>
+            <span className="ml-2 font-medium">{formatDate(order?.actualShippingDate)}</span>
           </div>
         </div>
       </section>

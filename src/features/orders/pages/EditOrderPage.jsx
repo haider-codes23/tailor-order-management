@@ -2,7 +2,6 @@ import { useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useForm, Controller } from "react-hook-form"
 import { useOrder, useUpdateOrder } from "@/hooks/useOrders"
-import { useUsers } from "@/hooks/useUsers"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -28,7 +27,6 @@ export default function EditOrderPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { data: order, isLoading: orderLoading } = useOrder(id)
-  const { data: usersData } = useUsers()
   const updateOrder = useUpdateOrder()
 
   const {
@@ -44,8 +42,6 @@ export default function EditOrderPage() {
           address: order.address || "",
           clientHeight: order.clientHeight || "",
           modesty: order.modesty || "",
-          consultantId: order.consultantId || "",
-          productionInchargeId: order.productionInchargeId || "",
           currency: order.currency || "",
           paymentMethod: order.paymentMethod || "",
           totalAmount: order.totalAmount || "",
@@ -65,10 +61,6 @@ export default function EditOrderPage() {
   })
 
   // Populate form when order data loads
-
-  const users = usersData?.data || []
-  const salesUsers = users.filter((u) => u.role === "SALES" || u.role === "ADMIN")
-  const productionUsers = users.filter((u) => u.role === "PRODUCTION_HEAD" || u.role === "ADMIN")
 
   const onSubmit = async (data) => {
     try {
@@ -200,49 +192,13 @@ export default function EditOrderPage() {
           <CardHeader>
             <CardTitle>Team Assignment</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent>
             <div>
               <Label>Fashion Consultant (Sales Person)</Label>
-              <Controller
-                name="consultantId"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value?.toString()} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select consultant" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {salesUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id.toString()}>
-                          {user.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-
-            <div>
-              <Label>Production Incharge</Label>
-              <Controller
-                name="productionInchargeId"
-                control={control}
-                render={({ field }) => (
-                  <Select value={field.value?.toString()} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select production incharge" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {productionUsers.map((user) => (
-                        <SelectItem key={user.id} value={user.id.toString()}>
-                          {user.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              <div className="h-10 px-3 py-2 rounded-md border border-input bg-muted flex items-center">
+                <span className="font-medium text-sm">{order.consultantName || "—"}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Assigned at order creation</p>
             </div>
           </CardContent>
         </Card>

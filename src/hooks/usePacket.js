@@ -80,23 +80,6 @@ const packetApi = {
       notes,
     })
   },
-
-  approvePacket: async ({ orderItemId, userId, isReadyStock, notes }) => {
-    return httpClient.post(`/order-items/${orderItemId}/packet/approve`, {
-      userId,
-      isReadyStock,
-      notes,
-    })
-  },
-
-  rejectPacket: async ({ orderItemId, userId, reasonCode, reason, notes }) => {
-    return httpClient.post(`/order-items/${orderItemId}/packet/reject`, {
-      userId,
-      reasonCode,
-      reason,
-      notes,
-    })
-  },
 }
 
 // ============================================================================
@@ -273,83 +256,11 @@ export function useCompletePacket() {
         queryKey: ["orderItems", "detail", variables.orderItemId],
       })
 
-      toast.success(data.message || "Packet completed - awaiting verification")
+      toast.success(data.message || "Packet completed — sections sent to dyeing")
     },
 
     onError: (error) => {
       toast.error(error.message || "Failed to complete packet")
-    },
-  })
-}
-
-/**
- * useApprovePacket - Production head approves packet
- */
-export function useApprovePacket() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: packetApi.approvePacket,
-
-    onSuccess: (data, variables) => {
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: packetKeys.detail(variables.orderItemId) })
-      queryClient.invalidateQueries({ queryKey: packetKeys.checkQueue() })
-      queryClient.invalidateQueries({ queryKey: packetKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: ["orderItems", "detail", variables.orderItemId] })
-      queryClient.invalidateQueries({ queryKey: ["orders"] })
-
-      // Force immediate refetch
-      queryClient.refetchQueries({
-        queryKey: packetKeys.detail(variables.orderItemId),
-        exact: true,
-      })
-      queryClient.refetchQueries({ queryKey: packetKeys.checkQueue() })
-      queryClient.refetchQueries({
-        queryKey: ["orderItems", "detail", variables.orderItemId],
-      })
-
-      toast.success(data.message || "Packet approved")
-    },
-
-    onError: (error) => {
-      toast.error(error.message || "Failed to approve packet")
-    },
-  })
-}
-
-/**
- * useRejectPacket - Production head rejects packet
- */
-export function useRejectPacket() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: packetApi.rejectPacket,
-
-    onSuccess: (data, variables) => {
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: packetKeys.detail(variables.orderItemId) })
-      queryClient.invalidateQueries({ queryKey: packetKeys.checkQueue() })
-      queryClient.invalidateQueries({ queryKey: packetKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: ["orderItems", "detail", variables.orderItemId] })
-      queryClient.invalidateQueries({ queryKey: ["orders"] })
-
-      // Force immediate refetch
-      queryClient.refetchQueries({
-        queryKey: packetKeys.detail(variables.orderItemId),
-        exact: true,
-      })
-      queryClient.refetchQueries({ queryKey: packetKeys.checkQueue() })
-      queryClient.refetchQueries({
-        queryKey: ["orderItems", "detail", variables.orderItemId],
-      })
-
-      toast.warning(data.message || "Packet rejected - sent back for correction")
-    },
-
-    onError: (error) => {
-      toast.error(error.message || "Failed to reject packet")
     },
   })
 }

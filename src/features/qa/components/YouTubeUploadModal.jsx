@@ -3,10 +3,8 @@
  * src/features/qa/components/YouTubeUploadModal.jsx
  *
  * Modal for uploading a video FILE directly to YouTube for an order item.
- * User selects a video file from their device → file is "uploaded to YouTube"
- * (simulated by MSW, real OAuth upload in production).
- *
- * Matches the wireframe: file chooser, drag-drop, supported formats, max 2GB.
+ * User selects a video file from their device → file is uploaded to the backend,
+ * which streams it to YouTube via the YouTube Data API.
  */
 
 import { useState, useRef, useCallback } from "react"
@@ -32,6 +30,7 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
   const [selectedFile, setSelectedFile] = useState(null)
   const [fileError, setFileError] = useState("")
   const [isDragging, setIsDragging] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   const uploadMutation = useUploadOrderItemVideo()
 
@@ -67,6 +66,7 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
   const handleRemoveFile = () => {
     setSelectedFile(null)
     setFileError("")
+    setUploadProgress(0)
   }
 
   // ── Drag & Drop ──────────────────────────────────────────────────────────
@@ -97,17 +97,24 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
   const handleSubmit = () => {
     if (!selectedFile) return
 
+    setUploadProgress(0)
+
     uploadMutation.mutate(
       {
         orderItemId,
         videoFile: selectedFile,
         uploadedBy: user?.id,
+        onProgress: (percent) => setUploadProgress(percent),
       },
       {
         onSuccess: () => {
           onOpenChange(false)
           setSelectedFile(null)
           setFileError("")
+          setUploadProgress(0)
+        },
+        onError: () => {
+          setUploadProgress(0)
         },
       }
     )
@@ -118,9 +125,14 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
     onOpenChange(false)
     setSelectedFile(null)
     setFileError("")
+    setUploadProgress(0)
   }
 
   const isValid = selectedFile && !fileError
+  const isUploading = uploadMutation.isPending
+  // Once the browser→backend upload hits 100%, the backend is still pushing to
+  // YouTube. Show an indeterminate "Finalizing…" state instead of a stuck 100%.
+  const isFinalizing = isUploading && uploadProgress >= 100
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -191,7 +203,7 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
                     </div>
                   </div>
                 </div>
-                {!uploadMutation.isPending && (
+                {!isUploading && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -204,13 +216,20 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
               </div>
 
               {/* Upload progress (shown during upload) */}
-              {uploadMutation.isPending && (
+              {isUploading && (
                 <div className="mt-3 space-y-1">
                   <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Uploading to YouTube...</span>
+                    <span>
+                      {isFinalizing
+                        ? "Finalizing on YouTube..."
+                        : `Uploading... ${uploadProgress}%`}
+                    </span>
                     <Loader2 className="h-3 w-3 animate-spin" />
                   </div>
-                  <Progress value={undefined} className="h-1.5" />
+                  <Progress
+                    value={isFinalizing ? undefined : uploadProgress}
+                    className="h-1.5"
+                  />
                 </div>
               )}
             </div>
@@ -239,18 +258,18 @@ export default function YouTubeUploadModal({ open, onOpenChange, orderItem }) {
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleClose} disabled={uploadMutation.isPending}>
+          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!isValid || uploadMutation.isPending}
+            disabled={!isValid || isUploading}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            {uploadMutation.isPending ? (
+            {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Uploading to YouTube...
+                {isFinalizing ? "Finalizing..." : `Uploading... ${uploadProgress}%`}
               </>
             ) : (
               <>

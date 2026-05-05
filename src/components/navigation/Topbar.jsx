@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { useLogout } from "@/features/auth/hooks/useAuthMutations"
-import { Bell, LogOut, Menu, User } from "lucide-react"
+import { LogOut, Menu, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
@@ -23,6 +23,9 @@ import {
  * The hamburger (Menu) icon is only visible below the lg breakpoint.
  * On desktop (lg+), it's hidden because the sidebar is always visible.
  */
+
+import NotificationBell from "@/features/notifications/components/NotificationBell"
+
 export default function Topbar({ onMenuClick }) {
   const { user } = useAuth()
   const logoutMutation = useLogout()
@@ -59,12 +62,7 @@ export default function Topbar({ onMenuClick }) {
           {/* Right side - user info and actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Notifications */}
-            <button
-              className="p-2 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors relative"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
+            <NotificationBell />
 
             {/* User info */}
             <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200">

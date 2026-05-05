@@ -52,6 +52,8 @@ import {
   Ruler,
 } from "lucide-react"
 
+import ShopifySyncPanel from "@/features/shopify/components/ShopifySyncPanel"
+
 export default function OrderDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -65,7 +67,7 @@ export default function OrderDetailPage() {
   // Payment modal state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState("")
-  const [paymentReceipt, setPaymentReceipt] = useState("")
+  const [paymentReceipt, setPaymentReceipt] = useState(null)
 
   // Format helpers
   const formatDate = (dateString) => {
@@ -102,11 +104,9 @@ export default function OrderDetailPage() {
   const calculateDelayedDays = () => {
     if (!order?.actualShippingDate) return null
 
-    // Use dispatch date if dispatched, otherwise use today
     const compareDate = order?.dispatchedAt ? new Date(order.dispatchedAt) : new Date()
     const promisedDate = new Date(order.actualShippingDate)
 
-    // Reset time to midnight for accurate day comparison
     compareDate.setHours(0, 0, 0, 0)
     promisedDate.setHours(0, 0, 0, 0)
 
@@ -126,7 +126,7 @@ export default function OrderDetailPage() {
         orderId: id,
         data: {
           amount: parseFloat(paymentAmount),
-          receiptUrl: paymentReceipt || null,
+          receiptFile: paymentReceipt || null,
         },
       },
       {
@@ -134,7 +134,7 @@ export default function OrderDetailPage() {
           toast.success("Payment added successfully")
           setPaymentModalOpen(false)
           setPaymentAmount("")
-          setPaymentReceipt("")
+          setPaymentReceipt(null)
         },
         onError: () => {
           toast.error("Failed to add payment")
@@ -177,6 +177,7 @@ export default function OrderDetailPage() {
   }
 
   const delayedDays = calculateDelayedDays()
+  const isReadyStock = order.fulfillmentSource === "READY_STOCK"
 
   return (
     <div className="space-y-6">
@@ -210,6 +211,12 @@ export default function OrderDetailPage() {
                 {order.urgent}
               </span>
             )}
+            {isReadyStock && (
+              <span className="px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-700 rounded flex items-center gap-1">
+                <Package className="h-3 w-3" />
+                Ready Stock
+              </span>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -230,6 +237,23 @@ export default function OrderDetailPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {isReadyStock && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-emerald-100 rounded">
+                  <Package className="h-5 w-5 text-emerald-700" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-emerald-900">Ready Stock Fulfillment</h4>
+                  <p className="text-sm text-emerald-800 mt-1">
+                    This order is fulfilled from finished inventory already in stock.
+                    Production, inventory check, dyeing, and QA stages are skipped. The order
+                    goes directly to payment verification, then dispatch.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Customer Info */}
             <div className="bg-white rounded-lg border p-4 sm:p-6 space-y-4">
@@ -313,7 +337,8 @@ export default function OrderDetailPage() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline flex items-center gap-1"
                   >
-                    View Form <ExternalLink className="h-3 w-3" />
+                    <span>View Form</span>
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
               )}
@@ -350,6 +375,9 @@ export default function OrderDetailPage() {
               <h3 className="font-semibold text-slate-900">Notes</h3>
               <p className="text-slate-600">{order.notes || "No notes added."}</p>
             </div>
+
+            {/* Shopify Integration Panel */}
+            <ShopifySyncPanel order={order} />
           </div>
         </TabsContent>
 
@@ -528,17 +556,34 @@ export default function OrderDetailPage() {
                           <p className="text-sm text-slate-500">{formatDate(payment.createdAt)}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {payment.receiptUrl && (
-                          <a
-                            href={payment.receiptUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:underline"
-                          >
-                            View Receipt
-                          </a>
-                        )}
+                      <div className="flex items-center gap-3">
+                        {payment.receiptUrl &&
+                          (payment.receiptUrl.toLowerCase().endsWith(".pdf") ? (
+                            <a
+                              href={payment.receiptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-3 py-2 border rounded-md bg-white hover:bg-slate-50 text-sm"
+                              title="Open PDF receipt"
+                            >
+                              <FileText className="h-5 w-5 text-red-500" />
+                              <span className="text-blue-600">View PDF</span>
+                            </a>
+                          ) : (
+                            <a
+                              href={payment.receiptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block"
+                              title="Click to view full size"
+                            >
+                              <img
+                                src={payment.receiptUrl}
+                                alt="Receipt"
+                                className="w-24 h-24 object-cover rounded-md border hover:opacity-80 transition-opacity"
+                              />
+                            </a>
+                          ))}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -576,14 +621,19 @@ export default function OrderDetailPage() {
               />
             </div>
             <div>
-              <Label>Receipt URL (optional)</Label>
+              <Label>Receipt (optional)</Label>
               <Input
-                placeholder="https://drive.google.com/..."
-                value={paymentReceipt}
-                onChange={(e) => setPaymentReceipt(e.target.value)}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={(e) => setPaymentReceipt(e.target.files?.[0] || null)}
               />
+              {paymentReceipt && (
+                <p className="text-xs text-slate-600 mt-1">
+                  📎 {paymentReceipt.name} ({(paymentReceipt.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
               <p className="text-xs text-slate-500 mt-1">
-                Upload receipt to Google Drive and paste the link
+                Accepted: JPEG, PNG, WebP, PDF — max 5 MB
               </p>
             </div>
           </div>

@@ -121,20 +121,42 @@ export default function ProductionOrderItemPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/production")}>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-3">
+          <Button
+            variant="ghost"
+            className="mt-0.5 px-2 md:px-3"
+            onClick={() => navigate("/production")}
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{orderItem.productName}</h1>
-            <p className="text-muted-foreground">{orderItem.orderNumber} • Production Management</p>
+
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 break-words">
+              {orderItem.productName}
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground break-words">
+              {orderItem.orderNumber} • Production Management
+            </p>
           </div>
         </div>
-        <Badge variant="outline" className="text-lg px-3 py-1">
-          FWD: {formatDate(orderItem.fwdDate)}
-        </Badge>
+
+        <div className="grid grid-cols-2 gap-3 w-full md:w-auto md:min-w-[220px]">
+          <div className="rounded-lg border bg-slate-50 px-3 py-2 text-left md:text-right">
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">FWD Date</p>
+            <p className="text-sm md:text-base font-semibold text-slate-900 leading-tight">
+              {formatDate(orderItem.fwdDate) || "Not set"}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-left md:text-right">
+            <p className="text-[11px] uppercase tracking-wide text-indigo-500">Ship Date</p>
+            <p className="text-sm md:text-base font-semibold text-indigo-700 leading-tight">
+              {formatDate(orderItem.productionShipDate) || "Not set"}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Task Creation Panel (Overlay) */}
@@ -340,7 +362,7 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
         {/* Timeline View */}
         {showTimeline && hasTasks && (
           <div className="mt-4">
-            <TaskTimelineView tasks={tasks} sectionName={section.name} compact />
+            <TaskTimelineView tasks={tasks} sectionName={section.name} canReassign />
           </div>
         )}
 
@@ -356,11 +378,76 @@ function SectionCard({ orderItemId, section, onCreateTasks, onSendToQA, isSendin
   )
 }
 
-// Order Details Card - Sanitized for Production (no personal customer info except name & height)
+// Order Details Card — mirrors the Order Confirmation Form layout
 function OrderDetailsCard({ orderItem }) {
+  // Render a customization block (Style / Color / Fabric)
+  const renderCustomization = (label, data) => {
+    if (!data) return null
+    const type = data.type || "original"
+    const isOriginal = typeof type === "string" && type.toLowerCase() === "original"
+
+    return (
+      <div>
+        <p className="text-sm text-slate-600">{label}</p>
+        <p className="font-semibold capitalize">{isOriginal ? "Original" : type}</p>
+
+        {/* String details */}
+        {data.details && typeof data.details === "string" && (
+          <p className="text-xs text-slate-500 mt-1">{data.details}</p>
+        )}
+
+        {/* Object details (top/bottom/dupattaShawl) */}
+        {data.details && typeof data.details === "object" && (
+          <div className="text-xs text-slate-500 mt-1 space-y-0.5">
+            {data.details.top && (
+              <p>
+                <span className="font-medium">Top:</span> {data.details.top}
+              </p>
+            )}
+            {data.details.bottom && (
+              <p>
+                <span className="font-medium">Bottom:</span> {data.details.bottom}
+              </p>
+            )}
+            {data.details.dupattaShawl && (
+              <p>
+                <span className="font-medium">Dupatta/Shawl:</span> {data.details.dupattaShawl}
+              </p>
+            )}
+          </div>
+        )}
+
+        {data.image && (
+          <img
+            src={data.image}
+            alt={`${label} reference`}
+            className="w-20 h-20 object-cover rounded mt-2 border"
+          />
+        )}
+      </div>
+    )
+  }
+
+  const hasStandardChart =
+    !orderItem.isCustomSize &&
+    orderItem.standardSizeChart &&
+    typeof orderItem.standardSizeChart === "object" &&
+    Object.keys(orderItem.standardSizeChart).length > 0
+
+  const hasHeightChart =
+    orderItem.heightChart &&
+    typeof orderItem.heightChart === "object" &&
+    Object.keys(orderItem.heightChart).length > 0
+
+  const hasCustomMeasurements =
+    orderItem.isCustomSize &&
+    orderItem.measurements &&
+    typeof orderItem.measurements === "object" &&
+    Object.keys(orderItem.measurements).length > 0
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Product Info */}
+      {/* ── Product Information ─────────────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -383,13 +470,16 @@ function OrderDetailsCard({ orderItem }) {
           <div className="space-y-2">
             <DetailRow label="Product" value={orderItem.productName} />
             <DetailRow label="SKU" value={orderItem.sku || "N/A"} />
+            <DetailRow label="Quantity" value={orderItem.quantity || 1} />
             <DetailRow label="Customer Name" value={orderItem.customerName} />
             <DetailRow label="Height" value={orderItem.customerHeight || "N/A"} />
+            <DetailRow label="Destination" value={orderItem.destination || "N/A"} />
+            <DetailRow label="Modesty" value={orderItem.modesty ? "Yes" : "No"} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Size & Measurements */}
+      {/* ── Size & Measurements ─────────────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -398,22 +488,49 @@ function OrderDetailsCard({ orderItem }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <DetailRow
-            label="Size Type"
-            value={orderItem.isCustomSize ? "Custom Measurements" : "Standard Size"}
-          />
-          {!orderItem.isCustomSize && (
-            <DetailRow label="Standard Size" value={orderItem.standardSize || "N/A"} />
+          <DetailRow label="Size Type" value={orderItem.isCustomSize ? "Custom" : "Standard"} />
+          {!orderItem.isCustomSize && <DetailRow label="Size" value={orderItem.size || "N/A"} />}
+
+          {/* Standard size chart */}
+          {hasStandardChart && (
+            <div className="mt-2 p-3 rounded-lg bg-slate-50">
+              <p className="text-sm font-medium mb-2">
+                Standard Size Measurements ({orderItem.size})
+              </p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                {Object.entries(orderItem.standardSizeChart).map(([key, value]) => (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-slate-500 capitalize">{key.replace(/_/g, " ")}:</span>
+                    <span className="font-medium">{value}"</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
-          {/* Custom measurements would go here */}
-          {orderItem.isCustomSize && orderItem.measurements && (
+          {/* Height-based chart */}
+          {hasHeightChart && (
             <div className="mt-2 p-3 rounded-lg bg-slate-50">
-              <p className="text-sm font-medium mb-2">Custom Measurements:</p>
-              <div className="grid grid-cols-2 gap-2 text-sm">
+              <p className="text-sm font-medium mb-2">Height-Based Measurements</p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                {Object.entries(orderItem.heightChart).map(([key, value]) => (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-slate-500 capitalize">{key.replace(/_/g, " ")}:</span>
+                    <span className="font-medium">{value}"</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Custom measurements */}
+          {hasCustomMeasurements && (
+            <div className="mt-2 p-3 rounded-lg bg-slate-50">
+              <p className="text-sm font-medium mb-2">Custom Measurements</p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
                 {Object.entries(orderItem.measurements).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
-                    <span className="text-slate-500 capitalize">{key}:</span>
+                    <span className="text-slate-500 capitalize">{key.replace(/_/g, " ")}:</span>
                     <span className="font-medium">{value}"</span>
                   </div>
                 ))}
@@ -423,36 +540,7 @@ function OrderDetailsCard({ orderItem }) {
         </CardContent>
       </Card>
 
-      {/* Style Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Image className="h-5 w-5 text-indigo-600" />
-            Style Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <DetailRow label="Color" value={orderItem.color || "Original"} />
-          <DetailRow label="Fabric" value={orderItem.fabric || "Original"} />
-          <DetailRow label="Modesty" value={orderItem.modesty ? "Yes" : "No"} />
-
-          {/* Style Sketch */}
-          {orderItem.styleSketch && (
-            <div className="mt-2">
-              <p className="text-sm font-medium mb-2">Custom Style Sketch:</p>
-              <div className="w-full h-32 rounded-lg bg-slate-100 overflow-hidden">
-                <img
-                  src={orderItem.styleSketch}
-                  alt="Style Sketch"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* What's Included & Add-ons */}
+      {/* ── What's Included & Add-ons ───────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -461,35 +549,84 @@ function OrderDetailsCard({ orderItem }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Included Sections */}
+          {/* Included Items */}
           <div>
             <p className="text-sm font-medium mb-2">Included:</p>
-            <div className="flex flex-wrap gap-2">
-              {orderItem.sections?.map((section) => (
-                <Badge key={section.name} variant="secondary">
-                  {section.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          {/* Add-ons */}
-          {orderItem.addons && orderItem.addons.length > 0 && (
-            <div>
-              <p className="text-sm font-medium mb-2">Selected Add-ons:</p>
+            {orderItem.includedItems && orderItem.includedItems.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {orderItem.addons.map((addon, index) => (
-                  <Badge key={index} variant="outline" className="bg-indigo-50">
-                    {addon}
+                {orderItem.includedItems.map((inc, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="secondary"
+                    className="bg-green-100 text-green-800 capitalize"
+                  >
+                    {inc.piece || inc}
+                    {inc.price > 0 && (
+                      <span className="ml-1 text-xs">PKR {inc.price.toLocaleString()}</span>
+                    )}
                   </Badge>
                 ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">None specified</p>
+            )}
+          </div>
+
+          {/* Selected Add-ons */}
+          <div>
+            <p className="text-sm font-medium mb-2">Selected Add-ons:</p>
+            {orderItem.selectedAddOns && orderItem.selectedAddOns.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {orderItem.selectedAddOns.map((addon, idx) => (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className="bg-amber-50 text-amber-800 capitalize"
+                  >
+                    {addon.piece || addon}
+                    {addon.price > 0 && (
+                      <span className="ml-1 text-xs">+PKR {addon.price.toLocaleString()}</span>
+                    )}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">None selected</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── Customizations ──────────────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Image className="h-5 w-5 text-indigo-600" />
+            Customizations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {renderCustomization("Style", orderItem.style)}
+          {renderCustomization("Color", orderItem.color)}
+          {renderCustomization("Fabric", orderItem.fabric)}
+
+          {/* Design Sketch */}
+          {orderItem.sketchImage && (
+            <div className="mt-2">
+              <p className="text-sm font-medium mb-2">Design Sketch:</p>
+              <div className="w-full h-48 rounded-lg bg-slate-100 overflow-hidden border">
+                <img
+                  src={orderItem.sketchImage}
+                  alt="Design Sketch"
+                  className="w-full h-full object-contain"
+                />
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Dates & Notes */}
+      {/* ── Dates & Notes ───────────────────────────────────────── */}
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
@@ -500,16 +637,16 @@ function OrderDetailsCard({ orderItem }) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-3 rounded-lg bg-slate-50">
+              <p className="text-xs text-slate-500">Order Date</p>
+              <p className="font-medium">{formatDate(orderItem.orderDate) || "Not set"}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-50">
               <p className="text-xs text-slate-500">FWD Date</p>
-              <p className="font-medium">{formatDate(orderItem.fwdDate)}</p>
+              <p className="font-medium">{formatDate(orderItem.fwdDate) || "Not set"}</p>
             </div>
             <div className="p-3 rounded-lg bg-slate-50">
               <p className="text-xs text-slate-500">Production Ship Date</p>
               <p className="font-medium">{formatDate(orderItem.productionShipDate) || "Not set"}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-slate-50">
-              <p className="text-xs text-slate-500">Order Date</p>
-              <p className="font-medium">{formatDate(orderItem.orderDate)}</p>
             </div>
           </div>
 
@@ -517,7 +654,7 @@ function OrderDetailsCard({ orderItem }) {
           {orderItem.notes && (
             <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
               <p className="text-sm font-medium text-amber-800 mb-1">Special Instructions:</p>
-              <p className="text-sm text-amber-700">{orderItem.notes}</p>
+              <p className="text-sm text-amber-700 whitespace-pre-wrap">{orderItem.notes}</p>
             </div>
           )}
         </CardContent>

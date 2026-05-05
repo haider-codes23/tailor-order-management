@@ -113,35 +113,36 @@ export default function ProductsListPage() {
       {/* Products Grid */}
       {/* Products Grid */}
       {!isLoading && products.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => (
             <Card
               key={product.id}
               onClick={() => handleProductClick(product.id)}
               className="cursor-pointer hover:shadow-lg transition-shadow flex flex-col"
             >
-              <CardHeader>
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0">
-                    <CardTitle className="text-lg line-clamp-1">{product.name}</CardTitle>
-                    <CardDescription className="mt-1 line-clamp-1">{product.sku}</CardDescription>
-                  </div>
-                  <Badge variant={product.active ? "default" : "secondary"} className="shrink-0">
-                    {product.active ? "Active" : "Inactive"}
-                  </Badge>
+             <CardHeader>
+                <div className="min-w-0">
+                  <CardTitle className="text-base line-clamp-2">{product.name}</CardTitle>
+                  <CardDescription className="mt-1 line-clamp-1">{product.sku}</CardDescription>
                 </div>
               </CardHeader>
 
               <CardContent className="flex-1 flex flex-col">
                 {/* Product Image */}
                 {product.primary_image && (
-                  <div className="mb-4 bg-muted rounded-lg overflow-hidden aspect-[3/4] max-w-[260px] mx-auto">
+                  <div className="mb-4 bg-muted rounded-lg overflow-hidden aspect-[3/4] w-full relative">
                     <img
                       src={product.primary_image}
                       alt={product.name}
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                     />
+                    <Badge
+                      variant={product.active ? "default" : "secondary"}
+                      className="absolute top-2 right-2 text-xs shadow-sm"
+                    >
+                      {product.active ? "Active" : "Inactive"}
+                    </Badge>
                   </div>
                 )}
 

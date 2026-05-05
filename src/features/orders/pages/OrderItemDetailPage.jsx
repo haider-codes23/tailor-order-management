@@ -83,9 +83,14 @@ function SectionInventoryResults({
       if (allFulfilled) {
         sectionsReadyForRecheck.push(sectionName)
       }
-    } else if (sectionData.status === SECTION_STATUS.PENDING_INVENTORY_CHECK) {
-      // Sections rejected from dyeing go back to PENDING_INVENTORY_CHECK
-      // They can be re-checked immediately since inventory was released
+    } else if (
+      sectionData.status === SECTION_STATUS.PENDING_INVENTORY_CHECK &&
+      sectionData.dyeingRejectedAt
+    ) {
+      // Sections rejected from dyeing go back to PENDING_INVENTORY_CHECK.
+      // Only treat as "ready for recheck" if they actually came from a dyeing
+      // rejection — otherwise this is the initial inventory check state and
+      // the top-level "Run Inventory Check" card handles it.
       sectionsReadyForRecheck.push(sectionName)
     }
   })
@@ -327,6 +332,13 @@ export default function OrderItemDetailPage() {
   ]
   const hasReachedInventoryCheck = item && !PRE_INVENTORY_STATUSES.includes(item.status)
 
+  // True if ANY section has been rejected from dyeing at least once.
+  // Used to hide the top-level "Run Inventory Check" card in favor of the
+  // per-section recheck button inside SectionInventoryResults.
+  const hasAnyDyeingRejectedSection =
+    item?.sectionStatuses &&
+    Object.values(item.sectionStatuses).some((s) => !!s?.dyeingRejectedAt)
+
   const procurementParams = hasReachedInventoryCheck ? { orderItemId: itemId } : { skip: true }
   const { data: procurementDemandsData } = useProcurementDemands(procurementParams)
   const procurementDemands = hasReachedInventoryCheck ? (procurementDemandsData?.data || []) : []
@@ -341,11 +353,30 @@ export default function OrderItemDetailPage() {
     enabled: !!item?.productId,
   })
 
-  // Check if product has an active BOM with items for this size
+  // Check if this item has a BOM available for inventory check.
+  //
+  // Two different sources depending on size type:
+  //   - STANDARD size → product-level BOM (looked up via useActiveBOM)
+  //   - CUSTOM size   → order-item-level customBOM, built in Fabrication
+  //
+  // The backend's inventoryCheckService follows the same rule:
+  // `getBOMItemsForOrderItem` reads item.custom_bom for custom items and
+  // falls back to the product's active BOM only for standard items.
+  // Mirroring that rule here keeps the "Run Inventory Check" button and
+  // the "No BOM Configured" banner consistent with what the backend will
+  // actually do when the check runs.
+  const isCustomSize = item?.sizeType === SIZE_TYPE.CUSTOM
+
+  // Only fetch the product-level BOM for standard-size items — custom items
+  // don't use a product BOM, so skip the query entirely.
   const { data: bomData } = useActiveBOM(item?.productId, item?.size, {
-    enabled: !!item?.productId,
+    enabled: !!item?.productId && !isCustomSize,
   })
-  const hasBOM = !!(bomData?.data?.items?.length > 0)
+
+  const hasBOM = isCustomSize
+    ? !!(item?.customBOM?.items?.length > 0)
+    : !!(bomData?.data?.items?.length > 0)
+
   const product = productData?.data
 
   const canManageForms = hasPermission(user, "orders.manage_customer_forms")
@@ -376,6 +407,16 @@ export default function OrderItemDetailPage() {
       } else {
         toast.success("All materials available! Ready for production.")
       }
+
+      // Auto-switch to Packet tab when inventory check results in a packet
+      // being created (full or partial). The backend's nextStatus is the
+      // source of truth.
+      if (
+        result?.nextStatus === ORDER_ITEM_STATUS.CREATE_PACKET ||
+        result?.nextStatus === ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET
+      ) {
+        setActiveTab("packet")
+      }
     } catch (error) {
       toast.error("Failed to run inventory check")
       console.error("Inventory check error:", error)
@@ -392,6 +433,21 @@ export default function OrderItemDetailPage() {
       const result = response?.data || response
       if (result.passedSections?.length > 0) {
         toast.success(`Inventory check passed for: ${result.passedSections.join(", ")}`)
+      }
+
+      // Auto-switch to Packet tab when the re-run resulted in a packet round
+      // for some sections. Trigger on CREATE_PACKET / PARTIAL_CREATE_PACKET,
+      // OR on any run where at least one section newly passed (Scenario 2:
+      // a section was rejected from dyeing, procurement fulfilled, rerun
+      // passes — the item may stay PARTIALLY_IN_DYEING because other
+      // sections are still in dyeing, but the newly-passed section now has
+      // a new packet round waiting in the Packet tab).
+      if (
+        result?.nextStatus === ORDER_ITEM_STATUS.CREATE_PACKET ||
+        result?.nextStatus === ORDER_ITEM_STATUS.PARTIAL_CREATE_PACKET ||
+        result?.passedSections?.length > 0
+      ) {
+        setActiveTab("packet")
       }
     } catch (error) {
       toast.error("Failed to re-run section inventory check")
@@ -664,7 +720,7 @@ export default function OrderItemDetailPage() {
             )}
 
           {/* Inventory Check section - show for items in INVENTORY_CHECK status */}
-          {item.status === ORDER_ITEM_STATUS.INVENTORY_CHECK && (
+           {item.status === ORDER_ITEM_STATUS.INVENTORY_CHECK && !hasAnyDyeingRejectedSection && (
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between mb-4">

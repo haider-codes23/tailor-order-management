@@ -43,6 +43,24 @@ export const assignProductionHead = async (orderItemId, data) => {
   return response.data
 }
 
+
+/**
+ * Get list of active production heads (for manual assignment dropdown)
+ * @returns {Promise} List of { id, name }
+ */
+export const getProductionHeadsList = async () => {
+  const response = await httpClient.get(`${BASE_URL}/heads`)
+  return response.data
+}
+
+/**
+ * Get production heads with their current workload (active items, product breakdown)
+ * @returns {Promise} List of production heads with workload data
+ */
+export const getProductionHeadsWorkload = async () => {
+  const response = await httpClient.get(`${BASE_URL}/heads-workload`)
+  return response.data
+}
 // ============================================================================
 // PRODUCTION HEAD DASHBOARD
 // ============================================================================
@@ -94,6 +112,16 @@ export const createSectionTasks = async (orderItemId, section, data) => {
     `${BASE_URL}/order-item/${orderItemId}/section/${section}/tasks`,
     data
   )
+  return response.data
+}
+
+/**
+ * Reassign a task to a different worker (production head only)
+ * @param {string} taskId
+ * @param {Object} data - { newWorkerId, reason }
+ */
+export const reassignTask = async (taskId, data) => {
+  const response = await httpClient.post(`${BASE_URL}/tasks/${taskId}/reassign`, data)
   return response.data
 }
 
@@ -215,6 +243,8 @@ export const productionApi = {
   getRoundRobinState,
   getReadyForAssignment,
   assignProductionHead,
+  getProductionHeadsList,
+  getProductionHeadsWorkload,
 
   // Production Head Dashboard
   getMyAssignments,
@@ -223,6 +253,7 @@ export const productionApi = {
 
   // Task Management
   createSectionTasks,
+  reassignTask,
   getSectionTasks,
   startSectionProduction,
   updateTask,

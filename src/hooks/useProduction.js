@@ -9,6 +9,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { productionApi } from "@/services/api/productionApi"
 import { useToast } from "@/hooks/use-toast"
+import { getProductionHeadsList, getProductionHeadsWorkload } from "@/services/api/productionApi"
 
 // ============================================================================
 // QUERY KEYS
@@ -20,6 +21,7 @@ export const productionKeys = {
   // Round Robin & Assignment
   roundRobin: () => [...productionKeys.all, "round-robin"],
   readyForAssignment: () => [...productionKeys.all, "ready-for-assignment"],
+  headsWorkload: () => [...productionKeys.all, "heads-workload"],
 
   // Production Head Dashboard
   myAssignments: (userId) => [...productionKeys.all, "my-assignments", userId],
@@ -63,6 +65,25 @@ export function useReadyForAssignment() {
     queryFn: productionApi.getReadyForAssignment,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000, // Refetch every minute
+  })
+}
+
+/**
+ * Get production heads with their current workload
+ */
+export function useProductionHeadsWorkload() {
+  return useQuery({
+    queryKey: productionKeys.headsWorkload(),
+    queryFn: getProductionHeadsWorkload,
+    staleTime: 30 * 1000,
+  })
+}
+
+export const useProductionHeadsList = () => {
+  return useQuery({
+    queryKey: ["production", "heads-list"],
+    queryFn: getProductionHeadsList,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -162,19 +183,21 @@ export function useAssignProductionHead() {
   const { toast } = useToast()
 
   return useMutation({
-    mutationFn: ({ orderItemId, assignedBy }) =>
-      productionApi.assignProductionHead(orderItemId, { assignedBy }),
+    mutationFn: ({ orderItemId, assignedBy, productionHeadId }) =>
+      productionApi.assignProductionHead(orderItemId, { assignedBy, productionHeadId }),
 
     onSuccess: (data, variables) => {
       // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({ queryKey: productionKeys.readyForAssignment() })
       queryClient.invalidateQueries({ queryKey: productionKeys.roundRobin() })
+      queryClient.invalidateQueries({ queryKey: productionKeys.headsWorkload() })
       queryClient.invalidateQueries({ queryKey: ["orderItems"] })
       queryClient.invalidateQueries({ queryKey: ["order-item", variables.orderItemId] })
 
       // Force refetch
       queryClient.refetchQueries({ queryKey: productionKeys.readyForAssignment() })
       queryClient.refetchQueries({ queryKey: productionKeys.roundRobin() })
+      queryClient.refetchQueries({ queryKey: productionKeys.headsWorkload() })
 
       toast({
         title: "Production Head Assigned",
@@ -383,6 +406,36 @@ export function useCompleteTask() {
   })
 }
 
+export function useReassignTask() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: ({ taskId, newWorkerId, reason }) =>
+      productionApi.reassignTask(taskId, { newWorkerId, reason }),
+
+    onSuccess: (data, variables) => {
+      // Invalidate anything that shows task/worker data
+      queryClient.invalidateQueries({ queryKey: ["production"] })
+      queryClient.invalidateQueries({ queryKey: ["orderItems"] })
+      queryClient.refetchQueries({ queryKey: ["production"] })
+
+      toast({
+        title: "Task Reassigned",
+        description: data?.message || "Task reassigned successfully",
+      })
+    },
+
+    onError: (error) => {
+      toast({
+        title: "Reassignment Failed",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      })
+    },
+  })
+}
+
 /**
  * Send section to QA
  */
@@ -446,6 +499,7 @@ export default {
   useStartSectionProduction,
   useUpdateTask,
   useStartTask,
+  useReassignTask,
   useCompleteTask,
   useSendSectionToQA,
 }

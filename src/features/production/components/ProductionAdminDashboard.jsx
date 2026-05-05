@@ -1,8 +1,10 @@
 /**
- * ProductionAdminDashboard.jsx - COMPLETE FIXED FILE
+ * ProductionAdminDashboard.jsx
  * Admin view for production - shows order items ready for production head assignment
  *
  * File: src/features/production/components/ProductionAdminDashboard.jsx
+ *
+ * Manual production head assignment (round-robin removed).
  */
 
 import { useState } from "react"
@@ -11,25 +13,32 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
+import {
   Loader2,
   Factory,
   UserPlus,
-  RefreshCw,
   CheckCircle,
-  Clock,
-  Users,
   AlertCircle,
   Package,
   Calendar,
-  ArrowRight,
   Shirt,
-  CircleDot,
+  ChevronDown,
+  ChevronUp,
+  User,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
   useReadyForAssignment,
   useRoundRobinState,
   useAssignProductionHead,
+  useProductionHeadsList,
+  useProductionHeadsWorkload,
 } from "@/hooks/useProduction"
 import { formatDate } from "../../../utils/formatters"
 
@@ -37,7 +46,6 @@ export default function ProductionAdminDashboard() {
   const navigate = useNavigate()
 
   // Fetch order items ready for production head assignment
-  // IMPORTANT: This returns { items: [...], nextProductionHead: {...} }
   const { data: readyData, isLoading: isLoadingReady, error: readyError } = useReadyForAssignment()
 
   // Extract items array from the response, default to empty array
@@ -46,21 +54,22 @@ export default function ProductionAdminDashboard() {
   console.log("ProductionAdminDashboard - readyData:", readyData)
   console.log("ProductionAdminDashboard - readyItems:", readyItems)
 
-  // Fetch round robin state to show next production head
+  // Fetch round robin state ONLY for stats (inProduction, completedToday, totalProductionHeads)
   const { data: roundRobinState, isLoading: isLoadingRoundRobin } = useRoundRobinState()
 
   // Assignment mutation
   const assignMutation = useAssignProductionHead()
 
-  // Handle assign production head - THIS IS THE CRITICAL FUNCTION
-  const handleAssignProductionHead = async (orderItemId, orderNumber, productName) => {
-    // DEBUG: Log what we received
-    console.log("=== handleAssignProductionHead CALLED ===")
-    console.log("orderItemId:", orderItemId, "type:", typeof orderItemId)
-    console.log("orderNumber:", orderNumber)
-    console.log("productName:", productName)
+  // Fetch production head workload for informed assignment
+  const { data: workloadData, isLoading: isLoadingWorkload } = useProductionHeadsWorkload()
+  const headsWorkload = workloadData || []
 
-    // GUARD: Check if orderItemId is valid
+  // Handle assign production head — now requires productionHeadId
+  const handleAssignProductionHead = async (orderItemId, orderNumber, productName, productionHeadId) => {
+    console.log("=== handleAssignProductionHead CALLED ===")
+    console.log("orderItemId:", orderItemId)
+    console.log("productionHeadId:", productionHeadId)
+
     if (!orderItemId || orderItemId === "undefined" || orderItemId === undefined) {
       console.error("ERROR: orderItemId is invalid:", orderItemId)
       toast.error("Cannot assign production head", {
@@ -69,10 +78,13 @@ export default function ProductionAdminDashboard() {
       return
     }
 
+    if (!productionHeadId) {
+      toast.error("Please select a production head")
+      return
+    }
+
     try {
-      console.log("Calling assignMutation.mutateAsync with:", orderItemId)
-      await assignMutation.mutateAsync({ orderItemId })
-      console.log("Assignment successful!")
+      await assignMutation.mutateAsync({ orderItemId, productionHeadId })
       toast.success(`Production head assigned to ${productName} (${orderNumber})`, {
         description: "The production head can now manage this order item.",
       })
@@ -114,40 +126,9 @@ export default function ProductionAdminDashboard() {
     )
   }
 
-  // Get next production head from either source
-  const nextProductionHead = readyData?.nextProductionHead || roundRobinState?.nextProductionHead
-
   return (
     <div className="p-6 space-y-6">
       <DashboardHeader />
-
-      {/* Round Robin Status Card */}
-      <Card className="border-indigo-200 bg-indigo-50/50">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-indigo-100 p-2">
-                <RefreshCw className="h-5 w-5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-700">Round Robin Assignment</p>
-                <p className="text-xs text-slate-500">
-                  Next in rotation:{" "}
-                  <span className="font-semibold text-indigo-600">
-                    {nextProductionHead?.name || "Loading..."}
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-slate-500">Active Production Heads</p>
-              <p className="text-2xl font-bold text-indigo-600">
-                {roundRobinState?.totalProductionHeads || 0}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -174,6 +155,36 @@ export default function ProductionAdminDashboard() {
         />
       </div>
 
+      {/* Production Head Workload Panel */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-blue-600" />
+            Production Head Workload
+          </CardTitle>
+          <CardDescription>
+            Current assignments per production head — use this to make informed assignment decisions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingWorkload ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : headsWorkload.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No active production heads found.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {headsWorkload.map((head) => (
+                <ProductionHeadWorkloadCard key={head.id} head={head} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Ready for Assignment List */}
       <Card>
         <CardHeader>
@@ -182,7 +193,7 @@ export default function ProductionAdminDashboard() {
             Order Items Ready for Production Head Assignment
           </CardTitle>
           <CardDescription>
-            Click "Assign Production Head" to automatically assign using round-robin rotation
+            Select a production head from the dropdown and click "Assign" to assign manually.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -200,9 +211,9 @@ export default function ProductionAdminDashboard() {
                 <OrderItemAssignmentCard
                   key={item.id || item.orderItemId || index}
                   item={item}
-                  nextProductionHead={nextProductionHead}
                   onAssign={handleAssignProductionHead}
                   isAssigning={assignMutation.isPending}
+                  headsWorkload={headsWorkload}
                 />
               ))}
             </div>
@@ -256,8 +267,14 @@ function StatsCard({ title, value, icon: Icon, color, description }) {
 }
 
 // Order Item Assignment Card Component
-function OrderItemAssignmentCard({ item, nextProductionHead, onAssign, isAssigning }) {
-  // Get the order item ID - support both 'id' and 'orderItemId' field names
+function OrderItemAssignmentCard({ item, onAssign, isAssigning, headsWorkload = [] }) {
+  // Local state for the selected production head in this card's dropdown
+  const [selectedHeadId, setSelectedHeadId] = useState("")
+
+  // Fetch the list of active production heads for the dropdown
+  const { data: heads = [], isLoading: isLoadingHeads } = useProductionHeadsList()
+
+  // Get the order item ID — support both 'id' and 'orderItemId' field names
   const orderItemId = item.id || item.orderItemId
 
   // Get sections that are ready for production
@@ -268,22 +285,15 @@ function OrderItemAssignmentCard({ item, nextProductionHead, onAssign, isAssigni
     ) ||
     []
 
-  // Debug log
   console.log("OrderItemAssignmentCard render - item:", item)
   console.log("OrderItemAssignmentCard render - extracted orderItemId:", orderItemId)
 
-  // Handle button click with explicit logging
   const handleClick = () => {
-    console.log("=== BUTTON CLICKED ===")
-    console.log("item object:", item)
-    console.log("item.id:", item.id)
-    console.log("item.orderItemId:", item.orderItemId)
-    console.log("Using orderItemId:", orderItemId)
-    console.log("item.orderNumber:", item.orderNumber)
-    console.log("item.productName:", item.productName)
-
-    // Call the onAssign function
-    onAssign(orderItemId, item.orderNumber, item.productName)
+    if (!selectedHeadId) {
+      toast.error("Please select a production head")
+      return
+    }
+    onAssign(orderItemId, item.orderNumber, item.productName, selectedHeadId)
   }
 
   return (
@@ -312,7 +322,6 @@ function OrderItemAssignmentCard({ item, nextProductionHead, onAssign, isAssigni
                 <Badge variant="outline" className="text-xs">
                   {item.orderNumber}
                 </Badge>
-                {/* Debug: Show the ID */}
                 <Badge variant="outline" className="text-xs bg-gray-100">
                   ID: {orderItemId || "MISSING!"}
                 </Badge>
@@ -358,12 +367,41 @@ function OrderItemAssignmentCard({ item, nextProductionHead, onAssign, isAssigni
               </div>
             </div>
 
-            {/* Assign Button */}
-            <div className="flex flex-col items-end gap-1">
+            {/* Production Head Dropdown + Assign Button */}
+            <div className="flex flex-col items-end gap-2">
+              <Select
+                value={selectedHeadId}
+                onValueChange={setSelectedHeadId}
+                disabled={isLoadingHeads || isAssigning}
+              >
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue
+                    placeholder={isLoadingHeads ? "Loading..." : "Select production head"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {heads.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-slate-500">
+                      No active production heads
+                    </div>
+                  ) : (
+                    heads.map((h) => {
+                      const workload = headsWorkload.find((w) => w.id === h.id)
+                      const count = workload?.totalActiveItems || 0
+                      return (
+                        <SelectItem key={h.id} value={String(h.id)}>
+                          {h.name} ({count} active)
+                        </SelectItem>
+                      )
+                    })
+                  )}
+                </SelectContent>
+              </Select>
+
               <Button
                 onClick={handleClick}
-                disabled={isAssigning || !orderItemId}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                disabled={isAssigning || !orderItemId || !selectedHeadId || isLoadingHeads}
+                className="bg-indigo-600 hover:bg-indigo-700 w-[220px]"
               >
                 {isAssigning ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -372,14 +410,79 @@ function OrderItemAssignmentCard({ item, nextProductionHead, onAssign, isAssigni
                 )}
                 Assign Production Head
               </Button>
-              <p className="text-xs text-slate-500 flex items-center gap-1">
-                <CircleDot className="h-3 w-3 text-indigo-500" />
-                Will assign: {nextProductionHead?.name || "Loading..."}
-              </p>
             </div>
           </div>
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// Production Head Workload Card Component
+function ProductionHeadWorkloadCard({ head }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="border rounded-lg p-4 hover:border-blue-200 transition-colors">
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <User className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <p className="font-semibold text-slate-900">{head.name}</p>
+            <p className="text-xs text-slate-500">
+              {head.totalActiveItems} active item{head.totalActiveItems !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+        {head.productBreakdown.length > 0 && (
+          expanded ? (
+            <ChevronUp className="h-4 w-4 text-slate-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-slate-400" />
+          )
+        )}
+      </div>
+
+      {/* Product breakdown badges — always visible */}
+      {head.productBreakdown.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {head.productBreakdown.map((product) => (
+            <Badge
+              key={product.productName}
+              variant="secondary"
+              className="text-xs bg-blue-50 text-blue-700"
+            >
+              {product.productName} × {product.count}
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      {head.totalActiveItems === 0 && (
+        <p className="text-xs text-green-600 mt-2">Available — no active assignments</p>
+      )}
+
+      {/* Expanded: show individual items */}
+      {expanded && head.activeItems.length > 0 && (
+        <div className="mt-3 pt-3 border-t space-y-2">
+          {head.activeItems.map((item) => (
+            <div key={item.id} className="flex items-center justify-between text-xs">
+              <div>
+                <span className="font-medium text-slate-700">{item.productName}</span>
+                <span className="text-slate-400 ml-2">{item.orderNumber}</span>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {item.status?.replace(/_/g, " ")}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

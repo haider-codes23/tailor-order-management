@@ -2,15 +2,14 @@
  * Sales Approval Dashboard Page - Phase 14 Redesign
  * src/features/sales/pages/SalesApprovalDashboardPage.jsx
  *
- * COMPLETE REWRITE — Now operates at ORDER level with 3 tabs:
- * Tab 1: Ready for Client — Orders with videos ready to send
- * Tab 2: Awaiting Response — Orders sent, awaiting client feedback
- * Tab 3: Payment Verification — Client approved, verifying payments
+ * Tabs:
+ *   Tab 1: Ready for Client — Orders with videos ready to send
+ *   Tab 2: Awaiting Response — Orders sent, awaiting client feedback
+ *   Tab 3: Payment Verification — Client approved OR ready stock, verifying payments
  *
- * Modals triggered from Tab 2:
- * - ClientApprovalModal (screenshot upload)
- * - RejectionOptionsModal → ReVideoRequestModal / AlterationRequestModal /
- *   StartFromScratchModal / CancellationConfirmModal
+ * Ready Stock orders skip the client approval flow entirely and land directly
+ * in Tab 3 (Payment Verify). They are visually distinguished with a green
+ * "Ready Stock" badge and an explanatory banner.
  */
 
 import { useState } from "react"
@@ -27,12 +26,12 @@ import {
   Loader2,
   AlertCircle,
   Video,
-  User,
   ExternalLink,
   CheckCircle,
   XCircle,
   Eye,
   Scissors,
+  Package,
 } from "lucide-react"
 import { format, formatDistanceToNow } from "date-fns"
 import { useAuth } from "@/features/auth/hooks/useAuth"
@@ -42,7 +41,6 @@ import {
   useAwaitingPayment,
   useSalesStats,
   useSendOrderToClient,
-  useMarkClientApproved,
   useApprovePayments,
 } from "@/hooks/useSalesApproval"
 import ClientApprovalModal from "../components/ClientApprovalModal"
@@ -57,7 +55,6 @@ export default function SalesApprovalDashboardPage() {
   const [activeTab, setActiveTab] = useState("ready")
   const [searchQuery, setSearchQuery] = useState("")
 
-  // ── Modal state ──────────────────────────────────────────────────────
   const [approvalModal, setApprovalModal] = useState({ open: false, order: null })
   const [rejectionModal, setRejectionModal] = useState({ open: false, order: null })
   const [reVideoModal, setReVideoModal] = useState({ open: false, order: null })
@@ -65,7 +62,6 @@ export default function SalesApprovalDashboardPage() {
   const [cancelModal, setCancelModal] = useState({ open: false, order: null })
   const [scratchModal, setScratchModal] = useState({ open: false, order: null })
 
-  // ── Queries ──────────────────────────────────────────────────────────
   const { data: stats, isLoading: statsLoading } = useSalesStats()
   const { data: readyOrders, isLoading: readyLoading, error: readyError } = useApprovalQueue()
   const {
@@ -79,11 +75,9 @@ export default function SalesApprovalDashboardPage() {
     error: paymentError,
   } = useAwaitingPayment()
 
-  // ── Mutations ────────────────────────────────────────────────────────
   const sendToClientMutation = useSendOrderToClient()
   const approvePaymentsMutation = useApprovePayments()
 
-  // ── Search filter ────────────────────────────────────────────────────
   const filterOrders = (orders) => {
     if (!searchQuery.trim()) return orders || []
     const q = searchQuery.toLowerCase()
@@ -96,20 +90,13 @@ export default function SalesApprovalDashboardPage() {
   const filteredAwaiting = filterOrders(awaitingOrders)
   const filteredPayment = filterOrders(paymentOrders)
 
-  // ── Handlers ─────────────────────────────────────────────────────────
   const handleSendToClient = (order) => {
     sendToClientMutation.mutate({ orderId: order.orderId, sentBy: user?.id })
   }
 
-  const handleClientApproved = (order) => {
-    setApprovalModal({ open: true, order })
-  }
+  const handleClientApproved = (order) => setApprovalModal({ open: true, order })
+  const handleClientNotSatisfied = (order) => setRejectionModal({ open: true, order })
 
-  const handleClientNotSatisfied = (order) => {
-    setRejectionModal({ open: true, order })
-  }
-
-  // Rejection option handlers — close rejection modal, open sub-modal
   const handleRejectionOption = (option, order) => {
     setRejectionModal({ open: false, order: null })
     if (option === "revideo") setReVideoModal({ open: true, order })
@@ -122,7 +109,6 @@ export default function SalesApprovalDashboardPage() {
     approvePaymentsMutation.mutate({ orderId: order.orderId, approvedBy: user?.id })
   }
 
-  // ── Render helpers ───────────────────────────────────────────────────
   const renderLoading = (color = "blue") => (
     <div className="flex items-center justify-center py-12">
       <Loader2 className={`h-8 w-8 animate-spin text-${color}-600`} />
@@ -147,7 +133,6 @@ export default function SalesApprovalDashboardPage() {
     </Card>
   )
 
-  // ── Shared: render previous video banner for an item ─────────────────
   const renderPreviousVideoBanner = (item) => {
     if (!item.videoData?.previousVideo) return null
     return (
@@ -174,7 +159,6 @@ export default function SalesApprovalDashboardPage() {
     )
   }
 
-  // ── Shared: render alteration banner for an item ─────────────────────
   const renderAlterationBanner = (item) => {
     const altered = Object.entries(item.sectionStatuses || {}).filter(
       ([, s]) => s.isAlteration || s.alterationNotes
@@ -195,12 +179,8 @@ export default function SalesApprovalDashboardPage() {
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════
-  // TAB 1: Ready for Client — Order cards with video links
-  // ════════════════════════════════════════════════════════════════════════
   const renderReadyCard = (order) => (
     <Card key={order.orderId} className="overflow-hidden">
-      {/* Header */}
       <div className="bg-gray-50 px-4 py-3 flex justify-between items-center">
         <div>
           <span className="font-semibold text-sm">{order.orderNumber}</span>
@@ -214,7 +194,6 @@ export default function SalesApprovalDashboardPage() {
           {order.items?.length || 0} Order Items • Total: PKR {order.totalAmount?.toLocaleString()}
         </div>
 
-        {/* Order Items with Videos */}
         <div className="space-y-2 mb-4">
           {(order.items || []).map((item) => (
             <div key={item.id} className="bg-gray-50 rounded p-3">
@@ -257,16 +236,12 @@ export default function SalesApprovalDashboardPage() {
     </Card>
   )
 
-  // ════════════════════════════════════════════════════════════════════════
-  // TAB 2: Awaiting Response — Sent to client, waiting for feedback
-  // ════════════════════════════════════════════════════════════════════════
   const renderAwaitingCard = (order) => {
     const sentAt = order.clientApprovalData?.sentToClientAt
     const timeAgo = sentAt ? formatDistanceToNow(new Date(sentAt), { addSuffix: true }) : null
 
     return (
       <Card key={order.orderId} className="overflow-hidden border-2 border-amber-300 bg-amber-50">
-        {/* Header */}
         <div className="bg-amber-100 px-4 py-3 flex justify-between items-center">
           <div>
             <span className="font-semibold text-sm">{order.orderNumber}</span>
@@ -282,7 +257,6 @@ export default function SalesApprovalDashboardPage() {
             </div>
           )}
 
-          {/* Video Links */}
           <div className="bg-white rounded p-3 mb-4 border">
             <div className="text-xs text-gray-500 mb-1">Videos sent to client:</div>
             {(order.items || []).map((item) => (
@@ -304,7 +278,6 @@ export default function SalesApprovalDashboardPage() {
             ))}
           </div>
 
-          {/* Action Buttons — or waiting state if re-video pending */}
           {(() => {
             const pendingReVideoItems = (order.items || []).filter((item) => item.reVideoRequest)
             const pendingAlterationItems = (order.items || []).filter(
@@ -353,7 +326,6 @@ export default function SalesApprovalDashboardPage() {
               )
             }
 
-            // Normal state — show action buttons
             return (
               <>
                 <div className="text-xs text-gray-500 mb-2">Client Response:</div>
@@ -384,27 +356,42 @@ export default function SalesApprovalDashboardPage() {
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════
-  // TAB 3: Payment Verification — Verify payments & dispatch
-  // ════════════════════════════════════════════════════════════════════════
   const renderPaymentCard = (order) => {
     const totalPaid = (order.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0)
     const remaining = (order.totalAmount || 0) - totalPaid
     const canApprove = remaining <= 0
+    const isReadyStock = order.fulfillmentSource === "READY_STOCK"
 
     return (
       <Card key={order.orderId} className="overflow-hidden border-2 border-purple-300 bg-purple-50">
-        {/* Header */}
-        <div className="bg-purple-100 px-4 py-3 flex justify-between items-center">
-          <div>
+        <div className="bg-purple-100 px-4 py-3 flex justify-between items-center flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm">{order.orderNumber}</span>
-            <span className="text-gray-500 text-sm ml-2">• {order.customerName}</span>
+            <span className="text-gray-500 text-sm">• {order.customerName}</span>
+            {isReadyStock && (
+              <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-300 gap-1">
+                <Package className="h-3 w-3" />
+                Ready Stock
+              </Badge>
+            )}
           </div>
           <Badge className="bg-purple-200 text-purple-800">Payment Pending</Badge>
         </div>
 
         <CardContent className="p-4">
-          {/* Payment Summary */}
+          {isReadyStock && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded p-3 mb-3">
+              <div className="flex items-start gap-2">
+                <Package className="h-4 w-4 text-emerald-700 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-emerald-800">
+                  <span className="font-semibold">Ready Stock Order —</span> This order is
+                  fulfilled from finished inventory already in stock. No client approval video was
+                  needed. Verify payment and send to dispatch.
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded p-3 mb-3 border">
             <div className="flex justify-between text-sm mb-2">
               <span>Order Total:</span>
@@ -424,7 +411,6 @@ export default function SalesApprovalDashboardPage() {
             </div>
           </div>
 
-          {/* Payment History */}
           {(order.payments || []).length > 0 && (
             <>
               <div className="text-xs text-gray-500 mb-2">Payment History:</div>
@@ -458,8 +444,7 @@ export default function SalesApprovalDashboardPage() {
             </>
           )}
 
-          {/* Approval Screenshots */}
-          {order.clientApprovalData?.approvalScreenshots?.length > 0 && (
+          {!isReadyStock && order.clientApprovalData?.approvalScreenshots?.length > 0 && (
             <>
               <div className="text-xs text-gray-500 mb-2">Client Approval Proof:</div>
               <div className="bg-white rounded p-2 border mb-3">
@@ -497,18 +482,13 @@ export default function SalesApprovalDashboardPage() {
     )
   }
 
-  // ════════════════════════════════════════════════════════════════════════
-  // MAIN RENDER
-  // ════════════════════════════════════════════════════════════════════════
   return (
     <div className="container mx-auto p-4 max-w-4xl">
-      {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Client Approval Dashboard</h1>
         <p className="text-gray-500 text-sm mt-1">Manage client approvals and requests</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <Card className="bg-blue-50 border-blue-200">
           <CardContent className="p-3 text-center">
@@ -541,7 +521,6 @@ export default function SalesApprovalDashboardPage() {
         </Card>
       </div>
 
-      {/* Search */}
       <div className="mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -554,7 +533,6 @@ export default function SalesApprovalDashboardPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="ready" className="text-xs">
@@ -568,7 +546,6 @@ export default function SalesApprovalDashboardPage() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab 1: Ready for Client */}
         <TabsContent value="ready">
           {readyLoading ? (
             renderLoading("blue")
@@ -581,7 +558,6 @@ export default function SalesApprovalDashboardPage() {
           )}
         </TabsContent>
 
-        {/* Tab 2: Awaiting Response */}
         <TabsContent value="awaiting">
           {awaitingLoading ? (
             renderLoading("amber")
@@ -596,7 +572,6 @@ export default function SalesApprovalDashboardPage() {
           )}
         </TabsContent>
 
-        {/* Tab 3: Payment Verification */}
         <TabsContent value="payment">
           {paymentLoading ? (
             renderLoading("purple")
@@ -612,9 +587,6 @@ export default function SalesApprovalDashboardPage() {
         </TabsContent>
       </Tabs>
 
-      {/* ══ MODALS ══════════════════════════════════════════════════════ */}
-
-      {/* Client Approved → Screenshot upload */}
       <ClientApprovalModal
         open={approvalModal.open}
         order={approvalModal.order}
@@ -622,7 +594,6 @@ export default function SalesApprovalDashboardPage() {
         onClose={() => setApprovalModal({ open: false, order: null })}
       />
 
-      {/* Client Not Satisfied → 4 options */}
       <RejectionOptionsModal
         open={rejectionModal.open}
         order={rejectionModal.order}
@@ -630,7 +601,6 @@ export default function SalesApprovalDashboardPage() {
         onSelectOption={(option) => handleRejectionOption(option, rejectionModal.order)}
       />
 
-      {/* Re-Video Request */}
       <ReVideoRequestModal
         open={reVideoModal.open}
         order={reVideoModal.order}
@@ -638,7 +608,6 @@ export default function SalesApprovalDashboardPage() {
         onClose={() => setReVideoModal({ open: false, order: null })}
       />
 
-      {/* Alteration Request */}
       <AlterationRequestModal
         open={alterationModal.open}
         order={alterationModal.order}
@@ -646,7 +615,6 @@ export default function SalesApprovalDashboardPage() {
         onClose={() => setAlterationModal({ open: false, order: null })}
       />
 
-      {/* Cancel Order */}
       <CancellationConfirmModal
         open={cancelModal.open}
         order={cancelModal.order}
@@ -654,7 +622,6 @@ export default function SalesApprovalDashboardPage() {
         onClose={() => setCancelModal({ open: false, order: null })}
       />
 
-      {/* Start from Scratch */}
       <StartFromScratchModal
         open={scratchModal.open}
         order={scratchModal.order}

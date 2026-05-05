@@ -1,13 +1,35 @@
 /**
  * TaskTimelineView.jsx
- * Visual timeline showing task progress for a section
- * Shared between Production Head Dashboard and Worker Task View
+ * Visual timeline showing task progress for a section.
+ * Shared between Production Head Dashboard and Worker Task View.
  *
  * File: src/features/production/components/TaskTimelineView.jsx
+ *
+ * Production heads can opt in to task reassignment by passing `canReassign={true}`.
+ * Workers should NEVER receive canReassign=true (leave it defaulted to false).
  */
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Loader2,
   CheckCircle,
@@ -24,14 +46,17 @@ import {
   Ruler,
   Palette,
   ClipboardList,
+  UserCog,
+  RefreshCw,
 } from "lucide-react"
-// import { formatDate, formatRelativeTime } from "@/lib/formatters"
+import { toast } from "sonner"
 import { formatDate } from "../../../utils/formatters"
 import {
   PRODUCTION_TASK_STATUS,
   PRODUCTION_TASK_STATUS_CONFIG,
   PRODUCTION_TASK_TYPE_CONFIG,
 } from "@/constants/orderConstants"
+import { useReassignTask, useProductionWorkers } from "@/hooks/useProduction"
 
 // Icon mapping
 const TASK_ICONS = {
@@ -57,6 +82,7 @@ export default function TaskTimelineView({
   sectionName,
   compact = false,
   highlightTaskId = null,
+  canReassign = false,
 }) {
   if (!tasks || tasks.length === 0) {
     return (
@@ -137,6 +163,7 @@ export default function TaskTimelineView({
                   isHighlighted={isHighlighted}
                   isCurrent={isCurrent}
                   compact={compact}
+                  canReassign={canReassign}
                 />
               )
             })}
@@ -157,7 +184,10 @@ function TaskTimelineItem({
   isHighlighted,
   isCurrent,
   compact,
+  canReassign,
 }) {
+  const [isReassignOpen, setIsReassignOpen] = useState(false)
+
   const taskName =
     task.taskType === "CUSTOM"
       ? task.customTaskName
@@ -166,6 +196,15 @@ function TaskTimelineItem({
   // Calculate duration if completed
   const duration =
     task.startedAt && task.completedAt ? calculateDuration(task.startedAt, task.completedAt) : null
+
+  // A task is reassignable only if caller allows it AND status is PENDING/READY/IN_PROGRESS
+  const isReassignable =
+    canReassign &&
+    [
+      PRODUCTION_TASK_STATUS.PENDING,
+      PRODUCTION_TASK_STATUS.READY,
+      PRODUCTION_TASK_STATUS.IN_PROGRESS,
+    ].includes(task.status)
 
   // Get status-based styling
   const getStatusStyles = () => {
@@ -285,16 +324,198 @@ function TaskTimelineItem({
               </div>
             )}
 
-            {/* Notes */}
+            {/* Notes — reassignment reason will appear here because reassignTask appends it */}
             {task.notes && (
-              <div className="mt-2 p-2 rounded bg-white border text-xs">
+              <div className="mt-2 p-2 rounded bg-white border text-xs whitespace-pre-wrap">
                 <span className="font-medium">Notes:</span> {task.notes}
               </div>
             )}
           </div>
         )}
+
+        {/* Reassign button — shown in BOTH compact and full mode for production heads */}
+        {isReassignable && (
+          <div className="mt-3 pt-3 border-t border-slate-200 flex justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsReassignOpen(true)}
+              className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+            >
+              <UserCog className="h-3.5 w-3.5 mr-1.5" />
+              Reassign
+            </Button>
+          </div>
+        )}
       </div>
+
+      {isReassignable && (
+        <ReassignTaskDialog
+          open={isReassignOpen}
+          onOpenChange={setIsReassignOpen}
+          task={task}
+        />
+      )}
     </div>
+  )
+}
+
+// Reassignment Dialog
+function ReassignTaskDialog({ open, onOpenChange, task }) {
+  const [newWorkerId, setNewWorkerId] = useState("")
+  const [reason, setReason] = useState("")
+
+  const { data: workers = [], isLoading: isLoadingWorkers } = useProductionWorkers()
+  const reassignMutation = useReassignTask()
+
+  const taskName =
+    task.taskType === "CUSTOM"
+      ? task.customTaskName
+      : PRODUCTION_TASK_TYPE_CONFIG[task.taskType]?.label || task.taskType
+
+  // Exclude the currently-assigned worker from the dropdown
+  const availableWorkers = workers.filter(
+    (w) => String(w.id) !== String(task.assignedToId)
+  )
+
+  const handleSubmit = async () => {
+    if (!newWorkerId) {
+      toast.error("Please select a worker")
+      return
+    }
+    if (!reason.trim()) {
+      toast.error("Please provide a reason for reassignment")
+      return
+    }
+
+    try {
+      await reassignMutation.mutateAsync({
+        taskId: task.id,
+        newWorkerId,
+        reason: reason.trim(),
+      })
+      toast.success("Task reassigned successfully")
+      setNewWorkerId("")
+      setReason("")
+      onOpenChange(false)
+    } catch (error) {
+      toast.error("Failed to reassign task", {
+        description: error?.message || "Please try again.",
+      })
+    }
+  }
+
+  const handleClose = (nextOpen) => {
+    if (reassignMutation.isPending) return
+    if (!nextOpen) {
+      setNewWorkerId("")
+      setReason("")
+    }
+    onOpenChange(nextOpen)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <RefreshCw className="h-5 w-5 text-indigo-600" />
+            Reassign Task
+          </DialogTitle>
+          <DialogDescription>
+            Reassign <span className="font-semibold">{taskName}</span> from{" "}
+            <span className="font-semibold">{task.assignedToName || "current worker"}</span> to a
+            different worker.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="new-worker">New Worker</Label>
+            <Select
+              value={newWorkerId}
+              onValueChange={setNewWorkerId}
+              disabled={isLoadingWorkers || reassignMutation.isPending}
+            >
+              <SelectTrigger id="new-worker">
+                <SelectValue
+                  placeholder={isLoadingWorkers ? "Loading..." : "Select a worker"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {availableWorkers.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-slate-500">
+                    No other workers available
+                  </div>
+                ) : (
+                  availableWorkers.map((w) => (
+                    <SelectItem key={w.id} value={String(w.id)}>
+                      {w.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reason">
+              Reason <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              id="reason"
+              placeholder="e.g., Original worker is sick and unavailable for several days"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={3}
+              disabled={reassignMutation.isPending}
+            />
+            <p className="text-xs text-slate-500">
+              This reason will be shown in the task notes and activity log.
+            </p>
+          </div>
+
+          {task.status === PRODUCTION_TASK_STATUS.IN_PROGRESS && (
+            <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 border border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-800">
+                This task is currently in progress. Reassigning will reset it to Ready — the new
+                worker will need to click Start.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => handleClose(false)}
+            disabled={reassignMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={
+              reassignMutation.isPending || !newWorkerId || !reason.trim() || isLoadingWorkers
+            }
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            {reassignMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Reassigning...
+              </>
+            ) : (
+              <>
+                <UserCog className="h-4 w-4 mr-2" />
+                Reassign Task
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

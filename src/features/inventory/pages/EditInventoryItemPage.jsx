@@ -17,6 +17,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, Save, Trash2, Loader2, AlertCircle, Package } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useProduct } from "../../../hooks/useProducts"
 
 /**
  * Edit Inventory Item Page
@@ -81,6 +82,12 @@ export default function EditInventoryItemPage() {
   // Extract item from response
   const item = itemData?.data
   const isVariantCategory = item?.has_variants || false
+
+  // Fetch the linked product details to display (read-only)
+  const { data: linkedProductData } = useProduct(item?.linked_product_id, {
+    enabled: !!item?.linked_product_id,
+  })
+  const linkedProduct = linkedProductData?.data
 
   /**
    * Initialize form with existing item data
@@ -300,6 +307,31 @@ export default function EditInventoryItemPage() {
                 Category cannot be changed after creation
               </p>
             </div>
+
+            {/* Linked Product - Display Only (cannot be changed after creation) */}
+            {isVariantCategory && item.linked_product_id && (
+              <div className="space-y-2">
+                <Label>Linked Product</Label>
+                <div className="p-3 bg-muted rounded-md text-sm">
+                  {linkedProduct ? (
+                    <div className="flex flex-col">
+                      <span className="font-medium">{linkedProduct.name}</span>
+                      {linkedProduct.sku && (
+                        <span className="text-xs text-muted-foreground mt-1">
+                          SKU: {linkedProduct.sku}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">Loading product...</span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Linked product cannot be changed after creation to preserve ready-stock allocation
+                  history.
+                </p>
+              </div>
+            )}
 
             {/* Description */}
             <div className="space-y-2">

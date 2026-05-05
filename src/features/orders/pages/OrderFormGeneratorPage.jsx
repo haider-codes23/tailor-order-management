@@ -55,6 +55,7 @@ const GARMENT_FIELD_MAP = {
     front: "shirtFront",
     back: "shirtBack",
     embroidery: "shirtEmbroidery",
+    addaWork: "shirtAddaWork",
   },
   bottom: {
     silhouette: "bottomSilhouette",
@@ -62,6 +63,7 @@ const GARMENT_FIELD_MAP = {
     front: "bottomFront",
     back: "bottomBack",
     embroidery: "bottomEmbroidery",
+    addaWork: "bottomAddaWork",
   },
   dupatta: {
     silhouette: "dupattaSilhouette",
@@ -69,6 +71,7 @@ const GARMENT_FIELD_MAP = {
     front: "dupattaFront",
     back: "dupattaBack",
     embroidery: "dupattaEmbroidery",
+    addaWork: "dupattaAddaWork",
   },
 }
 
@@ -139,16 +142,19 @@ export default function OrderFormGeneratorPage() {
       shirtFront: "",
       shirtBack: "",
       shirtEmbroidery: "",
+      shirtAddaWork: "",
       bottomSilhouette: "",
       bottomDressColor: "",
       bottomFront: "",
       bottomBack: "",
       bottomEmbroidery: "",
+      bottomAddaWork: "",
       dupattaSilhouette: "",
       dupattaDressColor: "",
       dupattaFront: "",
       dupattaBack: "",
       dupattaEmbroidery: "",
+      dupattaAddaWork: "",
     },
   })
 
@@ -182,16 +188,19 @@ export default function OrderFormGeneratorPage() {
         shirtFront: form.garmentNotes?.shirt?.front || "",
         shirtBack: form.garmentNotes?.shirt?.back || "",
         shirtEmbroidery: form.garmentNotes?.shirt?.embroidery || "",
+        shirtAddaWork: form.garmentNotes?.shirt?.addaWork || "",
         bottomSilhouette: form.garmentNotes?.bottom?.silhouette || "",
         bottomDressColor: form.garmentNotes?.bottom?.dressColor || "",
         bottomFront: form.garmentNotes?.bottom?.front || "",
         bottomBack: form.garmentNotes?.bottom?.back || "",
         bottomEmbroidery: form.garmentNotes?.bottom?.embroidery || "",
+        bottomAddaWork: form.garmentNotes?.bottom?.addaWork || "",
         dupattaSilhouette: form.garmentNotes?.dupatta?.silhouette || "",
         dupattaDressColor: form.garmentNotes?.dupatta?.dressColor || "",
         dupattaFront: form.garmentNotes?.dupatta?.front || "",
         dupattaBack: form.garmentNotes?.dupatta?.back || "",
         dupattaEmbroidery: form.garmentNotes?.dupatta?.embroidery || "",
+        dupattaAddaWork: form.garmentNotes?.dupatta?.addaWork || "",
       })
       // Set measurement categories
       if (form.selectedCategories) {
@@ -326,6 +335,7 @@ export default function OrderFormGeneratorPage() {
             front: isStyleCustomized || isFabricCustomized ? data.shirtFront : "",
             back: isStyleCustomized || isFabricCustomized ? data.shirtBack : "",
             embroidery: isFabricCustomized ? data.shirtEmbroidery : "",
+            addaWork: isFabricCustomized ? data.shirtAddaWork : "",
           },
           bottom: {
             silhouette: isStyleCustomized ? data.bottomSilhouette : "",
@@ -333,6 +343,7 @@ export default function OrderFormGeneratorPage() {
             front: isStyleCustomized || isFabricCustomized ? data.bottomFront : "",
             back: isStyleCustomized || isFabricCustomized ? data.bottomBack : "",
             embroidery: isFabricCustomized ? data.bottomEmbroidery : "",
+            addaWork: isFabricCustomized ? data.bottomAddaWork : "",
           },
           dupatta: {
             silhouette: isStyleCustomized ? data.dupattaSilhouette : "",
@@ -340,6 +351,7 @@ export default function OrderFormGeneratorPage() {
             front: isStyleCustomized || isFabricCustomized ? data.dupattaFront : "",
             back: isStyleCustomized || isFabricCustomized ? data.dupattaBack : "",
             embroidery: isFabricCustomized ? data.dupattaEmbroidery : "",
+            addaWork: isFabricCustomized ? data.dupattaAddaWork : "",
           },
         },
         sketchImage: !isStandardSize ? sketchImage : null,
@@ -416,7 +428,8 @@ export default function OrderFormGeneratorPage() {
           fields += `<li><strong>Front:</strong> ${notes.front || "—"}</li>`
           fields += `<li><strong>Back:</strong> ${notes.back || "—"}</li>`
         }
-        fields += `<li><strong>Embroidery/Adda Work:</strong> ${notes.embroidery || "—"}</li>`
+        fields += `<li><strong>Embroidery:</strong> ${notes.embroidery || "—"}</li>`
+        fields += `<li><strong>Adda Work:</strong> ${notes.addaWork || "—"}</li>`
       }
       return fields
     }
@@ -597,7 +610,8 @@ export default function OrderFormGeneratorPage() {
               content += `<li>Front: <strong>${notes?.front || "—"}</strong></li>`
               content += `<li>Back: <strong>${notes?.back || "—"}</strong></li>`
             }
-            content += `<li>Embroidery/Adda Work: <strong>${notes?.embroidery || "—"}</strong></li>`
+            content += `<li>Embroidery: <strong>${notes?.embroidery || "—"}</strong></li>`
+            content += `<li>Adda Work: <strong>${notes?.addaWork || "—"}</strong></li>`
             content += `</ul>`
           }
           return `
@@ -1319,17 +1333,34 @@ export default function OrderFormGeneratorPage() {
                               </>
                             )}
                             <div>
-                              <Label className="text-xs">Embroidery / Adda Work *</Label>
-                              <Input
+                              <Label className="text-xs">Embroidery *</Label>
+                              <Textarea
                                 {...register(fm.embroidery, {
                                   required: `${label} embroidery details are required`,
                                 })}
-                                placeholder="Enter embroidery/adda work details"
-                                className="text-sm h-8"
+                                placeholder="Enter embroidery details"
+                                className="text-sm"
+                                rows={2}
                               />
                               {errors[fm.embroidery] && (
                                 <p className="text-xs text-red-500 mt-0.5">
                                   {errors[fm.embroidery].message}
+                                </p>
+                              )}
+                            </div>
+                            <div>
+                              <Label className="text-xs">Adda Work *</Label>
+                              <Textarea
+                                {...register(fm.addaWork, {
+                                  required: `${label} adda work details are required`,
+                                })}
+                                placeholder="Enter adda work details"
+                                className="text-sm"
+                                rows={2}
+                              />
+                              {errors[fm.addaWork] && (
+                                <p className="text-xs text-red-500 mt-0.5">
+                                  {errors[fm.addaWork].message}
                                 </p>
                               )}
                             </div>
@@ -1442,12 +1473,6 @@ export default function OrderFormGeneratorPage() {
                 <div>
                   <span className="text-slate-600">Order No:</span>
                   <p className="font-semibold text-slate-900">{order?.orderNumber}</p>
-                </div>
-                <div>
-                  <span className="text-slate-600">Order Date:</span>
-                  <p className="font-semibold text-slate-900">
-                    {order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : "—"}
-                  </p>
                 </div>
                 <div>
                   <span className="text-slate-600">FWD Date:</span>
@@ -1727,8 +1752,12 @@ export default function OrderFormGeneratorPage() {
                                 </>
                               )}
                               <p>
-                                <span className="text-amber-500">Embroidery/Adda:</span>{" "}
+                                <span className="text-amber-500">Embroidery:</span>{" "}
                                 {notes?.embroidery || "—"}
+                              </p>
+                              <p>
+                                <span className="text-amber-500">Adda Work:</span>{" "}
+                                {notes?.addaWork || "—"}
                               </p>
                             </>
                           )}
